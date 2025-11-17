@@ -133,6 +133,51 @@ export type Database = {
           },
         ]
       }
+      arena_competitions: {
+        Row: {
+          claim_window_seconds: number | null
+          eligible_drivers: string[]
+          ended_at: string | null
+          id: string
+          order_id: string
+          started_at: string | null
+          winner_driver_id: string | null
+        }
+        Insert: {
+          claim_window_seconds?: number | null
+          eligible_drivers: string[]
+          ended_at?: string | null
+          id?: string
+          order_id: string
+          started_at?: string | null
+          winner_driver_id?: string | null
+        }
+        Update: {
+          claim_window_seconds?: number | null
+          eligible_drivers?: string[]
+          ended_at?: string | null
+          id?: string
+          order_id?: string
+          started_at?: string | null
+          winner_driver_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "arena_competitions_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "arena_competitions_winner_driver_id_fkey"
+            columns: ["winner_driver_id"]
+            isOneToOne: false
+            referencedRelation: "effective_permissions"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
       audit_logs: {
         Row: {
           created_at: string | null
@@ -2255,6 +2300,7 @@ export type Database = {
       }
       delivery_addresses: {
         Row: {
+          apt_suite: string | null
           city: string
           created_at: string | null
           id: string
@@ -2266,6 +2312,7 @@ export type Database = {
           zip_code: string
         }
         Insert: {
+          apt_suite?: string | null
           city: string
           created_at?: string | null
           id?: string
@@ -2277,6 +2324,7 @@ export type Database = {
           zip_code: string
         }
         Update: {
+          apt_suite?: string | null
           city?: string
           created_at?: string | null
           id?: string
@@ -2365,6 +2413,48 @@ export type Database = {
           updated_at?: string | null
         }
         Relationships: []
+      }
+      diamond_points_history: {
+        Row: {
+          created_at: string | null
+          driver_id: string
+          id: string
+          order_id: string | null
+          points: number
+          source: string
+        }
+        Insert: {
+          created_at?: string | null
+          driver_id: string
+          id?: string
+          order_id?: string | null
+          points: number
+          source: string
+        }
+        Update: {
+          created_at?: string | null
+          driver_id?: string
+          id?: string
+          order_id?: string | null
+          points?: number
+          source?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "diamond_points_history_driver_id_fkey"
+            columns: ["driver_id"]
+            isOneToOne: false
+            referencedRelation: "effective_permissions"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "diamond_points_history_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       dispute_messages: {
         Row: {
@@ -3172,10 +3262,12 @@ export type Database = {
       driver_profiles: {
         Row: {
           acceptance_rate: number | null
+          completed_orders: number | null
           completion_rate: number | null
           created_at: string | null
           current_latitude: number | null
           current_longitude: number | null
+          diamond_points: number | null
           heading: number | null
           id: string
           is_available: boolean | null
@@ -3184,6 +3276,7 @@ export type Database = {
           on_time_rate: number | null
           optimized_route: Json | null
           rating: number | null
+          rating_tier: string | null
           region_id: number | null
           route_updated_at: string | null
           speed: number | null
@@ -3198,10 +3291,12 @@ export type Database = {
         }
         Insert: {
           acceptance_rate?: number | null
+          completed_orders?: number | null
           completion_rate?: number | null
           created_at?: string | null
           current_latitude?: number | null
           current_longitude?: number | null
+          diamond_points?: number | null
           heading?: number | null
           id?: string
           is_available?: boolean | null
@@ -3210,6 +3305,7 @@ export type Database = {
           on_time_rate?: number | null
           optimized_route?: Json | null
           rating?: number | null
+          rating_tier?: string | null
           region_id?: number | null
           route_updated_at?: string | null
           speed?: number | null
@@ -3224,10 +3320,12 @@ export type Database = {
         }
         Update: {
           acceptance_rate?: number | null
+          completed_orders?: number | null
           completion_rate?: number | null
           created_at?: string | null
           current_latitude?: number | null
           current_longitude?: number | null
+          diamond_points?: number | null
           heading?: number | null
           id?: string
           is_available?: boolean | null
@@ -3236,6 +3334,7 @@ export type Database = {
           on_time_rate?: number | null
           optimized_route?: Json | null
           rating?: number | null
+          rating_tier?: string | null
           region_id?: number | null
           route_updated_at?: string | null
           speed?: number | null
@@ -5487,6 +5586,51 @@ export type Database = {
         }
         Relationships: []
       }
+      hotspots: {
+        Row: {
+          claimed_by: string | null
+          created_at: string | null
+          expires_at: string
+          id: string
+          lat: number
+          lng: number
+          order_id: string
+        }
+        Insert: {
+          claimed_by?: string | null
+          created_at?: string | null
+          expires_at: string
+          id?: string
+          lat: number
+          lng: number
+          order_id: string
+        }
+        Update: {
+          claimed_by?: string | null
+          created_at?: string | null
+          expires_at?: string
+          id?: string
+          lat?: number
+          lng?: number
+          order_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "hotspots_claimed_by_fkey"
+            columns: ["claimed_by"]
+            isOneToOne: false
+            referencedRelation: "effective_permissions"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "hotspots_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       iboe_templates: {
         Row: {
           category: string
@@ -6552,6 +6696,30 @@ export type Database = {
           },
         ]
       }
+      order_batches: {
+        Row: {
+          batch_type: string
+          created_at: string | null
+          diamond_only_until: string | null
+          id: string
+          order_ids: string[]
+        }
+        Insert: {
+          batch_type: string
+          created_at?: string | null
+          diamond_only_until?: string | null
+          id?: string
+          order_ids: string[]
+        }
+        Update: {
+          batch_type?: string
+          created_at?: string | null
+          diamond_only_until?: string | null
+          id?: string
+          order_ids?: string[]
+        }
+        Relationships: []
+      }
       order_feedback: {
         Row: {
           comment: string | null
@@ -6751,6 +6919,8 @@ export type Database = {
       orders: {
         Row: {
           assigned_craver_id: string | null
+          base_pay: number | null
+          batch_id: string | null
           created_at: string | null
           customer_id: string | null
           customer_name: string | null
@@ -6759,25 +6929,31 @@ export type Database = {
           delivery_fee: number | null
           delivery_fee_cents: number | null
           delivery_method: string | null
+          diamond_only_until: string | null
           distance_km: number | null
           driver_id: string | null
           dropoff_address: Json | null
+          dropoff_location: Json | null
           estimated_delivery_time: string | null
           estimated_distance_meters: number | null
           estimated_duration_seconds: number | null
+          exclusive_type: string | null
           id: string
           order_number: string | null
           order_status: string | null
           payout_cents: number | null
+          payout_hidden: boolean | null
           pickup_address: Json | null
           pickup_code: string | null
           pickup_confirmed_at: string | null
+          pickup_location: Json | null
           pickup_photo_url: string | null
           restaurant_id: string | null
           route_geometry: Json | null
           service_fee: number | null
           subtotal_cents: number
           tax_cents: number | null
+          tip: number | null
           tip_cents: number | null
           total_amount: number | null
           total_cents: number
@@ -6785,6 +6961,8 @@ export type Database = {
         }
         Insert: {
           assigned_craver_id?: string | null
+          base_pay?: number | null
+          batch_id?: string | null
           created_at?: string | null
           customer_id?: string | null
           customer_name?: string | null
@@ -6793,25 +6971,31 @@ export type Database = {
           delivery_fee?: number | null
           delivery_fee_cents?: number | null
           delivery_method?: string | null
+          diamond_only_until?: string | null
           distance_km?: number | null
           driver_id?: string | null
           dropoff_address?: Json | null
+          dropoff_location?: Json | null
           estimated_delivery_time?: string | null
           estimated_distance_meters?: number | null
           estimated_duration_seconds?: number | null
+          exclusive_type?: string | null
           id?: string
           order_number?: string | null
           order_status?: string | null
           payout_cents?: number | null
+          payout_hidden?: boolean | null
           pickup_address?: Json | null
           pickup_code?: string | null
           pickup_confirmed_at?: string | null
+          pickup_location?: Json | null
           pickup_photo_url?: string | null
           restaurant_id?: string | null
           route_geometry?: Json | null
           service_fee?: number | null
           subtotal_cents: number
           tax_cents?: number | null
+          tip?: number | null
           tip_cents?: number | null
           total_amount?: number | null
           total_cents: number
@@ -6819,6 +7003,8 @@ export type Database = {
         }
         Update: {
           assigned_craver_id?: string | null
+          base_pay?: number | null
+          batch_id?: string | null
           created_at?: string | null
           customer_id?: string | null
           customer_name?: string | null
@@ -6827,25 +7013,31 @@ export type Database = {
           delivery_fee?: number | null
           delivery_fee_cents?: number | null
           delivery_method?: string | null
+          diamond_only_until?: string | null
           distance_km?: number | null
           driver_id?: string | null
           dropoff_address?: Json | null
+          dropoff_location?: Json | null
           estimated_delivery_time?: string | null
           estimated_distance_meters?: number | null
           estimated_duration_seconds?: number | null
+          exclusive_type?: string | null
           id?: string
           order_number?: string | null
           order_status?: string | null
           payout_cents?: number | null
+          payout_hidden?: boolean | null
           pickup_address?: Json | null
           pickup_code?: string | null
           pickup_confirmed_at?: string | null
+          pickup_location?: Json | null
           pickup_photo_url?: string | null
           restaurant_id?: string | null
           route_geometry?: Json | null
           service_fee?: number | null
           subtotal_cents?: number
           tax_cents?: number | null
+          tip?: number | null
           tip_cents?: number | null
           total_amount?: number | null
           total_cents?: number
@@ -7895,8 +8087,10 @@ export type Database = {
           days_active: number | null
           documents_uploaded: boolean | null
           id: string
+          milestone_1_amount_cents: number | null
           milestone_1_paid: boolean | null
           milestone_1_paid_at: string | null
+          milestone_2_amount_cents: number | null
           milestone_2_paid: boolean | null
           milestone_2_paid_at: string | null
           paid_at: string | null
@@ -7918,8 +8112,10 @@ export type Database = {
           days_active?: number | null
           documents_uploaded?: boolean | null
           id?: string
+          milestone_1_amount_cents?: number | null
           milestone_1_paid?: boolean | null
           milestone_1_paid_at?: string | null
+          milestone_2_amount_cents?: number | null
           milestone_2_paid?: boolean | null
           milestone_2_paid_at?: string | null
           paid_at?: string | null
@@ -7941,8 +8137,10 @@ export type Database = {
           days_active?: number | null
           documents_uploaded?: boolean | null
           id?: string
+          milestone_1_amount_cents?: number | null
           milestone_1_paid?: boolean | null
           milestone_1_paid_at?: string | null
+          milestone_2_amount_cents?: number | null
           milestone_2_paid?: boolean | null
           milestone_2_paid_at?: string | null
           paid_at?: string | null
@@ -10775,6 +10973,15 @@ export type Database = {
         Returns: unknown
       }
       _st_within: { Args: { geom1: unknown; geom2: unknown }; Returns: boolean }
+      add_diamond_points: {
+        Args: {
+          p_driver_id: string
+          p_order_id?: string
+          p_points: number
+          p_source: string
+        }
+        Returns: undefined
+      }
       addauth: { Args: { "": string }; Returns: boolean }
       addgeometrycolumn:
         | {
@@ -11181,6 +11388,7 @@ export type Database = {
       is_c_level_position: { Args: { position_text: string }; Returns: boolean }
       is_ceo: { Args: { user_uuid: string }; Returns: boolean }
       is_ceo_email: { Args: { p_email: string }; Returns: boolean }
+      is_diamond_driver: { Args: { p_driver_id: string }; Returns: boolean }
       is_executive: { Args: { user_uuid: string }; Returns: boolean }
       link_document_to_resolution: {
         Args: { doc_id: string; resolution_id: string }

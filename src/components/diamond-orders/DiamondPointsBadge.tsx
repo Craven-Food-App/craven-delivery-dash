@@ -41,15 +41,7 @@ export const DiamondPointsBadge: React.FC<DiamondPointsBadgeProps> = ({ points, 
             color={getTierColor()}
             variant="filled"
             leftSection={<Sparkles size={14} />}
-            sx={{
-              ...styles,
-              animation: showAnimation ? 'shine 1s ease-in-out' : 'none',
-              '@keyframes shine': {
-                '0%': { transform: 'scale(1)', boxShadow: '0 0 0 0 rgba(255,106,0,0.7)' },
-                '50%': { transform: 'scale(1.1)', boxShadow: '0 0 20px rgba(255,106,0,0.9)' },
-                '100%': { transform: 'scale(1)', boxShadow: '0 0 0 0 rgba(255,106,0,0)' },
-              },
-            }}
+            style={styles}
           >
             <Text fw={700} size="sm">
               {points} Points

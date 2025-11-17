@@ -76,7 +76,7 @@ export const ArenaClaimModal: React.FC<ArenaClaimModalProps> = ({
       }}
     >
       <Stack gap="xl" align="center" w="100%" p="xl">
-        <Group position="apart" w="100%">
+        <Group justify="apart" w="100%">
           <Text fw={700} size="xl">ARENA COMPETITION</Text>
           <Button variant="subtle" onClick={onClose}>
             <X size={20} />
@@ -86,13 +86,13 @@ export const ArenaClaimModal: React.FC<ArenaClaimModalProps> = ({
         <Card
           p="xl"
           radius="md"
-          sx={(theme) => ({
-            background: theme.other.cravenOrangeGradient,
-            border: `2px solid #FF6A00`,
-            boxShadow: theme.shadows.glowStrong,
+          style={{
+            background: 'linear-gradient(135deg, #FF6A00 0%, #D45400 100%)',
+            border: '2px solid #FF6A00',
+            boxShadow: '0 0 24px rgba(255,106,0,0.8)',
             maxWidth: 400,
             width: '100%',
-          })}
+          }}
         >
           <Stack gap="lg" align="center">
             <Trophy size={48} color="white" />
@@ -136,7 +136,7 @@ export const ArenaClaimModal: React.FC<ArenaClaimModalProps> = ({
                   fullWidth
                   disabled={!isEligible || claimed}
                   onClick={handleTap}
-                  sx={(theme) => ({
+                  style={{
                     background: 'rgba(255,255,255,0.2)',
                     backdropFilter: 'blur(10px)',
                     border: '2px solid white',
@@ -144,15 +144,8 @@ export const ArenaClaimModal: React.FC<ArenaClaimModalProps> = ({
                     fontSize: '1.5rem',
                     fontWeight: 700,
                     height: 80,
-                    '&:hover': {
-                      background: 'rgba(255,255,255,0.3)',
-                      transform: 'scale(1.05)',
-                    },
-                    '&:active': {
-                      transform: 'scale(0.95)',
-                    },
                     transition: 'all 0.1s',
-                  })}
+                  }}
                 >
                   {!isEligible ? 'Not Eligible' : claimed ? 'Claimed!' : 'TAP TO CLAIM'}
                 </Button>

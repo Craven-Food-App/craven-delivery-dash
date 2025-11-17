@@ -49,7 +49,7 @@ export const ExclusiveOrdersFeed: React.FC<ExclusiveOrdersFeedProps> = ({ onClai
         })
       );
 
-      setBatches(batchesWithOrders as OrderBatch[]);
+      setBatches(batchesWithOrders as unknown as OrderBatch[]);
     } catch (error) {
       console.error('Error fetching batches:', error);
     }

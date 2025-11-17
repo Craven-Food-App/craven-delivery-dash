@@ -22,15 +22,15 @@ export const MysteryOrderCard: React.FC<MysteryOrderCardProps> = ({ order, onCla
     <Card
       p="lg"
       radius="md"
-      sx={(theme) => ({
-        background: theme.other.cravenOrangeGradient,
-        border: `2px solid #FF6A00`,
-        boxShadow: theme.shadows.glow,
+      style={{
+        background: 'linear-gradient(135deg, #FF6A00 0%, #D45400 100%)',
+        border: '2px solid #FF6A00',
+        boxShadow: '0 0 16px rgba(255,106,0,0.6)',
         position: 'relative',
-      })}
+      }}
     >
       <Stack gap="md">
-        <Group position="apart">
+        <Group justify="apart">
           <Text fw={700} size="lg" c="white">
             MYSTERY ORDER
           </Text>
@@ -72,13 +72,9 @@ export const MysteryOrderCard: React.FC<MysteryOrderCardProps> = ({ order, onCla
             color="white"
             onClick={handleReveal}
             leftSection={<Eye size={16} />}
-            sx={{
+            style={{
               borderColor: 'rgba(255,255,255,0.5)',
               color: 'white',
-              '&:hover': {
-                borderColor: 'white',
-                background: 'rgba(255,255,255,0.1)',
-              },
             }}
           >
             Reveal Payout
@@ -89,12 +85,9 @@ export const MysteryOrderCard: React.FC<MysteryOrderCardProps> = ({ order, onCla
           <Button
             fullWidth
             size="lg"
-            sx={(theme) => ({
-              background: theme.other.cravenOrangeGradient,
-              '&:hover': {
-                transform: 'scale(1.02)',
-              },
-            })}
+            style={{
+              background: 'linear-gradient(135deg, #FF6A00 0%, #D45400 100%)',
+            }}
             onClick={() => onClaim(order.id)}
           >
             Claim Order

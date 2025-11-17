@@ -70,10 +70,6 @@ const MobileFeederLogin: React.FC<MobileFeederLoginProps> = ({ onBack, onLoginSu
           insurance_policy,
           insurance_document,
           background_check_consent,
-          criminal_history_consent,
-          facial_image_consent,
-          electronic_1099_consent,
-          w9_signed,
           background_check,
           background_check_approved_at,
           background_check_initiated_at

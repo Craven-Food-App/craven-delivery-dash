@@ -32,19 +32,8 @@ export const HotspotMapMarker: React.FC<HotspotMapMarkerProps> = ({
         radius="xl"
         variant="gradient"
         gradient={{ from: '#FF6A00', to: '#D45400', deg: 135 }}
-        sx={{
+        style={{
           cursor: 'pointer',
-          animation: 'pulse 2s infinite',
-          '@keyframes pulse': {
-            '0%, 100%': {
-              transform: 'scale(1)',
-              boxShadow: '0 0 0 0 rgba(255,106,0,0.7)',
-            },
-            '50%': {
-              transform: 'scale(1.1)',
-              boxShadow: '0 0 0 10px rgba(255,106,0,0)',
-            },
-          },
         }}
       >
         <MapPin size={24} />
@@ -66,10 +55,10 @@ export const HotspotMapMarker: React.FC<HotspotMapMarkerProps> = ({
           <Card
             p="md"
             radius="md"
-            sx={(theme) => ({
-              background: theme.other.cravenOrangeGradient,
-              border: `2px solid #FF6A00`,
-            })}
+            style={{
+              background: 'linear-gradient(135deg, #FF6A00 0%, #D45400 100%)',
+              border: '2px solid #FF6A00',
+            }}
           >
             <Stack gap="xs">
               <Text size="sm" c="white">
@@ -98,12 +87,9 @@ export const HotspotMapMarker: React.FC<HotspotMapMarkerProps> = ({
               onClaim(hotspot.id);
               onClose();
             }}
-            sx={(theme) => ({
-              background: theme.other.cravenOrangeGradient,
-              '&:hover': {
-                transform: 'scale(1.02)',
-              },
-            })}
+            style={{
+              background: 'linear-gradient(135deg, #FF6A00 0%, #D45400 100%)',
+            }}
           >
             {isExpired ? 'Expired' : !isDiamond ? '🔒 Diamond Only' : 'Claim Hotspot Order'}
           </Button>

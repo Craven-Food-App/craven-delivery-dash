@@ -50,7 +50,7 @@ export const DriverQuizManagement: React.FC = () => {
         .order('display_order', { ascending: true });
 
       if (error) throw error;
-      setQuestions(data || []);
+      setQuestions((data as QuizQuestion[]) || []);
     } catch (error: any) {
       console.error('Error loading questions:', error);
       toast({
@@ -73,7 +73,7 @@ export const DriverQuizManagement: React.FC = () => {
           .from('driver_quiz_questions')
           .update({
             ...formData,
-            updated_by: user?.user?.id,
+            updated_by: user?.id,
           })
           .eq('id', editingQuestion.id);
 
@@ -90,11 +90,19 @@ export const DriverQuizManagement: React.FC = () => {
         
         const { error } = await supabase
           .from('driver_quiz_questions')
-          .insert({
-            ...formData,
+          .insert([{
+            question_text: formData.question_text!,
+            option_a: formData.option_a!,
+            option_b: formData.option_b!,
+            option_c: formData.option_c!,
+            option_d: formData.option_d!,
+            correct_answer: formData.correct_answer!,
+            points: formData.points!,
+            section: formData.section!,
             display_order: maxOrder + 1,
-            updated_by: user?.user?.id,
-          });
+            is_active: formData.is_active!,
+            updated_by: user?.id,
+          }]);
 
         if (error) throw error;
         toast({

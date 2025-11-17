@@ -36,32 +36,20 @@ export const FlashDropCard: React.FC<FlashDropCardProps> = ({ order, onClaim, is
     <Card
       p="lg"
       radius="md"
-      sx={(theme) => ({
+      style={{
         background: isLocked 
           ? 'linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%)'
-          : theme.other.cravenOrangeGradient,
+          : 'linear-gradient(135deg, #FF6A00 0%, #D45400 100%)',
         border: `2px solid ${isLocked ? '#444' : '#FF6A00'}`,
-        boxShadow: isLocked ? 'none' : theme.shadows.glow,
+        boxShadow: isLocked ? 'none' : '0 0 16px rgba(255,106,0,0.6)',
         position: 'relative',
         overflow: 'hidden',
         filter: isLocked ? 'blur(2px)' : 'none',
         opacity: isLocked ? 0.6 : 1,
-        '&::before': {
-          content: '""',
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          background: isLocked 
-            ? 'repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(0,0,0,0.1) 10px, rgba(0,0,0,0.1) 20px)'
-            : 'none',
-          pointerEvents: 'none',
-        },
-      })}
+      }}
     >
       <Stack gap="md">
-        <Group position="apart" align="flex-start">
+        <Group justify="apart" align="flex-start">
           <Stack gap="xs">
             <Group gap="xs">
               <Zap size={20} color={isLocked ? '#666' : '#fff'} />
@@ -106,18 +94,12 @@ export const FlashDropCard: React.FC<FlashDropCardProps> = ({ order, onClaim, is
           variant={isLocked ? 'outline' : 'filled'}
           disabled={isLocked || isExpired}
           onClick={() => onClaim(order.id)}
-          sx={(theme) => ({
+          style={{
             background: isLocked 
               ? 'transparent'
-              : theme.other.cravenOrangeGradient,
-            '&:hover': {
-              background: isLocked 
-                ? 'transparent'
-                : 'linear-gradient(135deg, #D45400 0%, #FF6A00 100%)',
-              transform: 'scale(1.02)',
-            },
+              : 'linear-gradient(135deg, #FF6A00 0%, #D45400 100%)',
             transition: 'all 0.2s',
-          })}
+          }}
         >
           {isLocked ? '🔒 Diamond Only' : isExpired ? 'Expired' : 'Claim Now'}
         </Button>
