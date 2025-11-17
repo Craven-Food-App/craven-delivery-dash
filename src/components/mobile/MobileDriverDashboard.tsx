@@ -243,7 +243,7 @@ export const MobileDriverDashboard: React.FC = () => {
             // Request permission and subscribe
             const newSubscription = await registration.pushManager.subscribe({
               userVisibleOnly: true,
-              applicationServerKey: process.env.VITE_VAPID_PUBLIC_KEY
+              applicationServerKey: import.meta.env.VITE_VAPID_PUBLIC_KEY
             });
             
             // Save subscription to database
@@ -820,19 +820,28 @@ export const MobileDriverDashboard: React.FC = () => {
       // Save session data to state for persistence
       setSessionData(sessionData);
 
-      // Update or create driver session for persistence
-      const {
-        error: sessionError
-      } = await supabase.from('driver_sessions').upsert({
-        driver_id: user.id,
-        is_online: true,
-        last_activity: new Date().toISOString(),
-        session_data: sessionData
-      }, {
-        onConflict: 'driver_id'
-      });
-      if (sessionError) {
-        console.error('Error updating driver session:', sessionError);
+      // Ensure driver profile exists before creating session
+      const { data: existingProfile } = await supabase
+        .from('driver_profiles')
+        .select('id')
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      let profileExists = !!existingProfile;
+      
+      if (!existingProfile) {
+        // Create driver profile if it doesn't exist
+        const { error: createProfileError } = await supabase.from('driver_profiles').insert({
+          user_id: user.id,
+          status: 'online',
+          is_available: true,
+          last_location_update: new Date().toISOString()
+        });
+        if (createProfileError) {
+          console.error('Error creating driver profile:', createProfileError);
+        } else {
+          profileExists = true;
+        }
       }
 
       // Update driver profile to online
@@ -844,6 +853,23 @@ export const MobileDriverDashboard: React.FC = () => {
       
       if (profileError) {
         console.error('Error updating driver profile:', profileError);
+      }
+
+      // Update or create driver session for persistence (only if profile exists)
+      if (profileExists) {
+        const {
+          error: sessionError
+        } = await supabase.from('driver_sessions').upsert({
+          driver_id: user.id,
+          is_online: true,
+          last_activity: new Date().toISOString(),
+          session_data: sessionData
+        }, {
+          onConflict: 'driver_id'
+        });
+        if (sessionError) {
+          console.error('Error updating driver session:', sessionError);
+        }
       }
 
       // Get location and update craver_locations table
@@ -871,6 +897,8 @@ export const MobileDriverDashboard: React.FC = () => {
             lat: location.lat,
             lng: location.lng,
             updated_at: new Date().toISOString()
+          }, {
+            onConflict: 'user_id'
           });
           if (locationError) {
             console.error('Error updating driver location:', locationError);

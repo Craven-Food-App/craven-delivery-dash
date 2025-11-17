@@ -98,15 +98,30 @@ const CorporateEarningsDashboard: React.FC<CorporateEarningsDashboardProps> = ({
       const acceptanceRate = totalAssignments > 0 ? Math.round((acceptedAssignments / totalAssignments) * 100) : 100;
 
       // Fetch available order for "UP FOR GRABS"
-      const { data: availableOrders } = await supabase
+      // Get orders that need a driver (pending, confirmed, preparing, ready)
+      // and don't have an accepted assignment
+      const { data: allOrders } = await supabase
         .from('orders')
-        .select('id, estimated_delivery_time, delivery_fee_cents, tip_cents, restaurant:restaurants(name)')
-        .is('driver_id', null)
-        .eq('order_status', 'confirmed')
+        .select(`
+          id, 
+          estimated_delivery_time, 
+          delivery_fee_cents, 
+          tip_cents, 
+          restaurant:restaurants(name),
+          order_assignments!left(id, status)
+        `)
+        .in('order_status', ['pending', 'confirmed', 'preparing', 'ready'])
         .order('created_at', { ascending: false })
-        .limit(1);
+        .limit(20);
 
-      if (availableOrders && availableOrders.length > 0) {
+      // Filter out orders that have accepted assignments
+      const availableOrders = allOrders?.filter(order => {
+        const assignments = order.order_assignments || [];
+        // Order is available if it has no assignments or no accepted assignments
+        return !assignments.some((a: any) => a.status === 'accepted');
+      }) || [];
+
+      if (availableOrders.length > 0) {
         const order = availableOrders[0];
         const deliveryFee = (order.delivery_fee_cents || 0) / 100;
         const tip = (order.tip_cents || 0) / 100;

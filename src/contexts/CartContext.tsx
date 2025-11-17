@@ -46,11 +46,24 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return;
       }
 
+      // Check if user is a driver - don't load cart for drivers
+      const { data: driverProfile } = await supabase
+        .from('driver_profiles')
+        .select('id')
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      if (driverProfile) {
+        // User is a driver, skip cart loading
+        setLoading(false);
+        return;
+      }
+
       const { data: persistedCart } = await supabase
         .from('customer_carts')
         .select('*')
         .eq('customer_id', user.id)
-        .single();
+        .maybeSingle();
 
       if (persistedCart) {
         setCartItems(Array.isArray(persistedCart.items) ? persistedCart.items as unknown as CartItem[] : []);
