@@ -52,7 +52,7 @@ export const SafetyQuiz: React.FC = () => {
       if (error) throw error;
 
       if (data && data.length > 0) {
-        setQuestions(data);
+        setQuestions(data as QuizQuestion[]);
       } else {
         toast({
           title: "Error",

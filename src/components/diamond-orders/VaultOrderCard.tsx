@@ -28,20 +28,20 @@ export const VaultOrderCard: React.FC<VaultOrderCardProps> = ({ order, onClaim, 
     <Card
       p="lg"
       radius="md"
-      sx={(theme) => ({
+      style={{
         background: isUnlocked 
-          ? theme.other.cravenOrangeGradient
+          ? 'linear-gradient(135deg, #FF6A00 0%, #D45400 100%)'
           : 'linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%)',
         border: `2px solid ${isUnlocked ? '#FF6A00' : '#444'}`,
-        boxShadow: isUnlocked ? theme.shadows.glow : 'none',
+        boxShadow: isUnlocked ? '0 0 16px rgba(255,106,0,0.6)' : 'none',
         position: 'relative',
         overflow: 'hidden',
         filter: isUnlocked ? 'none' : 'blur(1px)',
         opacity: isUnlocked ? 1 : 0.7,
-      })}
+      }}
     >
       <Stack gap="md">
-        <Group position="apart">
+        <Group justify="apart">
           <Group gap="xs">
             <ThemeIcon
               size={40}
@@ -51,16 +51,6 @@ export const VaultOrderCard: React.FC<VaultOrderCardProps> = ({ order, onClaim, 
                 ? { from: '#FF6A00', to: '#D45400', deg: 135 }
                 : { from: '#444', to: '#666', deg: 135 }
               }
-              sx={{
-                animation: isUnlocking ? 'burst 0.8s ease-out' : 'none',
-                '@keyframes burst': {
-                  '0%': { transform: 'scale(1) rotate(0deg)', opacity: 1 },
-                  '25%': { transform: 'scale(1.3) rotate(90deg)', opacity: 0.9 },
-                  '50%': { transform: 'scale(1.6) rotate(180deg)', opacity: 0.7 },
-                  '75%': { transform: 'scale(1.3) rotate(270deg)', opacity: 0.5 },
-                  '100%': { transform: 'scale(1) rotate(360deg)', opacity: 0 },
-                },
-              }}
             >
               {isUnlocked ? <Unlock size={24} /> : <Lock size={24} />}
             </ThemeIcon>
@@ -106,14 +96,10 @@ export const VaultOrderCard: React.FC<VaultOrderCardProps> = ({ order, onClaim, 
               <Button
                 fullWidth
                 size="lg"
-                style={styles}
-                sx={(theme) => ({
-                  background: theme.other.cravenOrangeGradient,
-                  '&:hover': {
-                    background: 'linear-gradient(135deg, #D45400 0%, #FF6A00 100%)',
-                    transform: 'scale(1.02)',
-                  },
-                })}
+                style={{
+                  background: 'linear-gradient(135deg, #FF6A00 0%, #D45400 100%)',
+                  ...styles
+                }}
                 onClick={() => onClaim(order.id)}
               >
                 Claim Order
