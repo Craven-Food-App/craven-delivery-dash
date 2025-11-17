@@ -15,6 +15,7 @@ import {
   Loader,
   Center,
   Modal,
+  Grid,
 } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
 import { supabase } from '@/integrations/supabase/client';
@@ -63,12 +64,23 @@ export const FinancialReportsDashboard: React.FC = () => {
         .order('generated_at', { ascending: false })
         .limit(50);
 
-      if (error) throw error;
+      if (error) {
+        if (error.code === '42P01' || error.message?.includes('does not exist')) {
+          notifications.show({
+            title: 'Setup Required',
+            message: 'Finance system tables not found. Please run the database migration.',
+            color: 'orange',
+          });
+          return;
+        }
+        throw error;
+      }
       setReports(data || []);
     } catch (error: any) {
+      console.error('Error fetching reports:', error);
       notifications.show({
         title: 'Error',
-        message: 'Failed to load reports',
+        message: error.message || 'Failed to load reports',
         color: 'red',
       });
     } finally {

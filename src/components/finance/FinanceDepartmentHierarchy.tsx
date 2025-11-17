@@ -87,7 +87,17 @@ export const FinanceDepartmentHierarchy: React.FC = () => {
         .order('position_level', { ascending: true })
         .order('position_title', { ascending: true });
 
-      if (posError) throw posError;
+      if (posError) {
+        if (posError.code === '42P01' || posError.message?.includes('does not exist')) {
+          notifications.show({
+            title: 'Setup Required',
+            message: 'Finance system tables not found. Please run the database migration.',
+            color: 'orange',
+          });
+          return;
+        }
+        throw posError;
+      }
 
       const { data: employeesData, error: empError } = await supabase
         .from('finance_employees')
@@ -98,14 +108,22 @@ export const FinanceDepartmentHierarchy: React.FC = () => {
         `)
         .eq('employment_status', 'active');
 
-      if (empError) throw empError;
+      if (empError) {
+        // Don't throw if table doesn't exist, just log
+        if (empError.code === '42P01' || empError.message?.includes('does not exist')) {
+          console.warn('Finance employees table not found');
+        } else {
+          throw empError;
+        }
+      }
 
       setPositions(positionsData || []);
       setEmployees(employeesData || []);
     } catch (error: any) {
+      console.error('Error fetching finance department data:', error);
       notifications.show({
         title: 'Error',
-        message: 'Failed to load finance department data',
+        message: error.message || 'Failed to load finance department data',
         color: 'red',
       });
     } finally {

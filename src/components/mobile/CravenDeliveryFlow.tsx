@@ -456,6 +456,25 @@ const CravenDeliveryFlow: React.FC<ActiveDeliveryProps> = ({
     }
   }, [status, onCameraStateChange]);
 
+  useEffect(() => {
+    if (onProgressChange) {
+      const stage = STATUS_TO_STAGE_MAP[status];
+      if (stage) {
+        const stageNumber = Object.keys(STATUS_TO_STAGE_MAP).indexOf(status) + 1;
+        const progress: DeliveryProgress = {
+          currentStage: stage,
+          stageNumber,
+          totalStages: 7,
+          stageName: STAGE_NAMES[stage],
+          isCompleted: status === DRIVER_STATUS.COMPLETE,
+          pickupPhotoUrl,
+          deliveryPhotoUrl,
+        };
+        onProgressChange(progress);
+      }
+    }
+  }, [status, onProgressChange, pickupPhotoUrl, deliveryPhotoUrl]);
+
   const handleConfirmArrivalAtStore = async () => {
     setStatus(DRIVER_STATUS.AT_STORE);
     await updateOrderStatus('at_restaurant');

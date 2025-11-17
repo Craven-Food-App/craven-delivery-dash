@@ -1,8 +1,10 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import { CheckCircle, Circle, Lock, FileText, AlertCircle, Download, Loader } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { message } from 'antd';
+import { EnhancedSignaturePad } from '@/components/common/EnhancedSignaturePad';
+import { Modal } from '@mantine/core';
 
 interface Document {
   id: string;
@@ -36,36 +38,12 @@ const ExecutiveSigningPortal = () => {
   const [userInfo, setUserInfo] = useState<any>(null);
   const [authToken, setAuthToken] = useState<string | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [signature, setSignature] = useState('');
+  const [typedName, setTypedName] = useState('');
   const [showSignModal, setShowSignModal] = useState(false);
   const [documentStages, setDocumentStages] = useState<DocumentStage[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isSigning, setIsSigning] = useState(false);
-  
-  const canvasRef = useRef<HTMLCanvasElement | null>(null);
-  const lastPointRef = useRef<{ x: number; y: number } | null>(null);
-  const isDrawingRef = useRef(false);
-
-  const CANVAS_WIDTH = 600;
-  const CANVAS_HEIGHT = 220;
-
-  // Initialize canvas
-  useEffect(() => {
-    if (canvasRef.current) {
-      const canvas = canvasRef.current;
-      const ctx = canvas.getContext('2d', { alpha: true });
-      if (ctx) {
-        canvas.width = CANVAS_WIDTH;
-        canvas.height = CANVAS_HEIGHT;
-        ctx.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
-        ctx.strokeStyle = '#111827';
-        ctx.lineWidth = 2;
-        ctx.lineCap = 'round';
-        ctx.lineJoin = 'round';
-      }
-    }
-  }, [showSignModal]);
 
   // Fetch documents by token
   useEffect(() => {
@@ -105,91 +83,6 @@ const ExecutiveSigningPortal = () => {
     initializeSession();
   }, [location.search]);
 
-  // Canvas drawing handlers
-  const getCanvasCoordinates = (event: React.PointerEvent<HTMLCanvasElement>) => {
-    const canvas = canvasRef.current;
-    if (!canvas) return { x: 0, y: 0 };
-    const rect = canvas.getBoundingClientRect();
-    const scaleX = canvas.width / rect.width;
-    const scaleY = canvas.height / rect.height;
-    return {
-      x: (event.clientX - rect.left) * scaleX,
-      y: (event.clientY - rect.top) * scaleY,
-    };
-  };
-
-  const handlePointerDown = (event: React.PointerEvent<HTMLCanvasElement>) => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext('2d', { alpha: true });
-    if (!ctx) return;
-    const { x, y } = getCanvasCoordinates(event);
-    ctx.beginPath();
-    ctx.moveTo(x, y);
-    ctx.lineTo(x, y);
-    ctx.stroke();
-    lastPointRef.current = { x, y };
-    isDrawingRef.current = true;
-    canvas.setPointerCapture(event.pointerId);
-  };
-
-  const handlePointerMove = (event: React.PointerEvent<HTMLCanvasElement>) => {
-    const canvas = canvasRef.current;
-    if (!canvas || !lastPointRef.current || !isDrawingRef.current) return;
-    const ctx = canvas.getContext('2d', { alpha: true });
-    if (!ctx) return;
-    const { x, y } = getCanvasCoordinates(event);
-    ctx.beginPath();
-    ctx.moveTo(lastPointRef.current.x, lastPointRef.current.y);
-    ctx.lineTo(x, y);
-    ctx.stroke();
-    lastPointRef.current = { x, y };
-  };
-
-  const handlePointerUp = (event: React.PointerEvent<HTMLCanvasElement>) => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext('2d', { alpha: true });
-    if (!ctx) return;
-    const lastPoint = lastPointRef.current;
-    if (lastPoint && isDrawingRef.current) {
-      const { x, y } = getCanvasCoordinates(event);
-      ctx.beginPath();
-      ctx.moveTo(lastPoint.x, lastPoint.y);
-      ctx.lineTo(x, y);
-      ctx.stroke();
-    }
-    lastPointRef.current = null;
-    isDrawingRef.current = false;
-    canvas.releasePointerCapture(event.pointerId);
-  };
-
-  const clearSignature = () => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext('2d', { alpha: true });
-    if (!ctx) return;
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    ctx.strokeStyle = '#111827';
-    ctx.lineWidth = 2;
-    lastPointRef.current = null;
-    isDrawingRef.current = false;
-  };
-
-  const getSignatureDataUrl = () => {
-    const canvas = canvasRef.current;
-    if (!canvas) return null;
-    const dataUrl = canvas.toDataURL('image/png');
-    // Check if canvas is blank
-    const ctx = canvas.getContext('2d', { alpha: true });
-    if (!ctx) return null;
-    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-    const hasDrawing = imageData.data.some((pixel, index) => {
-      return index % 4 === 3 && pixel > 0;
-    });
-    if (!hasDrawing) return null;
-    return dataUrl;
-  };
 
   // Check if a stage is unlocked
   const isStageUnlocked = (stageId: number) => {
@@ -218,14 +111,8 @@ const ExecutiveSigningPortal = () => {
   };
 
   // Handle document signing
-  const handleSignDocument = async () => {
+  const handleSignDocument = async (signatureDataUrl: string, signatureId?: string, typedNameValue?: string) => {
     if (!currentDocument) return;
-
-    const signatureDataUrl = getSignatureDataUrl();
-    if (!signatureDataUrl) {
-      message.error('Please draw your signature before submitting.');
-      return;
-    }
 
     setIsSigning(true);
 
@@ -252,7 +139,7 @@ const ExecutiveSigningPortal = () => {
         },
         body: JSON.stringify({
           document_id: currentDocument.id,
-          typed_name: signature.trim() || userInfo?.name || null,
+          typed_name: typedNameValue?.trim() || typedName.trim() || userInfo?.name || null,
           signature_png_base64: signatureDataUrl,
           signer_ip: signerIp,
           signer_user_agent: navigator.userAgent,
@@ -278,7 +165,7 @@ const ExecutiveSigningPortal = () => {
       }
 
       const signatureData: SignedDocument = {
-        signature: signature.trim() || userInfo?.name || 'Signed',
+        signature: typedNameValue?.trim() || typedName.trim() || userInfo?.name || 'Signed',
         timestamp: new Date().toISOString(),
       };
 
@@ -288,9 +175,8 @@ const ExecutiveSigningPortal = () => {
       });
 
       setShowSignModal(false);
-      setSignature('');
+      setTypedName('');
       setCurrentDocument(null);
-      clearSignature();
 
       // Check if stage is complete and advance
       const stage = documentStages.find(s => s.id === activeStage);
@@ -617,118 +503,59 @@ const ExecutiveSigningPortal = () => {
       </main>
 
       {/* Signature Modal */}
-      {showSignModal && currentDocument && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="p-6 border-b border-gray-200">
-              <h3 className="text-xl font-bold text-gray-900">Sign Document</h3>
-              <p className="text-sm text-gray-600 mt-1">{currentDocument.name}</p>
+      <Modal
+        opened={showSignModal}
+        onClose={() => {
+          if (!isSigning) {
+            setShowSignModal(false);
+            setTypedName('');
+            setCurrentDocument(null);
+          }
+        }}
+        title={currentDocument ? `Sign: ${currentDocument.name}` : 'Sign Document'}
+        size="lg"
+        fullScreen={window.innerWidth < 768}
+        closeOnClickOutside={!isSigning}
+        closeOnEscape={!isSigning}
+      >
+        {currentDocument && (
+          <div className="space-y-6">
+            {/* Document Preview */}
+            <div className="bg-gray-50 border border-gray-200 rounded-lg overflow-hidden">
+              <iframe
+                src={currentDocument.fileUrl}
+                className="w-full"
+                style={{ height: '400px' }}
+                title="Document Preview"
+              />
             </div>
 
-            <div className="p-6 space-y-6">
-              {/* Document Preview */}
-              <div className="bg-gray-50 border border-gray-200 rounded-lg overflow-hidden">
-                <iframe
-                  src={currentDocument.fileUrl}
-                  className="w-full"
-                  style={{ height: '400px' }}
-                  title="Document Preview"
-                />
-              </div>
-
-              {/* Agreement Checkbox */}
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                <label className="flex items-start gap-3 cursor-pointer">
-                  <input type="checkbox" className="mt-1 w-4 h-4 text-indigo-600" required />
-                  <span className="text-sm text-gray-700">
-                    I have read, understood, and agree to the terms and conditions outlined in this document.
-                    I acknowledge that my electronic signature has the same legal effect as a handwritten signature.
-                  </span>
-                </label>
-              </div>
-
-              {/* Signature Canvas */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Draw Your Signature *
-                </label>
-                <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 bg-white">
-                  <canvas
-                    ref={canvasRef}
-                    width={CANVAS_WIDTH}
-                    height={CANVAS_HEIGHT}
-                    className="w-full border rounded cursor-crosshair"
-                    style={{
-                      touchAction: 'none',
-                      display: 'block',
-                      background: 'linear-gradient(45deg, #f0f0f0 25%, transparent 25%), linear-gradient(-45deg, #f0f0f0 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #f0f0f0 75%), linear-gradient(-45deg, transparent 75%, #f0f0f0 75%)',
-                      backgroundSize: '20px 20px',
-                      backgroundPosition: '0 0, 0 10px, 10px -10px, -10px 0px'
-                    }}
-                    onPointerDown={handlePointerDown}
-                    onPointerMove={handlePointerMove}
-                    onPointerUp={handlePointerUp}
-                    onPointerCancel={handlePointerUp}
-                    onPointerLeave={handlePointerUp}
-                  />
-                </div>
-                <button
-                  onClick={clearSignature}
-                  className="mt-2 px-4 py-2 text-sm text-gray-600 hover:text-gray-800"
-                >
-                  Clear Signature
-                </button>
-              </div>
-
-              {/* Signature Input */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Your Full Legal Name (Electronic Signature)
-                </label>
-                <input
-                  type="text"
-                  value={signature}
-                  onChange={(e) => setSignature(e.target.value)}
-                  placeholder="Type your full legal name"
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                />
-                <p className="text-xs text-gray-500 mt-2">
-                  By typing your name above, you are creating a legally binding electronic signature
-                </p>
-              </div>
-
-              {/* Security Info */}
-              <div className="bg-gray-50 rounded-lg p-4 text-xs text-gray-600 space-y-1">
-                <p><strong>Audit Trail:</strong> This signature will be recorded with timestamp, IP address, and device information</p>
-                <p><strong>Date:</strong> {new Date().toLocaleString()}</p>
-                <p><strong>Email:</strong> {userInfo?.email}</p>
-                <p><strong>Document:</strong> {currentDocument.id}</p>
-              </div>
-            </div>
-
-            <div className="p-6 border-t border-gray-200 flex justify-end gap-3">
-              <button
-                onClick={() => {
+            {/* Enhanced Signature Pad */}
+            <EnhancedSignaturePad
+              onSave={handleSignDocument}
+              onCancel={() => {
+                if (!isSigning) {
                   setShowSignModal(false);
-                  setSignature('');
+                  setTypedName('');
                   setCurrentDocument(null);
-                  clearSignature();
-                }}
-                className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleSignDocument}
-                disabled={isSigning || !signature.trim()}
-                className="px-6 py-2 text-sm font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-              >
-                {isSigning ? 'Signing...' : 'Sign & Continue'}
-              </button>
-            </div>
+                }
+              }}
+              width={window.innerWidth < 768 ? window.innerWidth - 64 : 600}
+              height={300}
+              showTypedName={true}
+              typedNameLabel="Your Full Legal Name"
+              documentId={currentDocument.id}
+              saveToDatabase={true}
+              storageBucket="documents"
+              storagePath={`executive_signatures/${currentDocument.id}`}
+              title="Draw Your Signature"
+              description="Use your finger or stylus to sign"
+              required={true}
+              disabled={isSigning}
+            />
           </div>
-        </div>
-      )}
+        )}
+      </Modal>
     </div>
   );
 };

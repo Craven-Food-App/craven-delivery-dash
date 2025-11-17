@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import {
@@ -6,13 +6,13 @@ import {
   Button,
   Card,
   Divider,
-  Input,
   Space,
   Spin,
   Typography,
   message,
 } from 'antd';
-import { DownloadOutlined, ReloadOutlined, UndoOutlined } from '@ant-design/icons';
+import { DownloadOutlined } from '@ant-design/icons';
+import { EnhancedSignaturePad } from '@/components/common/EnhancedSignaturePad';
 
 const { Title, Paragraph, Text } = Typography;
 
@@ -32,21 +32,6 @@ interface ExecutiveDocument {
   signer_roles?: Record<string, boolean> | null;
 }
 
-const CANVAS_WIDTH = 600;
-const CANVAS_HEIGHT = 220;
-
-const createBlankDataUrl = (width: number, height: number) => {
-  const blank = document.createElement('canvas');
-  blank.width = width;
-  blank.height = height;
-  const ctx = blank.getContext('2d', { alpha: true });
-  if (ctx) {
-    // Transparent background
-    ctx.clearRect(0, 0, width, height);
-  }
-  return blank.toDataURL('image/png');
-};
-
 const ExecutiveDocumentSign = () => {
   const location = useLocation();
   const navigate = useNavigate();
@@ -59,33 +44,6 @@ const ExecutiveDocumentSign = () => {
   const [typedName, setTypedName] = useState('');
   const [isSigning, setIsSigning] = useState(false);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
-
-  const canvasRef = useRef<HTMLCanvasElement | null>(null);
-  const lastPointRef = useRef<{ x: number; y: number } | null>(null);
-  const blankSignatureRef = useRef<string | null>(null);
-
-  const initializeCanvas = () => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext('2d', { alpha: true });
-    if (!ctx) return;
-    canvas.width = CANVAS_WIDTH;
-    canvas.height = CANVAS_HEIGHT;
-    canvas.style.width = '100%';
-    canvas.style.maxWidth = `${CANVAS_WIDTH}px`;
-    canvas.style.height = `${(CANVAS_HEIGHT / CANVAS_WIDTH) * 100}%`;
-    // Clear canvas with transparent background
-    ctx.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
-    ctx.strokeStyle = '#111827';
-    ctx.lineWidth = 2;
-    ctx.lineCap = 'round';
-    ctx.lineJoin = 'round';
-    blankSignatureRef.current = createBlankDataUrl(CANVAS_WIDTH, CANVAS_HEIGHT);
-  };
-
-  useEffect(() => {
-    initializeCanvas();
-  }, []);
 
   useEffect(() => {
     const fetchDocument = async () => {
@@ -116,102 +74,8 @@ const ExecutiveDocumentSign = () => {
     fetchDocument();
   }, [token]);
 
-  const getCanvasCoordinates = (event: React.PointerEvent<HTMLCanvasElement>) => {
-    const canvas = canvasRef.current;
-    if (!canvas) {
-      return { x: 0, y: 0 };
-    }
-    const rect = canvas.getBoundingClientRect();
-    const scaleX = canvas.width / rect.width;
-    const scaleY = canvas.height / rect.height;
-    return {
-      x: (event.clientX - rect.left) * scaleX,
-      y: (event.clientY - rect.top) * scaleY,
-    };
-  };
-
-  const handlePointerDown = (event: React.PointerEvent<HTMLCanvasElement>) => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-    const { x, y } = getCanvasCoordinates(event);
-    ctx.beginPath();
-    ctx.moveTo(x, y);
-    ctx.lineTo(x, y);
-    ctx.stroke();
-    lastPointRef.current = { x, y };
-    canvas.setPointerCapture(event.pointerId);
-  };
-
-  const handlePointerMove = (event: React.PointerEvent<HTMLCanvasElement>) => {
-    const canvas = canvasRef.current;
-    if (!canvas || !lastPointRef.current) return;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-    const { x, y } = getCanvasCoordinates(event);
-    ctx.beginPath();
-    ctx.moveTo(lastPointRef.current.x, lastPointRef.current.y);
-    ctx.lineTo(x, y);
-    ctx.stroke();
-    lastPointRef.current = { x, y };
-  };
-
-  const handlePointerUp = (event: React.PointerEvent<HTMLCanvasElement>) => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-    const lastPoint = lastPointRef.current;
-    if (lastPoint) {
-      const { x, y } = getCanvasCoordinates(event);
-      ctx.beginPath();
-      ctx.moveTo(lastPoint.x, lastPoint.y);
-      ctx.lineTo(x, y);
-      ctx.stroke();
-    }
-    lastPointRef.current = null;
-    canvas.releasePointerCapture(event.pointerId);
-  };
-
-  const handlePointerCancel = (event: React.PointerEvent<HTMLCanvasElement>) => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    canvas.releasePointerCapture(event.pointerId);
-    lastPointRef.current = null;
-  };
-
-  const clearSignature = () => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext('2d', { alpha: true });
-    if (!ctx) return;
-    // Clear with transparent background
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    ctx.strokeStyle = '#111827';
-    ctx.lineWidth = 2;
-    lastPointRef.current = null;
-  };
-
-  const getSignatureDataUrl = () => {
-    const canvas = canvasRef.current;
-    if (!canvas) return null;
-    // Export as PNG with transparency
-    const dataUrl = canvas.toDataURL('image/png');
-    if (blankSignatureRef.current && dataUrl === blankSignatureRef.current) {
-      return null;
-    }
-    return dataUrl;
-  };
-
-  const handleSubmitSignature = async () => {
+  const handleSubmitSignature = async (signatureDataUrl: string, signatureId?: string, typedNameValue?: string) => {
     if (!document) return;
-
-    const signatureDataUrl = getSignatureDataUrl();
-    if (!signatureDataUrl) {
-      message.error('Please draw your signature before submitting.');
-      return;
-    }
 
     setIsSigning(true);
     setSuccessMessage(null);
@@ -228,7 +92,7 @@ const ExecutiveDocumentSign = () => {
       },
       body: JSON.stringify({
         document_id: document.id,
-        typed_name: typedName.trim() || document.officer_name || null,
+        typed_name: typedNameValue?.trim() || typedName.trim() || document.officer_name || null,
         signature_png_base64: signatureDataUrl,
         signer_user_agent: window.navigator.userAgent,
         signature_token: token,
@@ -364,52 +228,21 @@ const ExecutiveDocumentSign = () => {
           {!isAlreadySigned && (
             <Card title="Sign Document" className="shadow-sm">
               <Space direction="vertical" size="large" style={{ width: '100%' }}>
-                <div>
-                  <Text strong>Draw your signature *</Text>
-                  <div
-                    style={{
-                      border: '2px dashed #d9d9d9',
-                      borderRadius: 12,
-                      padding: 16,
-                      marginTop: 8,
-                      background: '#fefefe',
-                    }}
-                  >
-                    <canvas
-                      ref={canvasRef}
-                      width={CANVAS_WIDTH}
-                      height={CANVAS_HEIGHT}
-                      style={{ width: '100%', borderRadius: 8, cursor: 'crosshair', background: 'linear-gradient(45deg, #f0f0f0 25%, transparent 25%), linear-gradient(-45deg, #f0f0f0 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #f0f0f0 75%), linear-gradient(-45deg, transparent 75%, #f0f0f0 75%)', backgroundSize: '20px 20px', backgroundPosition: '0 0, 0 10px, 10px -10px, -10px 0px', touchAction: 'none' }}
-                      onPointerDown={handlePointerDown}
-                      onPointerMove={handlePointerMove}
-                      onPointerUp={handlePointerUp}
-                      onPointerCancel={handlePointerCancel}
-                      onPointerLeave={handlePointerCancel}
-                    />
-                    <Space style={{ marginTop: 12 }}>
-                      <Button icon={<UndoOutlined />} onClick={clearSignature}>
-                        Clear Signature
-                      </Button>
-                      <Button icon={<ReloadOutlined />} onClick={initializeCanvas}>
-                        Reset Canvas
-                      </Button>
-                    </Space>
-                  </div>
-                </div>
-
-                <Alert
-                  type="info"
-                  message="By clicking Sign & Submit, you agree that this electronic signature is the legal equivalent of your handwritten signature."
+                <EnhancedSignaturePad
+                  onSave={handleSubmitSignature}
+                  width={600}
+                  height={300}
+                  showTypedName={true}
+                  typedNameLabel="Your Full Legal Name"
+                  documentId={document.id}
+                  saveToDatabase={true}
+                  storageBucket="documents"
+                  storagePath={`executive_signatures/${document.id}`}
+                  title="Draw Your Signature"
+                  description="Use your finger or stylus to sign"
+                  required={true}
+                  disabled={isSigning}
                 />
-
-                <Button
-                  type="primary"
-                  size="large"
-                  onClick={handleSubmitSignature}
-                  loading={isSigning}
-                >
-                  Sign & Submit
-                </Button>
               </Space>
             </Card>
           )}

@@ -76,12 +76,23 @@ export const BudgetManagement: React.FC = () => {
         .order('budget_year', { ascending: false })
         .order('budget_quarter', { ascending: true });
 
-      if (error) throw error;
+      if (error) {
+        if (error.code === '42P01' || error.message?.includes('does not exist')) {
+          notifications.show({
+            title: 'Setup Required',
+            message: 'Finance system tables not found. Please run the database migration.',
+            color: 'orange',
+          });
+          return;
+        }
+        throw error;
+      }
       setBudgets(data || []);
     } catch (error: any) {
+      console.error('Error fetching budgets:', error);
       notifications.show({
         title: 'Error',
-        message: 'Failed to load budgets',
+        message: error.message || 'Failed to load budgets',
         color: 'red',
       });
     } finally {
@@ -95,12 +106,23 @@ export const BudgetManagement: React.FC = () => {
   };
 
   const fetchCategories = async () => {
-    const { data } = await supabase
-      .from('expense_categories')
-      .select('id, name')
-      .eq('is_active', true)
-      .order('name');
-    setCategories(data || []);
+    try {
+      const { data, error } = await supabase
+        .from('expense_categories')
+        .select('id, name')
+        .eq('is_active', true)
+        .order('name');
+      
+      if (error) {
+        if (error.code === '42P01' || error.message?.includes('does not exist')) {
+          return; // Table doesn't exist yet
+        }
+        throw error;
+      }
+      setCategories(data || []);
+    } catch (error: any) {
+      console.error('Error fetching categories:', error);
+    }
   };
 
   const handleSubmit = async () => {

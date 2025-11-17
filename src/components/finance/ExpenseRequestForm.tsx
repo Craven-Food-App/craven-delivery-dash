@@ -20,7 +20,7 @@ import {
 } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
 import { supabase } from '@/integrations/supabase/client';
-import { IconUpload, IconCheck, IconAlertCircle, IconDollarSign } from '@tabler/icons-react';
+import { IconUpload, IconCheck, IconAlertCircle, IconCurrencyDollar } from '@tabler/icons-react';
 import dayjs from 'dayjs';
 
 interface ExpenseCategory {
@@ -83,12 +83,24 @@ export const ExpenseRequestForm: React.FC<ExpenseRequestFormProps> = ({
         .eq('is_active', true)
         .order('name');
 
-      if (error) throw error;
+      if (error) {
+        // Check if table doesn't exist (code 42P01)
+        if (error.code === '42P01' || error.message?.includes('does not exist')) {
+          notifications.show({
+            title: 'Setup Required',
+            message: 'Finance system tables not found. Please run the database migration.',
+            color: 'orange',
+          });
+          return;
+        }
+        throw error;
+      }
       setCategories(data || []);
     } catch (error: any) {
+      console.error('Error fetching categories:', error);
       notifications.show({
         title: 'Error',
-        message: 'Failed to load expense categories',
+        message: error.message || 'Failed to load expense categories',
         color: 'red',
       });
     }
@@ -287,7 +299,7 @@ export const ExpenseRequestForm: React.FC<ExpenseRequestFormProps> = ({
                 fixedDecimalScale
                 value={formData.amount}
                 onChange={(value) => setFormData({ ...formData, amount: value.toString() })}
-                leftSection={<IconDollarSign size={16} />}
+                leftSection={<IconCurrencyDollar size={16} />}
               />
             </Grid.Col>
 

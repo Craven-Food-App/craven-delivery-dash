@@ -111,10 +111,18 @@ export const useExpenseCategories = () => {
         .eq('is_active', true)
         .order('name');
 
-      if (error) throw error;
+      if (error) {
+        if (error.code === '42P01' || error.message?.includes('does not exist')) {
+          console.warn('Expense categories table does not exist. Migration may not have been run.');
+          setCategories([]);
+          return;
+        }
+        throw error;
+      }
       setCategories(data || []);
     } catch (error) {
       console.error('Error fetching categories:', error);
+      setCategories([]);
     } finally {
       setLoading(false);
     }

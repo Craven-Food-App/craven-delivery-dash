@@ -7,7 +7,7 @@ import { InvoiceManagement } from './InvoiceManagement';
 import { FinancialReportsDashboard } from './FinancialReportsDashboard';
 import { FinanceDepartmentHierarchy } from './FinanceDepartmentHierarchy';
 import {
-  IconDollarSign,
+  IconCurrencyDollar,
   IconCheck,
   IconWallet,
   IconFileText,
@@ -22,7 +22,7 @@ export const FinancePortal: React.FC = () => {
     <Stack gap="lg">
       <Tabs value={activeTab} onChange={(value) => setActiveTab(value || 'expenses')}>
         <Tabs.List>
-          <Tabs.Tab value="expenses" leftSection={<IconDollarSign size={16} />}>
+          <Tabs.Tab value="expenses" leftSection={<IconCurrencyDollar size={16} />}>
             Expense Requests
           </Tabs.Tab>
           <Tabs.Tab value="approvals" leftSection={<IconCheck size={16} />}>

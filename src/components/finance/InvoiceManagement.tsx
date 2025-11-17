@@ -33,7 +33,7 @@ import {
   IconUpload,
   IconFileText,
   IconCalendar,
-  IconDollarSign,
+  IconCurrencyDollar,
 } from '@tabler/icons-react';
 import dayjs from 'dayjs';
 import { isInvoiceOverdue } from '@/utils/finance';
@@ -105,12 +105,23 @@ export const InvoiceManagement: React.FC = () => {
 
       const { data, error } = await query;
 
-      if (error) throw error;
+      if (error) {
+        if (error.code === '42P01' || error.message?.includes('does not exist')) {
+          notifications.show({
+            title: 'Setup Required',
+            message: 'Finance system tables not found. Please run the database migration.',
+            color: 'orange',
+          });
+          return;
+        }
+        throw error;
+      }
       setInvoices(data || []);
     } catch (error: any) {
+      console.error('Error fetching invoices:', error);
       notifications.show({
         title: 'Error',
-        message: 'Failed to load invoices',
+        message: error.message || 'Failed to load invoices',
         color: 'red',
       });
     } finally {
@@ -124,12 +135,24 @@ export const InvoiceManagement: React.FC = () => {
   };
 
   const fetchCategories = async () => {
-    const { data } = await supabase
-      .from('expense_categories')
-      .select('id, name')
-      .eq('is_active', true)
-      .order('name');
-    setCategories(data || []);
+    try {
+      const { data, error } = await supabase
+        .from('expense_categories')
+        .select('id, name')
+        .eq('is_active', true)
+        .order('name');
+      
+      if (error) {
+        if (error.code === '42P01' || error.message?.includes('does not exist')) {
+          return; // Table doesn't exist yet
+        }
+        console.error('Error fetching categories:', error);
+        return;
+      }
+      setCategories(data || []);
+    } catch (error: any) {
+      console.error('Error fetching categories:', error);
+    }
   };
 
   const uploadInvoiceFile = async (): Promise<string | null> => {
@@ -456,7 +479,7 @@ export const InvoiceManagement: React.FC = () => {
                                 color="blue"
                                 onClick={() => handleMarkPaid(invoice)}
                               >
-                                <IconDollarSign size={16} />
+                                <IconCurrencyDollar size={16} />
                               </ActionIcon>
                             </Tooltip>
                           )}
@@ -737,7 +760,7 @@ export const InvoiceManagement: React.FC = () => {
                 <Group justify="flex-end">
                   <Button
                     color="blue"
-                    leftSection={<IconDollarSign size={16} />}
+                    leftSection={<IconCurrencyDollar size={16} />}
                     onClick={() => {
                       handleMarkPaid(selectedInvoice);
                       setViewModalOpen(false);

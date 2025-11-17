@@ -27,7 +27,7 @@ import {
   IconX,
   IconEye,
   IconFileText,
-  IconDollarSign,
+  IconCurrencyDollar,
   IconCalendar,
   IconUser,
 } from '@tabler/icons-react';
@@ -88,7 +88,17 @@ export const ExpenseApprovalDashboard: React.FC = () => {
 
       const { data, error } = await query;
 
-      if (error) throw error;
+      if (error) {
+        if (error.code === '42P01' || error.message?.includes('does not exist')) {
+          notifications.show({
+            title: 'Setup Required',
+            message: 'Finance system tables not found. Please run the database migration.',
+            color: 'orange',
+          });
+          return;
+        }
+        throw error;
+      }
 
       const formatted = (data || []).map(exp => ({
         ...exp,
@@ -99,9 +109,10 @@ export const ExpenseApprovalDashboard: React.FC = () => {
 
       setExpenses(formatted);
     } catch (error: any) {
+      console.error('Error fetching expenses:', error);
       notifications.show({
         title: 'Error',
-        message: 'Failed to load expenses',
+        message: error.message || 'Failed to load expenses',
         color: 'red',
       });
     } finally {
