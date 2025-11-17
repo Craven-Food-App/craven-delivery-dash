@@ -87,7 +87,17 @@ export const useExclusiveOrders = (isDiamond: boolean) => {
       });
 
       console.log('Available exclusive orders after filtering:', availableOrders.length);
-      setOrders(availableOrders as ExclusiveOrder[]);
+      
+      // Map order_status to status and cast Json fields for type compatibility
+      const mappedOrders = availableOrders.map(order => ({
+        ...order,
+        status: order.order_status,
+        pickup_location: order.pickup_location as { lat: number; lng: number; address?: string },
+        delivery_address: order.delivery_address as { lat: number; lng: number; address: string },
+        dropoff_location: order.dropoff_location as { lat: number; lng: number; address?: string }
+      }));
+      
+      setOrders(mappedOrders as ExclusiveOrder[]);
     } catch (error) {
       console.error('Error fetching exclusive orders:', error);
       setOrders([]);
