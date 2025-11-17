@@ -62,6 +62,7 @@ import { FuturisticChart } from '@/components/cfo/FuturisticChart';
 import BusinessEmailSystem from '@/components/executive/BusinessEmailSystem';
 import ExecutivePortalLayout, { ExecutiveNavItem } from '@/components/executive/ExecutivePortalLayout';
 import ExecutiveWordProcessor from '@/components/executive/ExecutiveWordProcessor';
+import { FinancePortal } from '@/components/finance/FinancePortal';
 
 const { RangePicker } = DatePicker;
 
@@ -687,6 +688,7 @@ export default function CFOPortal() {
 
   const navItems = useMemo<ExecutiveNavItem[]>(() => [
     { id: 'overview', label: 'Command Dashboard', icon: BarChart3 },
+    { id: 'finance', label: 'Finance Department', icon: DollarSign },
     { id: 'transactions', label: `Review Transactions (${transactions.length})`, icon: FileText },
     { id: 'payouts', label: `Process Payouts (${payouts.length})`, icon: DollarSign },
     { id: 'manager', label: 'Manage Team', icon: Users },
@@ -752,6 +754,8 @@ export default function CFOPortal() {
     switch (activeSection) {
       case 'overview':
         return <CFODashboard />;
+      case 'finance':
+        return <FinancePortal />;
       case 'transactions':
         return (
           <div className="overflow-hidden">

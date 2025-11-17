@@ -1,9 +1,10 @@
 // @ts-nocheck
 import React, { useState, useEffect } from 'react';
 import { Table, Button, Tag, Modal, message, InputNumber, Input, Select } from 'antd';
-import { CheckCircleOutlined, CloseCircleOutlined, DollarOutlined } from '@ant-design/icons';
+import { CheckCircleOutlined, CloseCircleOutlined, DollarOutlined, PlusOutlined } from '@ant-design/icons';
 import { supabase } from '@/integrations/supabase/client';
 import dayjs from 'dayjs';
+import { ExpenseRequestForm } from '@/components/finance/ExpenseRequestForm';
 
 const { TextArea } = Input;
 const { Option } = Select;
@@ -24,6 +25,7 @@ export const FinancialApprovals: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [selectedApproval, setSelectedApproval] = useState<Approval | null>(null);
   const [modalVisible, setModalVisible] = useState(false);
+  const [expenseFormVisible, setExpenseFormVisible] = useState(false);
   const [reviewNotes, setReviewNotes] = useState('');
   const [isMobile, setIsMobile] = useState(false);
 
@@ -294,10 +296,20 @@ export const FinancialApprovals: React.FC = () => {
           <h2 className="text-xl sm:text-2xl font-bold text-slate-900 mb-1 sm:mb-2">Financial Approvals</h2>
           <p className="text-sm sm:text-base text-slate-600">Review and approve financial requests</p>
         </div>
-        <div className="text-left sm:text-right">
-          <div className="text-xs sm:text-sm text-slate-600">Pending Requests</div>
-          <div className={`font-bold text-orange-600 ${isMobile ? 'text-2xl' : 'text-3xl'}`}>{pendingApprovals.length}</div>
-          <div className="text-xs sm:text-sm text-slate-500">${totalPendingAmount.toLocaleString()} total</div>
+        <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-end">
+          <div className="text-left sm:text-right">
+            <div className="text-xs sm:text-sm text-slate-600">Pending Requests</div>
+            <div className={`font-bold text-orange-600 ${isMobile ? 'text-2xl' : 'text-3xl'}`}>{pendingApprovals.length}</div>
+            <div className="text-xs sm:text-sm text-slate-500">${totalPendingAmount.toLocaleString()} total</div>
+          </div>
+          <Button
+            type="primary"
+            icon={<PlusOutlined />}
+            onClick={() => setExpenseFormVisible(true)}
+            size={isMobile ? 'middle' : 'large'}
+          >
+            Add Expense Request
+          </Button>
         </div>
       </div>
 
@@ -394,6 +406,24 @@ export const FinancialApprovals: React.FC = () => {
             </div>
           </div>
         )}
+      </Modal>
+
+      {/* Add Expense Request Modal */}
+      <Modal
+        title="New Expense Request"
+        open={expenseFormVisible}
+        onCancel={() => setExpenseFormVisible(false)}
+        footer={null}
+        width={isMobile ? '95%' : 800}
+        destroyOnClose
+      >
+        <ExpenseRequestForm
+          onSuccess={() => {
+            setExpenseFormVisible(false);
+            fetchApprovals();
+          }}
+          onCancel={() => setExpenseFormVisible(false)}
+        />
       </Modal>
     </div>
   );
