@@ -16,6 +16,9 @@ import CTODailyWorkflow from '@/components/cto/CTODailyWorkflow';
 import MorningTechnicalReview from '@/components/cto/MorningTechnicalReview';
 import SprintManagement from '@/components/cto/SprintManagement';
 import CodeReviewQueue from '@/components/cto/CodeReviewQueue';
+import ITHelpDeskDashboard from '@/components/cto/ITHelpDeskDashboard';
+import CodeEditorPortal from '@/components/cto/CodeEditorPortal';
+import DeveloperOnboarding from '@/components/cto/DeveloperOnboarding';
 
 const { Header, Content } = Layout;
 const { TabPane } = Tabs;
@@ -163,6 +166,21 @@ export default function CTOPortal() {
           {/* Code Review Queue */}
           <TabPane tab={<><CodeOutlined /> Code Reviews</>} key="code-review">
             <CodeReviewQueue />
+          </TabPane>
+          
+          {/* IT Help Desk */}
+          <TabPane tab={<><TeamOutlined /> IT Help Desk</>} key="help-desk">
+            <ITHelpDeskDashboard />
+          </TabPane>
+          
+          {/* Code Editor Portal */}
+          <TabPane tab={<><CodeOutlined /> Code Editor</>} key="code-editor">
+            <CodeEditorPortal />
+          </TabPane>
+          
+          {/* Developer Onboarding */}
+          <TabPane tab={<><RocketOutlined /> Developer Onboarding</>} key="developer-onboarding">
+            <DeveloperOnboarding />
           </TabPane>
           
           {/* Infrastructure */}

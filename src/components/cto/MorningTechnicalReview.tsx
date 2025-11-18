@@ -60,18 +60,26 @@ export default function MorningTechnicalReview() {
         activeIncidents: incidentsRes.data?.length || 0,
       });
 
-      // Mock deployments (would come from CI/CD system)
-      setDeployments([
-        { id: '1', service: 'API Gateway', version: 'v2.1.3', status: 'success', deployed_at: new Date().toISOString(), deployed_by: 'System' },
-        { id: '2', service: 'Mobile App', version: 'v1.4.2', status: 'success', deployed_at: new Date(Date.now() - 3600000).toISOString(), deployed_by: 'CTO' },
-      ]);
+      // Fetch real deployments from architecture_changes table
+      const { data: deploymentsData } = await supabase
+        .from('cto_architecture_changes')
+        .select('*')
+        .eq('status', 'completed')
+        .order('deployed_at', { ascending: false })
+        .limit(10);
+      
+      setDeployments((deploymentsData || []).map((d: any) => ({
+        id: d.id,
+        service: d.change_title,
+        version: d.change_type,
+        status: d.status === 'completed' ? 'success' : 'failed',
+        deployed_at: d.deployed_at || d.created_at,
+        deployed_by: d.deployed_by || 'System',
+      })));
 
-      // Mock cron jobs
-      setCronJobs([
-        { id: '1', job_name: 'Daily Driver Payouts', schedule: 'Daily 2:00 AM', last_run: new Date(Date.now() - 3600000).toISOString(), status: 'success', next_run: new Date(Date.now() + 86400000).toISOString() },
-        { id: '2', job_name: 'Order Assignment Queue', schedule: 'Every 30 seconds', last_run: new Date(Date.now() - 30000).toISOString(), status: 'success', next_run: new Date(Date.now() + 30000).toISOString() },
-        { id: '3', job_name: 'Database Backup', schedule: 'Daily 3:00 AM', last_run: new Date(Date.now() - 7200000).toISOString(), status: 'success', next_run: new Date(Date.now() + 82800000).toISOString() },
-      ]);
+      // Fetch cron jobs from Supabase Edge Functions (if we have a cron_jobs table)
+      // For now, show empty array - can be populated when cron_jobs table exists
+      setCronJobs([]);
     } catch (error) {
       console.error('Error fetching data:', error);
     } finally {
