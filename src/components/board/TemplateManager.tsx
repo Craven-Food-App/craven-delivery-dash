@@ -163,9 +163,26 @@ export const TemplateManager: React.FC = () => {
         supabase.from('template_usage').select('*'),
       ]);
 
-      if (emailData.data) setEmailTemplates(emailData.data);
-      if (docData.data) setDocumentTemplates(docData.data);
-      if (usageData.data) setTemplateUsage(usageData.data);
+      if (emailData.data) {
+        setEmailTemplates(emailData.data.map(t => ({
+          ...t,
+          variables: (Array.isArray(t.variables) ? t.variables : []).map(v => String(v))
+        })));
+      }
+      if (docData.data) {
+        setDocumentTemplates(docData.data.map(t => ({
+          ...t,
+          placeholders: (Array.isArray(t.placeholders) ? t.placeholders : []).map(p => String(p))
+        })));
+      }
+      if (usageData.data) {
+        setTemplateUsage(usageData.data.map(t => ({
+          ...t,
+          template_type: (t.template_type === 'email' || t.template_type === 'document') 
+            ? t.template_type 
+            : 'document'
+        })));
+      }
     } catch (error: any) {
       notifications.show({
         title: 'Error',
@@ -986,10 +1003,12 @@ export const TemplateManager: React.FC = () => {
             size="xl"
           >
             <SignatureFieldEditor
-              template={signatureEditorTemplate}
-              onClose={() => setSignatureEditorTemplate(null)}
-              onSave={async () => {
-                await fetchTemplates();
+              templateId={signatureEditorTemplate.id}
+              templateName={signatureEditorTemplate.name}
+              htmlContent={signatureEditorTemplate.html_content}
+              visible={true}
+              onClose={(refresh) => {
+                if (refresh) fetchTemplates();
                 setSignatureEditorTemplate(null);
               }}
             />

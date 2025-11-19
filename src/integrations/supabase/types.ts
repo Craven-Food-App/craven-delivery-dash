@@ -14,6 +14,87 @@ export type Database = {
   }
   public: {
     Tables: {
+      accounts_receivable: {
+        Row: {
+          amount: number
+          created_at: string | null
+          customer_email: string | null
+          customer_id: string | null
+          customer_name: string
+          due_date: string
+          id: string
+          invoice_date: string
+          invoice_number: string
+          notes: string | null
+          order_id: string | null
+          outstanding_amount: number | null
+          paid_amount: number | null
+          payment_terms: string | null
+          payments: Json | null
+          status: string | null
+          tax_amount: number | null
+          total_amount: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          amount: number
+          created_at?: string | null
+          customer_email?: string | null
+          customer_id?: string | null
+          customer_name: string
+          due_date: string
+          id?: string
+          invoice_date: string
+          invoice_number: string
+          notes?: string | null
+          order_id?: string | null
+          outstanding_amount?: number | null
+          paid_amount?: number | null
+          payment_terms?: string | null
+          payments?: Json | null
+          status?: string | null
+          tax_amount?: number | null
+          total_amount?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          amount?: number
+          created_at?: string | null
+          customer_email?: string | null
+          customer_id?: string | null
+          customer_name?: string
+          due_date?: string
+          id?: string
+          invoice_date?: string
+          invoice_number?: string
+          notes?: string | null
+          order_id?: string | null
+          outstanding_amount?: number | null
+          paid_amount?: number | null
+          payment_terms?: string | null
+          payments?: Json | null
+          status?: string | null
+          tax_amount?: number | null
+          total_amount?: number | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "accounts_receivable_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "effective_permissions"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "accounts_receivable_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       activation_queue: {
         Row: {
           added_at: string | null
@@ -428,6 +509,86 @@ export type Database = {
         }
         Relationships: []
       }
+      board_members: {
+        Row: {
+          created_at: string
+          email: string
+          full_name: string
+          id: string
+          is_active: boolean
+          role: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          full_name: string
+          id?: string
+          is_active?: boolean
+          role: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          full_name?: string
+          id?: string
+          is_active?: boolean
+          role?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "board_members_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "effective_permissions"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
+      board_resolution_votes: {
+        Row: {
+          board_member_id: string
+          comment: string | null
+          created_at: string
+          id: string
+          resolution_id: string
+          vote: string
+        }
+        Insert: {
+          board_member_id: string
+          comment?: string | null
+          created_at?: string
+          id?: string
+          resolution_id: string
+          vote: string
+        }
+        Update: {
+          board_member_id?: string
+          comment?: string | null
+          created_at?: string
+          id?: string
+          resolution_id?: string
+          vote?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "board_resolution_votes_board_member_id_fkey"
+            columns: ["board_member_id"]
+            isOneToOne: false
+            referencedRelation: "board_members"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "board_resolution_votes_resolution_id_fkey"
+            columns: ["resolution_id"]
+            isOneToOne: false
+            referencedRelation: "governance_board_resolutions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       board_resolutions: {
         Row: {
           board_members: Json
@@ -539,6 +700,95 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "effective_permissions"
             referencedColumns: ["user_id"]
+          },
+        ]
+      }
+      budgets: {
+        Row: {
+          allocated_amount: number
+          approved_at: string | null
+          approved_by: string | null
+          budget_name: string
+          budget_quarter: number | null
+          budget_year: number
+          category_id: string | null
+          committed_amount: number | null
+          created_at: string | null
+          created_by: string | null
+          department_id: string | null
+          id: string
+          notes: string | null
+          remaining_amount: number | null
+          spent_amount: number | null
+          status: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          allocated_amount: number
+          approved_at?: string | null
+          approved_by?: string | null
+          budget_name: string
+          budget_quarter?: number | null
+          budget_year: number
+          category_id?: string | null
+          committed_amount?: number | null
+          created_at?: string | null
+          created_by?: string | null
+          department_id?: string | null
+          id?: string
+          notes?: string | null
+          remaining_amount?: number | null
+          spent_amount?: number | null
+          status?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          allocated_amount?: number
+          approved_at?: string | null
+          approved_by?: string | null
+          budget_name?: string
+          budget_quarter?: number | null
+          budget_year?: number
+          category_id?: string | null
+          committed_amount?: number | null
+          created_at?: string | null
+          created_by?: string | null
+          department_id?: string | null
+          id?: string
+          notes?: string | null
+          remaining_amount?: number | null
+          spent_amount?: number | null
+          status?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "budgets_approved_by_fkey"
+            columns: ["approved_by"]
+            isOneToOne: false
+            referencedRelation: "effective_permissions"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "budgets_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "expense_categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "budgets_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "effective_permissions"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "budgets_department_id_fkey"
+            columns: ["department_id"]
+            isOneToOne: false
+            referencedRelation: "departments"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -1150,6 +1400,122 @@ export type Database = {
         }
         Relationships: []
       }
+      code_access_logs: {
+        Row: {
+          action: string
+          created_at: string | null
+          developer_id: string
+          file_path: string | null
+          id: string
+          ip_address: string | null
+          repository: string
+          user_agent: string | null
+        }
+        Insert: {
+          action: string
+          created_at?: string | null
+          developer_id: string
+          file_path?: string | null
+          id?: string
+          ip_address?: string | null
+          repository: string
+          user_agent?: string | null
+        }
+        Update: {
+          action?: string
+          created_at?: string | null
+          developer_id?: string
+          file_path?: string | null
+          id?: string
+          ip_address?: string | null
+          repository?: string
+          user_agent?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "code_access_logs_developer_id_fkey"
+            columns: ["developer_id"]
+            isOneToOne: false
+            referencedRelation: "effective_permissions"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
+      code_change_requests: {
+        Row: {
+          branch_name: string
+          commit_message: string | null
+          created_at: string | null
+          developer_id: string
+          file_path: string
+          github_pr_number: number | null
+          github_pr_url: string | null
+          id: string
+          merged_at: string | null
+          new_content: string
+          old_content: string | null
+          repository: string
+          request_number: string
+          review_notes: string | null
+          reviewer_id: string | null
+          status: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          branch_name: string
+          commit_message?: string | null
+          created_at?: string | null
+          developer_id: string
+          file_path: string
+          github_pr_number?: number | null
+          github_pr_url?: string | null
+          id?: string
+          merged_at?: string | null
+          new_content: string
+          old_content?: string | null
+          repository: string
+          request_number: string
+          review_notes?: string | null
+          reviewer_id?: string | null
+          status?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          branch_name?: string
+          commit_message?: string | null
+          created_at?: string | null
+          developer_id?: string
+          file_path?: string
+          github_pr_number?: number | null
+          github_pr_url?: string | null
+          id?: string
+          merged_at?: string | null
+          new_content?: string
+          old_content?: string | null
+          repository?: string
+          request_number?: string
+          review_notes?: string | null
+          reviewer_id?: string | null
+          status?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "code_change_requests_developer_id_fkey"
+            columns: ["developer_id"]
+            isOneToOne: false
+            referencedRelation: "effective_permissions"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "code_change_requests_reviewer_id_fkey"
+            columns: ["reviewer_id"]
+            isOneToOne: false
+            referencedRelation: "effective_permissions"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
       commission_settings: {
         Row: {
           created_at: string
@@ -1400,6 +1766,65 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "effective_permissions"
             referencedColumns: ["user_id"]
+          },
+        ]
+      }
+      corporate_officers: {
+        Row: {
+          appointed_by: string | null
+          certificate_url: string | null
+          created_at: string
+          effective_date: string
+          email: string | null
+          full_name: string
+          id: string
+          metadata: Json | null
+          removal_notes: string | null
+          resignation_date: string | null
+          status: string
+          term_end: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          appointed_by?: string | null
+          certificate_url?: string | null
+          created_at?: string
+          effective_date: string
+          email?: string | null
+          full_name: string
+          id?: string
+          metadata?: Json | null
+          removal_notes?: string | null
+          resignation_date?: string | null
+          status?: string
+          term_end?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          appointed_by?: string | null
+          certificate_url?: string | null
+          created_at?: string
+          effective_date?: string
+          email?: string | null
+          full_name?: string
+          id?: string
+          metadata?: Json | null
+          removal_notes?: string | null
+          resignation_date?: string | null
+          status?: string
+          term_end?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "corporate_officers_appointed_by_fkey"
+            columns: ["appointed_by"]
+            isOneToOne: false
+            referencedRelation: "governance_board_resolutions"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -2413,6 +2838,129 @@ export type Database = {
           updated_at?: string | null
         }
         Relationships: []
+      }
+      developer_onboarding: {
+        Row: {
+          assigned_mentor_id: string | null
+          completed_at: string | null
+          created_at: string | null
+          dev_environment_setup: boolean | null
+          developer_id: string
+          documentation_reviewed: boolean | null
+          first_code_review_completed: boolean | null
+          github_access_granted: boolean | null
+          id: string
+          onboarding_notes: string | null
+          onboarding_status: string | null
+          started_at: string | null
+          supabase_access_granted: boolean | null
+          updated_at: string | null
+        }
+        Insert: {
+          assigned_mentor_id?: string | null
+          completed_at?: string | null
+          created_at?: string | null
+          dev_environment_setup?: boolean | null
+          developer_id: string
+          documentation_reviewed?: boolean | null
+          first_code_review_completed?: boolean | null
+          github_access_granted?: boolean | null
+          id?: string
+          onboarding_notes?: string | null
+          onboarding_status?: string | null
+          started_at?: string | null
+          supabase_access_granted?: boolean | null
+          updated_at?: string | null
+        }
+        Update: {
+          assigned_mentor_id?: string | null
+          completed_at?: string | null
+          created_at?: string | null
+          dev_environment_setup?: boolean | null
+          developer_id?: string
+          documentation_reviewed?: boolean | null
+          first_code_review_completed?: boolean | null
+          github_access_granted?: boolean | null
+          id?: string
+          onboarding_notes?: string | null
+          onboarding_status?: string | null
+          started_at?: string | null
+          supabase_access_granted?: boolean | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "developer_onboarding_assigned_mentor_id_fkey"
+            columns: ["assigned_mentor_id"]
+            isOneToOne: false
+            referencedRelation: "effective_permissions"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "developer_onboarding_developer_id_fkey"
+            columns: ["developer_id"]
+            isOneToOne: true
+            referencedRelation: "effective_permissions"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
+      developer_permissions: {
+        Row: {
+          can_deploy: boolean | null
+          can_merge: boolean | null
+          can_read: boolean | null
+          can_write: boolean | null
+          developer_id: string
+          granted_at: string | null
+          granted_by: string | null
+          id: string
+          is_active: boolean | null
+          repository: string
+          revoked_at: string | null
+        }
+        Insert: {
+          can_deploy?: boolean | null
+          can_merge?: boolean | null
+          can_read?: boolean | null
+          can_write?: boolean | null
+          developer_id: string
+          granted_at?: string | null
+          granted_by?: string | null
+          id?: string
+          is_active?: boolean | null
+          repository: string
+          revoked_at?: string | null
+        }
+        Update: {
+          can_deploy?: boolean | null
+          can_merge?: boolean | null
+          can_read?: boolean | null
+          can_write?: boolean | null
+          developer_id?: string
+          granted_at?: string | null
+          granted_by?: string | null
+          id?: string
+          is_active?: boolean | null
+          repository?: string
+          revoked_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "developer_permissions_developer_id_fkey"
+            columns: ["developer_id"]
+            isOneToOne: false
+            referencedRelation: "effective_permissions"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "developer_permissions_granted_by_fkey"
+            columns: ["granted_by"]
+            isOneToOne: false
+            referencedRelation: "effective_permissions"
+            referencedColumns: ["user_id"]
+          },
+        ]
       }
       diamond_points_history: {
         Row: {
@@ -5182,6 +5730,120 @@ export type Database = {
           },
         ]
       }
+      executive_appointments: {
+        Row: {
+          appointment_letter_url: string | null
+          appointment_type: string
+          authority_granted: string | null
+          board_meeting_date: string | null
+          board_resolution_id: string | null
+          board_resolution_url: string | null
+          certificate_url: string | null
+          compensation_structure: string | null
+          confidentiality_ip_url: string | null
+          created_at: string
+          created_by: string | null
+          deferred_compensation_url: string | null
+          department: string | null
+          effective_date: string
+          employment_agreement_url: string | null
+          equity_details: string | null
+          equity_included: boolean | null
+          formation_mode: boolean | null
+          id: string
+          notes: string | null
+          pre_incorporation_consent_url: string | null
+          proposed_officer_email: string | null
+          proposed_officer_name: string
+          proposed_officer_phone: string | null
+          proposed_title: string
+          reporting_to: string | null
+          status: string
+          stock_subscription_url: string | null
+          term_length_months: number | null
+          updated_at: string
+        }
+        Insert: {
+          appointment_letter_url?: string | null
+          appointment_type: string
+          authority_granted?: string | null
+          board_meeting_date?: string | null
+          board_resolution_id?: string | null
+          board_resolution_url?: string | null
+          certificate_url?: string | null
+          compensation_structure?: string | null
+          confidentiality_ip_url?: string | null
+          created_at?: string
+          created_by?: string | null
+          deferred_compensation_url?: string | null
+          department?: string | null
+          effective_date: string
+          employment_agreement_url?: string | null
+          equity_details?: string | null
+          equity_included?: boolean | null
+          formation_mode?: boolean | null
+          id?: string
+          notes?: string | null
+          pre_incorporation_consent_url?: string | null
+          proposed_officer_email?: string | null
+          proposed_officer_name: string
+          proposed_officer_phone?: string | null
+          proposed_title: string
+          reporting_to?: string | null
+          status?: string
+          stock_subscription_url?: string | null
+          term_length_months?: number | null
+          updated_at?: string
+        }
+        Update: {
+          appointment_letter_url?: string | null
+          appointment_type?: string
+          authority_granted?: string | null
+          board_meeting_date?: string | null
+          board_resolution_id?: string | null
+          board_resolution_url?: string | null
+          certificate_url?: string | null
+          compensation_structure?: string | null
+          confidentiality_ip_url?: string | null
+          created_at?: string
+          created_by?: string | null
+          deferred_compensation_url?: string | null
+          department?: string | null
+          effective_date?: string
+          employment_agreement_url?: string | null
+          equity_details?: string | null
+          equity_included?: boolean | null
+          formation_mode?: boolean | null
+          id?: string
+          notes?: string | null
+          pre_incorporation_consent_url?: string | null
+          proposed_officer_email?: string | null
+          proposed_officer_name?: string
+          proposed_officer_phone?: string | null
+          proposed_title?: string
+          reporting_to?: string | null
+          status?: string
+          stock_subscription_url?: string | null
+          term_length_months?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "executive_appointments_board_resolution_id_fkey"
+            columns: ["board_resolution_id"]
+            isOneToOne: false
+            referencedRelation: "governance_board_resolutions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "executive_appointments_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "effective_permissions"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
       executive_documents: {
         Row: {
           created_at: string | null
@@ -5408,6 +6070,259 @@ export type Database = {
           },
         ]
       }
+      expense_approval_log: {
+        Row: {
+          action: string
+          actor_id: string | null
+          actor_name: string | null
+          comments: string | null
+          created_at: string | null
+          expense_request_id: string
+          id: string
+          new_status: string | null
+          previous_status: string | null
+        }
+        Insert: {
+          action: string
+          actor_id?: string | null
+          actor_name?: string | null
+          comments?: string | null
+          created_at?: string | null
+          expense_request_id: string
+          id?: string
+          new_status?: string | null
+          previous_status?: string | null
+        }
+        Update: {
+          action?: string
+          actor_id?: string | null
+          actor_name?: string | null
+          comments?: string | null
+          created_at?: string | null
+          expense_request_id?: string
+          id?: string
+          new_status?: string | null
+          previous_status?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "expense_approval_log_actor_id_fkey"
+            columns: ["actor_id"]
+            isOneToOne: false
+            referencedRelation: "effective_permissions"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "expense_approval_log_expense_request_id_fkey"
+            columns: ["expense_request_id"]
+            isOneToOne: false
+            referencedRelation: "expense_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      expense_categories: {
+        Row: {
+          approval_threshold: number | null
+          budget_code: string | null
+          code: string
+          created_at: string | null
+          description: string | null
+          id: string
+          is_active: boolean | null
+          name: string
+          parent_category_id: string | null
+          requires_approval: boolean | null
+          requires_receipt: boolean | null
+        }
+        Insert: {
+          approval_threshold?: number | null
+          budget_code?: string | null
+          code: string
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          parent_category_id?: string | null
+          requires_approval?: boolean | null
+          requires_receipt?: boolean | null
+        }
+        Update: {
+          approval_threshold?: number | null
+          budget_code?: string | null
+          code?: string
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          parent_category_id?: string | null
+          requires_approval?: boolean | null
+          requires_receipt?: boolean | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "expense_categories_parent_category_id_fkey"
+            columns: ["parent_category_id"]
+            isOneToOne: false
+            referencedRelation: "expense_categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      expense_requests: {
+        Row: {
+          amount: number
+          approved_at: string | null
+          approved_by: string | null
+          approver_id: string | null
+          business_purpose: string
+          cost_center: string | null
+          created_at: string | null
+          currency: string | null
+          department_id: string | null
+          description: string
+          due_date: string | null
+          expense_category_id: string
+          expense_date: string
+          gl_account_code: string | null
+          id: string
+          justification: string | null
+          metadata: Json | null
+          payment_method: string | null
+          priority: string | null
+          project_code: string | null
+          receipt_urls: string[] | null
+          rejection_reason: string | null
+          request_number: string
+          requested_date: string
+          requester_employee_id: string | null
+          requester_id: string
+          status: string | null
+          supporting_documents: string[] | null
+          updated_at: string | null
+          vendor_account_number: string | null
+          vendor_name: string | null
+        }
+        Insert: {
+          amount: number
+          approved_at?: string | null
+          approved_by?: string | null
+          approver_id?: string | null
+          business_purpose: string
+          cost_center?: string | null
+          created_at?: string | null
+          currency?: string | null
+          department_id?: string | null
+          description: string
+          due_date?: string | null
+          expense_category_id: string
+          expense_date: string
+          gl_account_code?: string | null
+          id?: string
+          justification?: string | null
+          metadata?: Json | null
+          payment_method?: string | null
+          priority?: string | null
+          project_code?: string | null
+          receipt_urls?: string[] | null
+          rejection_reason?: string | null
+          request_number: string
+          requested_date?: string
+          requester_employee_id?: string | null
+          requester_id: string
+          status?: string | null
+          supporting_documents?: string[] | null
+          updated_at?: string | null
+          vendor_account_number?: string | null
+          vendor_name?: string | null
+        }
+        Update: {
+          amount?: number
+          approved_at?: string | null
+          approved_by?: string | null
+          approver_id?: string | null
+          business_purpose?: string
+          cost_center?: string | null
+          created_at?: string | null
+          currency?: string | null
+          department_id?: string | null
+          description?: string
+          due_date?: string | null
+          expense_category_id?: string
+          expense_date?: string
+          gl_account_code?: string | null
+          id?: string
+          justification?: string | null
+          metadata?: Json | null
+          payment_method?: string | null
+          priority?: string | null
+          project_code?: string | null
+          receipt_urls?: string[] | null
+          rejection_reason?: string | null
+          request_number?: string
+          requested_date?: string
+          requester_employee_id?: string | null
+          requester_id?: string
+          status?: string | null
+          supporting_documents?: string[] | null
+          updated_at?: string | null
+          vendor_account_number?: string | null
+          vendor_name?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "expense_requests_approved_by_fkey"
+            columns: ["approved_by"]
+            isOneToOne: false
+            referencedRelation: "effective_permissions"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "expense_requests_approver_id_fkey"
+            columns: ["approver_id"]
+            isOneToOne: false
+            referencedRelation: "effective_permissions"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "expense_requests_department_id_fkey"
+            columns: ["department_id"]
+            isOneToOne: false
+            referencedRelation: "departments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "expense_requests_expense_category_id_fkey"
+            columns: ["expense_category_id"]
+            isOneToOne: false
+            referencedRelation: "expense_categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "expense_requests_requester_employee_id_fkey"
+            columns: ["requester_employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "expense_requests_requester_employee_id_fkey"
+            columns: ["requester_employee_id"]
+            isOneToOne: false
+            referencedRelation: "payroll_summary"
+            referencedColumns: ["employee_id"]
+          },
+          {
+            foreignKeyName: "expense_requests_requester_id_fkey"
+            columns: ["requester_id"]
+            isOneToOne: false
+            referencedRelation: "effective_permissions"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
       favorite_restaurants: {
         Row: {
           created_at: string | null
@@ -5431,6 +6346,207 @@ export type Database = {
           {
             foreignKeyName: "favorite_restaurants_user_id_fkey"
             columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "effective_permissions"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
+      finance_employees: {
+        Row: {
+          access_level: number | null
+          can_approve_expenses_up_to: number | null
+          can_create_budgets: boolean | null
+          can_view_all_financials: boolean | null
+          created_at: string | null
+          employee_id: string
+          employment_status: string | null
+          hire_date: string
+          id: string
+          manager_id: string | null
+          notes: string | null
+          position_id: string
+          start_date: string
+          termination_date: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          access_level?: number | null
+          can_approve_expenses_up_to?: number | null
+          can_create_budgets?: boolean | null
+          can_view_all_financials?: boolean | null
+          created_at?: string | null
+          employee_id: string
+          employment_status?: string | null
+          hire_date?: string
+          id?: string
+          manager_id?: string | null
+          notes?: string | null
+          position_id: string
+          start_date?: string
+          termination_date?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          access_level?: number | null
+          can_approve_expenses_up_to?: number | null
+          can_create_budgets?: boolean | null
+          can_view_all_financials?: boolean | null
+          created_at?: string | null
+          employee_id?: string
+          employment_status?: string | null
+          hire_date?: string
+          id?: string
+          manager_id?: string | null
+          notes?: string | null
+          position_id?: string
+          start_date?: string
+          termination_date?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "finance_employees_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: true
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "finance_employees_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: true
+            referencedRelation: "payroll_summary"
+            referencedColumns: ["employee_id"]
+          },
+          {
+            foreignKeyName: "finance_employees_manager_id_fkey"
+            columns: ["manager_id"]
+            isOneToOne: false
+            referencedRelation: "finance_employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "finance_employees_position_id_fkey"
+            columns: ["position_id"]
+            isOneToOne: false
+            referencedRelation: "finance_positions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      finance_positions: {
+        Row: {
+          created_at: string | null
+          department: string
+          id: string
+          is_active: boolean | null
+          key_responsibilities: string[] | null
+          max_salary: number | null
+          min_salary: number | null
+          position_level: number
+          position_title: string
+          reports_to_position_id: string | null
+          required_education: string | null
+          required_experience_years: number | null
+          required_skills: string[] | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          department?: string
+          id?: string
+          is_active?: boolean | null
+          key_responsibilities?: string[] | null
+          max_salary?: number | null
+          min_salary?: number | null
+          position_level: number
+          position_title: string
+          reports_to_position_id?: string | null
+          required_education?: string | null
+          required_experience_years?: number | null
+          required_skills?: string[] | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          department?: string
+          id?: string
+          is_active?: boolean | null
+          key_responsibilities?: string[] | null
+          max_salary?: number | null
+          min_salary?: number | null
+          position_level?: number
+          position_title?: string
+          reports_to_position_id?: string | null
+          required_education?: string | null
+          required_experience_years?: number | null
+          required_skills?: string[] | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "finance_positions_reports_to_position_id_fkey"
+            columns: ["reports_to_position_id"]
+            isOneToOne: false
+            referencedRelation: "finance_positions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      financial_reports: {
+        Row: {
+          created_at: string | null
+          excel_url: string | null
+          generated_at: string | null
+          generated_by: string | null
+          id: string
+          is_public: boolean | null
+          pdf_url: string | null
+          report_data: Json
+          report_name: string
+          report_period_end: string
+          report_period_start: string
+          report_type: string
+          status: string | null
+          summary: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          excel_url?: string | null
+          generated_at?: string | null
+          generated_by?: string | null
+          id?: string
+          is_public?: boolean | null
+          pdf_url?: string | null
+          report_data: Json
+          report_name: string
+          report_period_end: string
+          report_period_start: string
+          report_type: string
+          status?: string | null
+          summary?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          excel_url?: string | null
+          generated_at?: string | null
+          generated_by?: string | null
+          id?: string
+          is_public?: boolean | null
+          pdf_url?: string | null
+          report_data?: Json
+          report_name?: string
+          report_period_end?: string
+          report_period_start?: string
+          report_type?: string
+          status?: string | null
+          summary?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "financial_reports_generated_by_fkey"
+            columns: ["generated_by"]
             isOneToOne: false
             referencedRelation: "effective_permissions"
             referencedColumns: ["user_id"]
@@ -5586,6 +6702,103 @@ export type Database = {
         }
         Relationships: []
       }
+      governance_board_resolutions: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          description: string | null
+          effective_date: string | null
+          id: string
+          meeting_date: string | null
+          metadata: Json | null
+          related_officer_id: string | null
+          resolution_number: string
+          status: string
+          title: string
+          type: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          effective_date?: string | null
+          id?: string
+          meeting_date?: string | null
+          metadata?: Json | null
+          related_officer_id?: string | null
+          resolution_number: string
+          status?: string
+          title: string
+          type: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          effective_date?: string | null
+          id?: string
+          meeting_date?: string | null
+          metadata?: Json | null
+          related_officer_id?: string | null
+          resolution_number?: string
+          status?: string
+          title?: string
+          type?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "governance_board_resolutions_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "effective_permissions"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
+      governance_logs: {
+        Row: {
+          action: string
+          actor_id: string | null
+          data: Json | null
+          description: string | null
+          entity_id: string
+          entity_type: string
+          id: string
+          timestamp: string
+        }
+        Insert: {
+          action: string
+          actor_id?: string | null
+          data?: Json | null
+          description?: string | null
+          entity_id: string
+          entity_type: string
+          id?: string
+          timestamp?: string
+        }
+        Update: {
+          action?: string
+          actor_id?: string | null
+          data?: Json | null
+          description?: string | null
+          entity_id?: string
+          entity_type?: string
+          id?: string
+          timestamp?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "governance_logs_actor_id_fkey"
+            columns: ["actor_id"]
+            isOneToOne: false
+            referencedRelation: "effective_permissions"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
       hotspots: {
         Row: {
           claimed_by: string | null
@@ -5681,6 +6894,145 @@ export type Database = {
           },
         ]
       }
+      invoices: {
+        Row: {
+          amount: number
+          approved_at: string | null
+          approved_by: string | null
+          approver_id: string | null
+          budget_id: string | null
+          created_at: string | null
+          currency: string | null
+          department_id: string | null
+          due_date: string
+          expense_category_id: string | null
+          id: string
+          invoice_date: string
+          invoice_file_url: string | null
+          invoice_number: string
+          line_items: Json | null
+          notes: string | null
+          paid_by: string | null
+          payment_date: string | null
+          payment_method: string | null
+          payment_reference: string | null
+          status: string | null
+          supporting_documents: string[] | null
+          tax_amount: number | null
+          total_amount: number | null
+          updated_at: string | null
+          vendor_address: string | null
+          vendor_email: string | null
+          vendor_id: string | null
+          vendor_name: string
+        }
+        Insert: {
+          amount: number
+          approved_at?: string | null
+          approved_by?: string | null
+          approver_id?: string | null
+          budget_id?: string | null
+          created_at?: string | null
+          currency?: string | null
+          department_id?: string | null
+          due_date: string
+          expense_category_id?: string | null
+          id?: string
+          invoice_date: string
+          invoice_file_url?: string | null
+          invoice_number: string
+          line_items?: Json | null
+          notes?: string | null
+          paid_by?: string | null
+          payment_date?: string | null
+          payment_method?: string | null
+          payment_reference?: string | null
+          status?: string | null
+          supporting_documents?: string[] | null
+          tax_amount?: number | null
+          total_amount?: number | null
+          updated_at?: string | null
+          vendor_address?: string | null
+          vendor_email?: string | null
+          vendor_id?: string | null
+          vendor_name: string
+        }
+        Update: {
+          amount?: number
+          approved_at?: string | null
+          approved_by?: string | null
+          approver_id?: string | null
+          budget_id?: string | null
+          created_at?: string | null
+          currency?: string | null
+          department_id?: string | null
+          due_date?: string
+          expense_category_id?: string | null
+          id?: string
+          invoice_date?: string
+          invoice_file_url?: string | null
+          invoice_number?: string
+          line_items?: Json | null
+          notes?: string | null
+          paid_by?: string | null
+          payment_date?: string | null
+          payment_method?: string | null
+          payment_reference?: string | null
+          status?: string | null
+          supporting_documents?: string[] | null
+          tax_amount?: number | null
+          total_amount?: number | null
+          updated_at?: string | null
+          vendor_address?: string | null
+          vendor_email?: string | null
+          vendor_id?: string | null
+          vendor_name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "invoices_approved_by_fkey"
+            columns: ["approved_by"]
+            isOneToOne: false
+            referencedRelation: "effective_permissions"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "invoices_approver_id_fkey"
+            columns: ["approver_id"]
+            isOneToOne: false
+            referencedRelation: "effective_permissions"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "invoices_budget_id_fkey"
+            columns: ["budget_id"]
+            isOneToOne: false
+            referencedRelation: "budgets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invoices_department_id_fkey"
+            columns: ["department_id"]
+            isOneToOne: false
+            referencedRelation: "departments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invoices_expense_category_id_fkey"
+            columns: ["expense_category_id"]
+            isOneToOne: false
+            referencedRelation: "expense_categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invoices_paid_by_fkey"
+            columns: ["paid_by"]
+            isOneToOne: false
+            referencedRelation: "effective_permissions"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
       it_assets: {
         Row: {
           asset_name: string
@@ -5731,6 +7083,111 @@ export type Database = {
           {
             foreignKeyName: "it_assets_assigned_to_fkey"
             columns: ["assigned_to"]
+            isOneToOne: false
+            referencedRelation: "effective_permissions"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
+      it_help_desk_messages: {
+        Row: {
+          created_at: string | null
+          id: string
+          is_internal: boolean | null
+          message: string
+          sender_id: string
+          ticket_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          is_internal?: boolean | null
+          message: string
+          sender_id: string
+          ticket_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          is_internal?: boolean | null
+          message?: string
+          sender_id?: string
+          ticket_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "it_help_desk_messages_sender_id_fkey"
+            columns: ["sender_id"]
+            isOneToOne: false
+            referencedRelation: "effective_permissions"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "it_help_desk_messages_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "it_help_desk_tickets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      it_help_desk_tickets: {
+        Row: {
+          assigned_to: string | null
+          category: string
+          created_at: string | null
+          description: string
+          id: string
+          priority: string | null
+          requester_id: string
+          resolution_notes: string | null
+          resolved_at: string | null
+          status: string | null
+          subject: string
+          ticket_number: string
+          updated_at: string | null
+        }
+        Insert: {
+          assigned_to?: string | null
+          category: string
+          created_at?: string | null
+          description: string
+          id?: string
+          priority?: string | null
+          requester_id: string
+          resolution_notes?: string | null
+          resolved_at?: string | null
+          status?: string | null
+          subject: string
+          ticket_number: string
+          updated_at?: string | null
+        }
+        Update: {
+          assigned_to?: string | null
+          category?: string
+          created_at?: string | null
+          description?: string
+          id?: string
+          priority?: string | null
+          requester_id?: string
+          resolution_notes?: string | null
+          resolved_at?: string | null
+          status?: string | null
+          subject?: string
+          ticket_number?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "it_help_desk_tickets_assigned_to_fkey"
+            columns: ["assigned_to"]
+            isOneToOne: false
+            referencedRelation: "effective_permissions"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "it_help_desk_tickets_requester_id_fkey"
+            columns: ["requester_id"]
             isOneToOne: false
             referencedRelation: "effective_permissions"
             referencedColumns: ["user_id"]
@@ -10116,6 +11573,56 @@ export type Database = {
           },
         ]
       }
+      tech_knowledge_base: {
+        Row: {
+          author_id: string | null
+          category: string
+          content: string
+          created_at: string | null
+          helpful_count: number | null
+          id: string
+          is_published: boolean | null
+          tags: string[] | null
+          title: string
+          updated_at: string | null
+          views_count: number | null
+        }
+        Insert: {
+          author_id?: string | null
+          category: string
+          content: string
+          created_at?: string | null
+          helpful_count?: number | null
+          id?: string
+          is_published?: boolean | null
+          tags?: string[] | null
+          title: string
+          updated_at?: string | null
+          views_count?: number | null
+        }
+        Update: {
+          author_id?: string | null
+          category?: string
+          content?: string
+          created_at?: string | null
+          helpful_count?: number | null
+          id?: string
+          is_published?: boolean | null
+          tags?: string[] | null
+          title?: string
+          updated_at?: string | null
+          views_count?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tech_knowledge_base_author_id_fkey"
+            columns: ["author_id"]
+            isOneToOne: false
+            referencedRelation: "effective_permissions"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
       template_usage: {
         Row: {
           created_at: string
@@ -11180,7 +12687,10 @@ export type Database = {
         Returns: boolean
       }
       equals: { Args: { geom1: unknown; geom2: unknown }; Returns: boolean }
+      generate_code_request_number: { Args: never; Returns: string }
       generate_employee_number: { Args: never; Returns: string }
+      generate_expense_number: { Args: never; Returns: string }
+      generate_governance_resolution_number: { Args: never; Returns: string }
       generate_order_number: { Args: never; Returns: string }
       generate_payroll_invoice: {
         Args: { payroll_end: string; payroll_start: string }
@@ -11195,6 +12705,7 @@ export type Database = {
         Args: { p_user_id: string; p_user_type: string }
         Returns: string
       }
+      generate_ticket_number: { Args: never; Returns: string }
       geometry: { Args: { "": string }; Returns: unknown }
       geometry_above: {
         Args: { geom1: unknown; geom2: unknown }
@@ -11293,6 +12804,7 @@ export type Database = {
         Returns: boolean
       }
       geomfromewkt: { Args: { "": string }; Returns: unknown }
+      get_current_user_email: { Args: never; Returns: string }
       get_department_name: { Args: { dept_id: string }; Returns: string }
       get_document_statistics: {
         Args: never
@@ -11388,6 +12900,7 @@ export type Database = {
       is_c_level_position: { Args: { position_text: string }; Returns: boolean }
       is_ceo: { Args: { user_uuid: string }; Returns: boolean }
       is_ceo_email: { Args: { p_email: string }; Returns: boolean }
+      is_craven_founder: { Args: never; Returns: boolean }
       is_diamond_driver: { Args: { p_driver_id: string }; Returns: boolean }
       is_executive: { Args: { user_uuid: string }; Returns: boolean }
       link_document_to_resolution: {
