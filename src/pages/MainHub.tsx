@@ -211,11 +211,12 @@ const MainHub: React.FC = () => {
 
       // Skip CEO PIN check - not in current schema
       // Check CEO role via exec_users table
+      // @ts-ignore - Type instantiation depth issue
       const { data: execUser } = await supabase
         .from("exec_users")
-        .select("*")
+        .select("email, role")
         .eq("email", email)
-        .single();
+        .maybeSingle();
 
       if (execUser) {
         const { data: profiles } = await supabase.from("user_profiles").select("*").eq("user_id", user.id).single();

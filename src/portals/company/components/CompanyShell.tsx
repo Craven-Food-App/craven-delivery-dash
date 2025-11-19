@@ -1,5 +1,5 @@
 import React from 'react';
-import { AppShell, Navbar, Header, Burger, Group, Text, Badge, Avatar, Menu, UnstyledButton } from '@mantine/core';
+import { AppShell, Burger, Group, Text, Badge, Avatar, Menu, UnstyledButton } from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
 import { IconBuilding, IconChevronDown, IconLogout, IconUser } from '@tabler/icons-react';
 import { useNavigate } from 'react-router-dom';
