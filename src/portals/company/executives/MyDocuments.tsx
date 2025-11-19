@@ -329,11 +329,11 @@ const MyDocuments: React.FC = () => {
       const canvas = canvasRef.current;
       const ctx = canvas.getContext('2d');
       if (ctx) {
-        canvas.width = 600;
-        canvas.height = 200;
+        canvas.width = 800;
+        canvas.height = 350;
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         ctx.strokeStyle = '#111827';
-        ctx.lineWidth = 2;
+        ctx.lineWidth = 2.5;
         ctx.lineCap = 'round';
         ctx.lineJoin = 'round';
       }
@@ -733,6 +733,10 @@ const MyDocuments: React.FC = () => {
         }}
         title={selectedDocument ? `Sign: ${getDocumentTypeName(selectedDocument.type)}` : 'Sign Document'}
         size="xl"
+        fullScreen={window.innerWidth < 1024}
+        styles={{
+          body: { maxHeight: '90vh', overflow: 'auto' },
+        }}
       >
         {selectedDocument && (
           <Stack gap="md">
@@ -743,77 +747,82 @@ const MyDocuments: React.FC = () => {
               </Text>
             </Alert>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-              <Stack gap="md">
-                <TextInput
-                  label="Type your full legal name"
-                  placeholder="Full legal name"
-                  value={typedName}
-                  onChange={(e) => setTypedName(e.target.value)}
-                  required
-                />
-                <div>
-                  <Text size="sm" fw={500} mb="xs">Draw your signature</Text>
-                  <div style={{ border: '2px dashed #ccc', borderRadius: '8px', padding: '1rem', background: 'white' }}>
-                    <canvas
-                      ref={canvasRef}
-                      width={600}
-                      height={200}
+            {/* Document Preview Section */}
+            <div>
+              <Text size="sm" fw={500} mb="xs">Document Preview</Text>
+              {selectedDocument.file_url && (
+                <>
+                  {documentLoading ? (
+                    <Center h={300}>
+                      <Loader size="md" />
+                    </Center>
+                  ) : isHtmlFile(selectedDocument.file_url) && documentHtmlContent ? (
+                    <div
                       style={{
                         width: '100%',
+                        height: '300px',
                         border: '1px solid #ddd',
                         borderRadius: '4px',
-                        cursor: 'crosshair',
-                        touchAction: 'none',
-                        background: 'linear-gradient(45deg, #f0f0f0 25%, transparent 25%), linear-gradient(-45deg, #f0f0f0 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #f0f0f0 75%), linear-gradient(-45deg, transparent 75%, #f0f0f0 75%)',
-                        backgroundSize: '20px 20px',
+                        overflow: 'auto',
+                        padding: '1rem',
+                        backgroundColor: '#fff',
                       }}
-                      onMouseDown={startDrawing}
-                      onMouseMove={draw}
-                      onMouseUp={stopDrawing}
-                      onMouseLeave={stopDrawing}
-                      onTouchStart={startDrawing}
-                      onTouchMove={draw}
-                      onTouchEnd={stopDrawing}
+                      dangerouslySetInnerHTML={{ __html: documentHtmlContent }}
                     />
-                  </div>
-                  <Button variant="light" size="xs" mt="xs" onClick={clearCanvas}>
-                    Clear Signature
-                  </Button>
-                </div>
-              </Stack>
-              <div>
-                <Text size="sm" fw={500} mb="xs">Document Preview</Text>
-                {selectedDocument.file_url && (
-                  <>
-                    {documentLoading ? (
-                      <Center h={400}>
-                        <Loader size="md" />
-                      </Center>
-                    ) : isHtmlFile(selectedDocument.file_url) && documentHtmlContent ? (
-                      <div
-                        style={{
-                          width: '100%',
-                          height: '400px',
-                          border: '1px solid #ddd',
-                          borderRadius: '4px',
-                          overflow: 'auto',
-                          padding: '1rem',
-                          backgroundColor: '#fff',
-                        }}
-                        dangerouslySetInnerHTML={{ __html: documentHtmlContent }}
-                      />
-                    ) : (
-                      <iframe
-                        src={selectedDocument.file_url}
-                        style={{ width: '100%', height: '400px', border: '1px solid #ddd', borderRadius: '4px' }}
-                        title="Document Preview"
-                      />
-                    )}
-                  </>
-                )}
-              </div>
+                  ) : (
+                    <iframe
+                      src={selectedDocument.file_url}
+                      style={{ width: '100%', height: '300px', border: '1px solid #ddd', borderRadius: '4px' }}
+                      title="Document Preview"
+                    />
+                  )}
+                </>
+              )}
             </div>
+
+            <Divider label="Signature Section" labelPosition="center" />
+
+            {/* Signature Input Section */}
+            <Stack gap="md">
+              <TextInput
+                label="Type your full legal name"
+                placeholder="Full legal name"
+                value={typedName}
+                onChange={(e) => setTypedName(e.target.value)}
+                required
+                size="md"
+              />
+              <div>
+                <Text size="sm" fw={500} mb="xs">Draw your signature</Text>
+                <div style={{ border: '2px dashed #ccc', borderRadius: '8px', padding: '1.5rem', background: 'white' }}>
+                  <canvas
+                    ref={canvasRef}
+                    width={800}
+                    height={350}
+                    style={{
+                      width: '100%',
+                      minHeight: '350px',
+                      border: '2px solid #ddd',
+                      borderRadius: '4px',
+                      cursor: 'crosshair',
+                      touchAction: 'none',
+                      background: 'linear-gradient(45deg, #f0f0f0 25%, transparent 25%), linear-gradient(-45deg, #f0f0f0 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #f0f0f0 75%), linear-gradient(-45deg, transparent 75%, #f0f0f0 75%)',
+                      backgroundSize: '20px 20px',
+                    }}
+                    onMouseDown={startDrawing}
+                    onMouseMove={draw}
+                    onMouseUp={stopDrawing}
+                    onMouseLeave={stopDrawing}
+                    onTouchStart={startDrawing}
+                    onTouchMove={draw}
+                    onTouchEnd={stopDrawing}
+                  />
+                </div>
+                <Button variant="light" size="sm" mt="xs" onClick={clearCanvas}>
+                  Clear Signature
+                </Button>
+              </div>
+            </Stack>
 
             <Group justify="flex-end" mt="md">
               <Button

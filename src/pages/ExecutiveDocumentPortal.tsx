@@ -195,11 +195,11 @@ export const ExecutiveDocumentPortal: React.FC = () => {
       const canvas = canvasRef.current;
       const ctx = canvas.getContext('2d', { alpha: true });
       if (ctx) {
-        canvas.width = 500;
-        canvas.height = 200;
+        canvas.width = 800;
+        canvas.height = 350;
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         ctx.strokeStyle = '#111827';
-        ctx.lineWidth = 2;
+        ctx.lineWidth = 2.5;
         ctx.lineCap = 'round';
         ctx.lineJoin = 'round';
       }
@@ -604,89 +604,96 @@ export const ExecutiveDocumentPortal: React.FC = () => {
           clearCanvas();
         }}
         footer={null}
-        width={800}
+        width={window.innerWidth < 1024 ? '95%' : 1000}
+        styles={{
+          body: { maxHeight: '90vh', overflow: 'auto' },
+        }}
       >
         {selectedDocument && (
           <div className="mt-4">
-            <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-              <p className="text-sm text-gray-700 mb-2">
-                <strong>Document:</strong> {getDocumentTypeName(selectedDocument.type)}
-              </p>
-              <p className="text-sm text-gray-700 mb-2">
-                <strong>Role:</strong> {selectedDocument.role}
-              </p>
-              <p className="text-sm text-gray-600">
-                By signing below, you acknowledge that you have read and agree to the terms of this document. 
-                This electronic signature is legally binding and equivalent to a handwritten signature.
-              </p>
+            <Alert
+              message="Document Signing Agreement"
+              description="By signing below, you acknowledge that you have read and agree to the terms of this document. This electronic signature is legally binding and equivalent to a handwritten signature."
+              type="info"
+              showIcon
+              className="mb-6"
+            />
+
+            {/* Document Preview Section */}
+            <div className="mb-6">
+              <h4 className="font-semibold mb-2">Document Preview</h4>
+              {selectedDocument.file_url && (
+                <>
+                  {documentLoading ? (
+                    <div className="flex items-center justify-center" style={{ height: '300px' }}>
+                      <LoadingOutlined style={{ fontSize: 32 }} spin />
+                    </div>
+                  ) : isHtmlFile(selectedDocument.file_url) && documentHtmlContent ? (
+                    <div
+                      style={{
+                        width: '100%',
+                        height: '300px',
+                        border: '1px solid #ddd',
+                        borderRadius: '4px',
+                        overflow: 'auto',
+                        padding: '1rem',
+                        backgroundColor: '#fff',
+                      }}
+                      dangerouslySetInnerHTML={{ __html: documentHtmlContent }}
+                    />
+                  ) : (
+                    <iframe
+                      src={selectedDocument.file_url}
+                      className="w-full border rounded"
+                      style={{ height: '300px' }}
+                      title="Document Preview"
+                    />
+                  )}
+                </>
+              )}
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <label className="block text-sm font-semibold mb-2">Type your full legal name *</label>
-                <Input
-                  value={typedName}
-                  onChange={(e) => setTypedName(e.target.value)}
-                  placeholder="Full legal name"
-                  className="mb-4"
-                />
-                <label className="block text-sm font-semibold mb-2">Draw your signature *</label>
-                <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 bg-white">
-                  <canvas
-                    ref={canvasRef}
-                    width={500}
-                    height={200}
-                    className="border rounded w-full cursor-crosshair"
-                    style={{ 
-                      touchAction: 'none', 
-                      display: 'block',
-                      background: 'linear-gradient(45deg, #f0f0f0 25%, transparent 25%), linear-gradient(-45deg, #f0f0f0 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #f0f0f0 75%), linear-gradient(-45deg, transparent 75%, #f0f0f0 75%)',
-                      backgroundSize: '20px 20px',
-                      backgroundPosition: '0 0, 0 10px, 10px -10px, -10px 0px'
-                    }}
-                    onMouseDown={startDrawing}
-                    onMouseMove={draw}
-                    onMouseUp={stopDrawing}
-                    onMouseLeave={stopDrawing}
-                    onTouchStart={startDrawing}
-                    onTouchMove={draw}
-                    onTouchEnd={stopDrawing}
+            <div className="border-t pt-6 mt-6">
+              <h4 className="font-semibold mb-4 text-center">Signature Section</h4>
+              
+              {/* Signature Input Section */}
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-semibold mb-2">Type your full legal name *</label>
+                  <Input
+                    value={typedName}
+                    onChange={(e) => setTypedName(e.target.value)}
+                    placeholder="Full legal name"
+                    size="large"
                   />
                 </div>
-                <Button className="mt-2" onClick={clearCanvas}>Clear Signature</Button>
-              </div>
-              <div>
-                <div className="mb-4">
-                  <h4 className="font-semibold mb-2">Document Preview</h4>
-                  {selectedDocument.file_url && (
-                    <>
-                      {documentLoading ? (
-                        <div className="flex items-center justify-center" style={{ height: '400px' }}>
-                          <LoadingOutlined style={{ fontSize: 32 }} spin />
-                        </div>
-                      ) : isHtmlFile(selectedDocument.file_url) && documentHtmlContent ? (
-                        <div
-                          style={{
-                            width: '100%',
-                            height: '400px',
-                            border: '1px solid #ddd',
-                            borderRadius: '4px',
-                            overflow: 'auto',
-                            padding: '1rem',
-                            backgroundColor: '#fff',
-                          }}
-                          dangerouslySetInnerHTML={{ __html: documentHtmlContent }}
-                        />
-                      ) : (
-                        <iframe
-                          src={selectedDocument.file_url}
-                          className="w-full border rounded"
-                          style={{ height: '400px' }}
-                          title="Document Preview"
-                        />
-                      )}
-                    </>
-                  )}
+                
+                <div>
+                  <label className="block text-sm font-semibold mb-2">Draw your signature *</label>
+                  <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 bg-white">
+                    <canvas
+                      ref={canvasRef}
+                      width={800}
+                      height={350}
+                      className="border-2 border-gray-200 rounded w-full cursor-crosshair"
+                      style={{ 
+                        touchAction: 'none', 
+                        display: 'block',
+                        minHeight: '350px',
+                        background: 'linear-gradient(45deg, #f0f0f0 25%, transparent 25%), linear-gradient(-45deg, #f0f0f0 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #f0f0f0 75%), linear-gradient(-45deg, transparent 75%, #f0f0f0 75%)',
+                        backgroundSize: '20px 20px',
+                        backgroundPosition: '0 0, 0 10px, 10px -10px, -10px 0px'
+                      }}
+                      onMouseDown={startDrawing}
+                      onMouseMove={draw}
+                      onMouseUp={stopDrawing}
+                      onMouseLeave={stopDrawing}
+                      onTouchStart={startDrawing}
+                      onTouchMove={draw}
+                      onTouchEnd={stopDrawing}
+                    />
+                  </div>
+                  <Button className="mt-3" onClick={clearCanvas} size="small">Clear Signature</Button>
                 </div>
               </div>
             </div>
