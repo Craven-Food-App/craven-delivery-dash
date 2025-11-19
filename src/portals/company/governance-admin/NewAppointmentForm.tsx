@@ -65,7 +65,8 @@ const NewAppointmentForm: React.FC = () => {
           .single();
         
         // If no record exists or value is false/null, default formation_mode to true
-        const hasArticlesOnFile = data?.setting_value === 'true' || data?.setting_value === true;
+        const settingValue = data?.setting_value;
+        const hasArticlesOnFile = settingValue === 'true' || settingValue === true;
         setHasArticles(hasArticlesOnFile);
         
         if (!hasArticlesOnFile) {

@@ -177,13 +177,11 @@ export const ExpenseRequestForm: React.FC<ExpenseRequestFormProps> = ({
       // Get user profile for name
       const { data: profile } = await supabase
         .from('user_profiles')
-        .select('first_name, last_name')
+        .select('email')
         .eq('id', user.id)
         .single();
 
-      const requesterName = profile
-        ? `${profile.first_name} ${profile.last_name}`
-        : user.email || 'Unknown';
+      const requesterName = user.email || 'Unknown';
 
       // Determine status based on approval requirements
       const selectedCategory = categories.find(c => c.id === formData.expense_category_id);
@@ -197,7 +195,6 @@ export const ExpenseRequestForm: React.FC<ExpenseRequestFormProps> = ({
       const { data, error } = await supabase
         .from('expense_requests')
         .insert({
-          requester_id: user.id,
           requester_employee_id: employee?.id,
           department_id: formData.department_id || employee?.department_id,
           expense_category_id: formData.expense_category_id,
@@ -212,7 +209,7 @@ export const ExpenseRequestForm: React.FC<ExpenseRequestFormProps> = ({
           payment_method: formData.payment_method,
           vendor_name: formData.vendor_name,
           receipt_urls: receiptUrls,
-        })
+        } as any)
         .select()
         .single();
 
@@ -412,7 +409,8 @@ export const ExpenseRequestForm: React.FC<ExpenseRequestFormProps> = ({
                 <FileButton
                   onChange={(files) => {
                     if (files) {
-                      setReceiptFiles([...receiptFiles, files]);
+                      const fileArray = Array.isArray(files) ? files : [files];
+                      setReceiptFiles([...receiptFiles, ...fileArray]);
                     }
                   }}
                   accept="image/*,application/pdf"

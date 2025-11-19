@@ -414,7 +414,7 @@ export const FinanceDepartmentHierarchy: React.FC = () => {
           <NumberInput
             label="Required Experience (Years)"
             value={formData.required_experience_years}
-            onChange={(value) => setFormData({ ...formData, required_experience_years: value || 0 })}
+            onChange={(value) => setFormData({ ...formData, required_experience_years: Number(value) || 0 })}
           />
 
           <Select
