@@ -177,20 +177,17 @@ const MainHub: React.FC = () => {
     const { email, pin } = values;
 
     try {
-      // Check CEO Master PIN first
-      if (pin === CEO_MASTER_PIN || pin === CEO_PIN) {
-        // Check if email matches CEO pattern OR verify against user profile
-        const { data: profiles } = await supabase.from("user_profiles").select("*").eq("user_id", user.id).single();
+      // First, check CEO PIN using database verification (most secure)
+      if (email.toLowerCase() === 'tstroman.ceo@cravenusa.com') {
+        const { data: isValidPin, error: pinError } = await supabase
+          .rpc('verify_ceo_pin', { 
+            check_email: email.toLowerCase(), 
+            check_pin: pin 
+          });
 
-        const isTorrance =
-          profiles &&
-          (profiles.full_name?.toLowerCase().includes("torrance") ||
-            profiles.full_name?.toLowerCase().includes("stroman") ||
-            email.toLowerCase().includes("torrance") ||
-            email.toLowerCase().includes("stroman") ||
-            email.toLowerCase().includes("tstroman.ceo@cravenusa.com"));
-
-        if (isTorrance) {
+        if (!pinError && isValidPin) {
+          const { data: profiles } = await supabase.from("user_profiles").select("*").eq("user_id", user.id).maybeSingle();
+          
           const ceoInfo: EmployeeInfo = {
             id: user.id,
             employee_number: "CEO001",
@@ -209,7 +206,34 @@ const MainHub: React.FC = () => {
         }
       }
 
-      // Skip CEO PIN check - not in current schema
+      // Fallback: Check CEO Master PIN or hardcoded PIN
+      if (pin === CEO_MASTER_PIN || pin === CEO_PIN) {
+        // Check if email matches CEO pattern
+        const isCEOEmail = email.toLowerCase().includes("torrance") ||
+                          email.toLowerCase().includes("stroman") ||
+                          email.toLowerCase().includes("tstroman.ceo@cravenusa.com");
+
+        if (isCEOEmail) {
+          const { data: profiles } = await supabase.from("user_profiles").select("*").eq("user_id", user.id).maybeSingle();
+
+          const ceoInfo: EmployeeInfo = {
+            id: user.id,
+            employee_number: "CEO001",
+            full_name: profiles?.full_name || "Torrance Stroman",
+            email: user.email || email,
+            position: "Chief Executive Officer",
+            isCEO: true,
+          };
+
+          sessionStorage.setItem("hub_employee_info", JSON.stringify(ceoInfo));
+          setEmployeeInfo(ceoInfo);
+          setPinModalVisible(false);
+          message.success("Welcome, CEO Stroman! PIN verified.");
+          setPinLoading(false);
+          return;
+        }
+      }
+
       // Check CEO role via exec_users table
       // @ts-ignore - Type instantiation depth issue
       const { data: execUser } = await supabase
@@ -218,8 +242,8 @@ const MainHub: React.FC = () => {
         .eq("email", email)
         .maybeSingle();
 
-      if (execUser) {
-        const { data: profiles } = await supabase.from("user_profiles").select("*").eq("user_id", user.id).single();
+      if (execUser && pin === CEO_PIN) {
+        const { data: profiles } = await supabase.from("user_profiles").select("*").eq("user_id", user.id).maybeSingle();
         const ceoInfo: EmployeeInfo = {
           id: user.id,
           employee_number: "CEO001",
