@@ -38,7 +38,10 @@ const LeadershipPublicPage: React.FC = () => {
         return;
       }
 
-      setOfficers(data || []);
+      setOfficers((data || []).map((officer: any) => ({
+        ...officer,
+        metadata: typeof officer.metadata === 'string' ? {} : (officer.metadata || {})
+      })) as any);
     } catch (error) {
       console.error('Error:', error);
     } finally {

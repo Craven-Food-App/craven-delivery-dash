@@ -240,7 +240,9 @@ export const BudgetManagement: React.FC = () => {
             </Table.Thead>
             <Table.Tbody>
               {budgets.map(budget => {
-                const utilization = calculateBudgetUtilization(budget);
+                const utilization = budget.allocated_amount > 0 
+                  ? ((budget.spent_amount + budget.committed_amount) / budget.allocated_amount) * 100 
+                  : 0;
                 return (
                   <Table.Tr key={budget.id}>
                     <Table.Td>{budget.budget_name}</Table.Td>
@@ -339,7 +341,7 @@ export const BudgetManagement: React.FC = () => {
                 label="Budget Year"
                 required
                 value={formData.budget_year}
-                onChange={(value) => setFormData({ ...formData, budget_year: value || new Date().getFullYear() })}
+                onChange={(value) => setFormData({ ...formData, budget_year: Number(value) || new Date().getFullYear() })}
               />
             </Grid.Col>
             <Grid.Col span={6}>

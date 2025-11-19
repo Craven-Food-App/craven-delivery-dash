@@ -15,11 +15,7 @@ export const useITHelpDeskTickets = () => {
     try {
       const { data, error } = await supabase
         .from('it_help_desk_tickets')
-        .select(`
-          *,
-          requester:auth.users!requester_id(email),
-          assignee:auth.users!assigned_to(email)
-        `)
+        .select('*')
         .order('created_at', { ascending: false });
 
       if (error) {
@@ -30,7 +26,7 @@ export const useITHelpDeskTickets = () => {
         }
         throw error;
       }
-      setTickets(data || []);
+      setTickets((data || []) as ITHelpDeskTicket[]);
     } catch (error) {
       console.error('Error fetching tickets:', error);
       setTickets([]);
@@ -56,15 +52,12 @@ export const useITHelpDeskMessages = (ticketId: string) => {
     try {
       const { data, error } = await supabase
         .from('it_help_desk_messages')
-        .select(`
-          *,
-          sender:auth.users!sender_id(email)
-        `)
+        .select('*')
         .eq('ticket_id', ticketId)
         .order('created_at', { ascending: true });
 
       if (error) throw error;
-      setMessages(data || []);
+      setMessages((data || []) as ITHelpDeskMessage[]);
     } catch (error) {
       console.error('Error fetching messages:', error);
     } finally {
@@ -88,11 +81,7 @@ export const useCodeChangeRequests = () => {
     try {
       const { data, error } = await supabase
         .from('code_change_requests')
-        .select(`
-          *,
-          developer:auth.users!developer_id(email),
-          reviewer:auth.users!reviewer_id(email)
-        `)
+        .select('*')
         .order('created_at', { ascending: false });
 
       if (error) {
@@ -103,7 +92,7 @@ export const useCodeChangeRequests = () => {
         }
         throw error;
       }
-      setRequests(data || []);
+      setRequests((data || []) as CodeChangeRequest[]);
     } catch (error) {
       console.error('Error fetching code change requests:', error);
       setRequests([]);
@@ -128,15 +117,12 @@ export const useDeveloperPermissions = () => {
     try {
       const { data, error } = await supabase
         .from('developer_permissions')
-        .select(`
-          *,
-          developer:auth.users!developer_id(email)
-        `)
+        .select('*')
         .eq('is_active', true)
         .order('granted_at', { ascending: false });
 
       if (error) throw error;
-      setPermissions(data || []);
+      setPermissions((data || []) as DeveloperPermission[]);
     } catch (error) {
       console.error('Error fetching permissions:', error);
     } finally {
@@ -160,11 +146,7 @@ export const useDeveloperOnboarding = () => {
     try {
       const { data, error } = await supabase
         .from('developer_onboarding')
-        .select(`
-          *,
-          developer:auth.users!developer_id(email),
-          mentor:auth.users!assigned_mentor_id(email)
-        `)
+        .select('*')
         .order('created_at', { ascending: false });
 
       if (error) {
@@ -175,7 +157,7 @@ export const useDeveloperOnboarding = () => {
         }
         throw error;
       }
-      setOnboarding(data || []);
+      setOnboarding((data || []) as DeveloperOnboarding[]);
     } catch (error) {
       console.error('Error fetching onboarding:', error);
       setOnboarding([]);
@@ -200,10 +182,7 @@ export const useKnowledgeBase = (category?: string) => {
     try {
       let query = supabase
         .from('tech_knowledge_base')
-        .select(`
-          *,
-          author:auth.users!author_id(email)
-       `)
+        .select('*')
         .eq('is_published', true)
         .order('created_at', { ascending: false });
 
@@ -213,7 +192,7 @@ export const useKnowledgeBase = (category?: string) => {
 
       const { data, error } = await query;
       if (error) throw error;
-      setArticles(data || []);
+      setArticles((data || []) as KnowledgeBaseArticle[]);
     } catch (error) {
       console.error('Error fetching knowledge base:', error);
     } finally {

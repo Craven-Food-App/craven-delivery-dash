@@ -45,15 +45,12 @@ export default function ITHelpDeskDashboard() {
     try {
       const { data, error } = await supabase
         .from('it_help_desk_messages')
-        .select(`
-          *,
-          sender:auth.users!sender_id(email)
-        `)
+        .select('*')
         .eq('ticket_id', ticket.id)
         .order('created_at', { ascending: true });
 
       if (error) throw error;
-      setMessages(data || []);
+      setMessages((data || []) as ITHelpDeskMessage[]);
       setMessageModalVisible(true);
     } catch (error: any) {
       message.error(error.message || 'Failed to load messages');

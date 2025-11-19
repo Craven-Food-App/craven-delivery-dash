@@ -60,25 +60,10 @@ export default function MorningTechnicalReview() {
         activeIncidents: incidentsRes.data?.length || 0,
       });
 
-      // Fetch real deployments from architecture_changes table
-      const { data: deploymentsData } = await supabase
-        .from('cto_architecture_changes')
-        .select('*')
-        .eq('status', 'completed')
-        .order('deployed_at', { ascending: false })
-        .limit(10);
-      
-      setDeployments((deploymentsData || []).map((d: any) => ({
-        id: d.id,
-        service: d.change_title,
-        version: d.change_type,
-        status: d.status === 'completed' ? 'success' : 'failed',
-        deployed_at: d.deployed_at || d.created_at,
-        deployed_by: d.deployed_by || 'System',
-      })));
+      // Deployments - placeholder for now as table doesn't exist
+      setDeployments([]);
 
-      // Fetch cron jobs from Supabase Edge Functions (if we have a cron_jobs table)
-      // For now, show empty array - can be populated when cron_jobs table exists
+      // Cron jobs - placeholder for now as table doesn't exist
       setCronJobs([]);
     } catch (error) {
       console.error('Error fetching data:', error);

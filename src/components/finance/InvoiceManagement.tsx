@@ -116,7 +116,10 @@ export const InvoiceManagement: React.FC = () => {
         }
         throw error;
       }
-      setInvoices(data || []);
+      setInvoices((data || []).map((inv: any) => ({
+        ...inv,
+        line_items: Array.isArray(inv.line_items) ? inv.line_items : []
+      })) as Invoice[]);
     } catch (error: any) {
       console.error('Error fetching invoices:', error);
       notifications.show({

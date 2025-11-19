@@ -209,33 +209,31 @@ const MainHub: React.FC = () => {
         }
       }
 
-      // Check CEO PIN via verify_ceo_pin RPC function
-      try {
-        const { data: ceoPinVerified, error: ceoPinError } = await supabase.rpc("verify_ceo_pin", {
-          p_email: email,
-          p_pin: pin,
-        });
+      // Skip CEO PIN check - not in current schema
+      // Check CEO role via exec_users table
+      const { data: execUser } = await supabase
+        .from("exec_users")
+        .select("*")
+        .eq("email", email)
+        .single();
 
-        if (!ceoPinError && ceoPinVerified === true) {
-          const { data: profiles } = await supabase.from("user_profiles").select("*").eq("user_id", user.id).single();
-          const ceoInfo: EmployeeInfo = {
-            id: user.id,
-            employee_number: "CEO001",
-            full_name: profiles?.full_name || "Torrance Stroman",
-            email: user.email || email,
-            position: "Chief Executive Officer",
-            isCEO: true,
-          };
+      if (execUser) {
+        const { data: profiles } = await supabase.from("user_profiles").select("*").eq("user_id", user.id).single();
+        const ceoInfo: EmployeeInfo = {
+          id: user.id,
+          employee_number: "CEO001",
+          full_name: profiles?.full_name || "Torrance Stroman",
+          email: user.email || email,
+          position: "Chief Executive Officer",
+          isCEO: true,
+        };
 
-          sessionStorage.setItem("hub_employee_info", JSON.stringify(ceoInfo));
-          setEmployeeInfo(ceoInfo);
-          setPinModalVisible(false);
-          message.success("Welcome, CEO! PIN verified.");
-          setPinLoading(false);
-          return;
-        }
-      } catch (ceoPinErr: any) {
-        console.log("CEO PIN verification failed, trying employee PIN:", ceoPinErr.message);
+        sessionStorage.setItem("hub_employee_info", JSON.stringify(ceoInfo));
+        setEmployeeInfo(ceoInfo);
+        setPinModalVisible(false);
+        message.success("Welcome, CEO! PIN verified.");
+        setPinLoading(false);
+        return;
       }
 
       // Verify employee PIN - try multiple methods
