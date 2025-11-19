@@ -12895,6 +12895,7 @@ export type Database = {
         Returns: boolean
       }
       has_role: { Args: { _role: string; _user_id: string }; Returns: boolean }
+      has_universal_access: { Args: never; Returns: boolean }
       is_admin: { Args: { user_uuid: string }; Returns: boolean }
       is_admin_user: { Args: never; Returns: boolean }
       is_c_level_position: { Args: { position_text: string }; Returns: boolean }
@@ -12903,6 +12904,11 @@ export type Database = {
       is_craven_founder: { Args: never; Returns: boolean }
       is_diamond_driver: { Args: { p_driver_id: string }; Returns: boolean }
       is_executive: { Args: { user_uuid: string }; Returns: boolean }
+      is_universal_ceo: { Args: never; Returns: boolean }
+      is_user_in_exec_users: {
+        Args: { check_user_id: string }
+        Returns: boolean
+      }
       link_document_to_resolution: {
         Args: { doc_id: string; resolution_id: string }
         Returns: undefined
