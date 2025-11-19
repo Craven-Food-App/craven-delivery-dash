@@ -81,6 +81,21 @@ import ExecutiveDocumentSign from "./pages/ExecutiveDocumentSign";
 import ExecutiveSigningPortal from "./pages/ExecutiveSigningPortal";
 import ExecutiveProfile from "./pages/ExecutiveProfile";
 import ExecutiveResetPassword from "./pages/ExecutiveResetPassword";
+import CompanyPortalLayout from "./portals/company/index";
+import CompanyDashboard from "./portals/company/dashboard/CompanyDashboard";
+import GovernanceAdminDashboard from "./portals/company/governance-admin/GovernanceAdminDashboard";
+import AppointmentList from "./portals/company/governance-admin/AppointmentList";
+import NewAppointmentForm from "./portals/company/governance-admin/NewAppointmentForm";
+import ResolutionList from "./portals/company/governance-admin/ResolutionList";
+import OfficerLedger from "./portals/company/governance-admin/OfficerLedger";
+import GovernanceLogList from "./portals/company/governance-admin/GovernanceLogList";
+import BoardDashboard from "./portals/company/board/BoardDashboard";
+import BoardResolutionDetail from "./portals/company/board/BoardResolutionDetail";
+import ExecutiveDashboard from "./portals/company/executives/ExecutiveDashboard";
+import MyAppointment from "./portals/company/executives/MyAppointment";
+import OfficerDirectoryInternal from "./portals/company/executives/OfficerDirectoryInternal";
+import LeadershipPublicPage from "./portals/company/leadership-public/LeadershipPublicPage";
+import { TemplateManager } from "./components/board/TemplateManager";
 
 // Lazy load guide pages
 const AdminGuide = lazy(() => import("./pages/AdminGuide"));
@@ -312,6 +327,22 @@ const App = () => {
                   <Route path="/cto" element={<BusinessAuthGuard><CTOPortal /></BusinessAuthGuard>} />
                   <Route path="/cxo" element={<BusinessAuthGuard><CXOPortal /></BusinessAuthGuard>} />
                   <Route path="/executive-portal/documents" element={<BusinessAuthGuard><ExecutiveDocumentPortal /></BusinessAuthGuard>} />
+                  <Route path="/company/*" element={<CompanyPortalLayout />}>
+                    <Route index element={<CompanyDashboard />} />
+                    <Route path="governance-admin" element={<GovernanceAdminDashboard />} />
+                    <Route path="governance-admin/appointments" element={<AppointmentList />} />
+                    <Route path="governance-admin/appointments/new" element={<NewAppointmentForm />} />
+                    <Route path="governance-admin/resolutions" element={<ResolutionList />} />
+                    <Route path="governance-admin/officers" element={<OfficerLedger />} />
+                    <Route path="governance-admin/logs" element={<GovernanceLogList />} />
+                    <Route path="board" element={<BoardDashboard />} />
+                    <Route path="board/resolution/:id" element={<BoardResolutionDetail />} />
+                    <Route path="executives" element={<ExecutiveDashboard />} />
+                    <Route path="executives/my-appointment" element={<MyAppointment />} />
+                    <Route path="executives/directory" element={<OfficerDirectoryInternal />} />
+                    <Route path="leadership-public" element={<LeadershipPublicPage />} />
+                    <Route path="leadership/templates" element={<TemplateManager />} />
+                  </Route>
                   <Route path="*" element={<Navigate to="/" replace />} />
                 </Routes>
               </BrowserRouter>
@@ -582,6 +613,22 @@ const App = () => {
           <Route path="/coo" element={<BusinessAuthGuard><COOPortal /></BusinessAuthGuard>} />
           <Route path="/cto" element={<BusinessAuthGuard><CTOPortal /></BusinessAuthGuard>} />
           <Route path="/cxo" element={<BusinessAuthGuard><CXOPortal /></BusinessAuthGuard>} />
+          <Route path="/company/*" element={<CompanyPortalLayout />}>
+            <Route index element={<CompanyDashboard />} />
+            <Route path="governance-admin" element={<GovernanceAdminDashboard />} />
+            <Route path="governance-admin/appointments" element={<AppointmentList />} />
+            <Route path="governance-admin/appointments/new" element={<NewAppointmentForm />} />
+            <Route path="governance-admin/resolutions" element={<ResolutionList />} />
+            <Route path="governance-admin/officers" element={<OfficerLedger />} />
+            <Route path="governance-admin/logs" element={<GovernanceLogList />} />
+            <Route path="board" element={<BoardDashboard />} />
+            <Route path="board/resolution/:id" element={<BoardResolutionDetail />} />
+            <Route path="executives" element={<ExecutiveDashboard />} />
+            <Route path="executives/my-appointment" element={<MyAppointment />} />
+            <Route path="executives/directory" element={<OfficerDirectoryInternal />} />
+            <Route path="leadership-public" element={<LeadershipPublicPage />} />
+            <Route path="leadership/templates" element={<TemplateManager />} />
+          </Route>
           <Route path="/marketing-portal" element={<MarketingPortal />} />
           <Route path="/payment-success" element={<PaymentSuccess />} />
           <Route path="/checkout" element={<Checkout />} />

@@ -10,6 +10,21 @@ import App from './App.tsx';
 import './index.css';
 import 'mapbox-gl/dist/mapbox-gl.css';
 
+// Suppress known harmless console warnings
+const originalWarn = console.warn;
+console.warn = (...args: any[]) => {
+  const message = args.join(' ');
+  // Suppress LockManager warnings from Supabase (known browser compatibility issue)
+  if (message.includes('LockManager') || message.includes('@supabase/gotrue-js')) {
+    return;
+  }
+  // Suppress CacheStorage errors from service worker (handled gracefully)
+  if (message.includes('CacheStorage') || message.includes('Failed to open cache')) {
+    return;
+  }
+  originalWarn.apply(console, args);
+};
+
 const theme: MantineThemeOverride = createTheme({
   primaryColor: 'orange',
   fontFamily: 'Inter, system-ui, -apple-system, sans-serif',
@@ -59,7 +74,10 @@ if ('serviceWorker' in navigator) {
         
         // Check for updates every hour
         setInterval(() => {
-          registration.update();
+          registration.update().catch((err) => {
+            // Silently handle update failures
+            console.warn('Service worker update check failed:', err);
+          });
         }, 60 * 60 * 1000);
 
         // Listen for service worker updates
@@ -81,7 +99,12 @@ if ('serviceWorker' in navigator) {
         }
       })
       .catch(err => {
-        console.error('❌ Service Worker registration failed:', err);
+        // Only log if it's not a cache storage error (which can happen in private browsing)
+        if (!err.message?.includes('CacheStorage') && !err.message?.includes('Unexpected internal error')) {
+          console.error('❌ Service Worker registration failed:', err);
+        } else {
+          console.warn('⚠️ Service Worker registration skipped (cache storage unavailable):', err.message);
+        }
       });
 
     // Listen for messages from service worker

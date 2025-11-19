@@ -856,6 +856,14 @@ const MainHub: React.FC = () => {
   // Company-side portals only
   const portals: Portal[] = [
     {
+      id: "company",
+      name: "Company Portal",
+      description: "Restricted – Corporate HQ",
+      icon: LockOutlined,
+      path: "/company",
+      color: "#ff6a00",
+    },
+    {
       id: "admin",
       name: "Admin Portal",
       description: "System administration and operations management",
@@ -939,8 +947,32 @@ const MainHub: React.FC = () => {
   const canCTO = usePermission('cto.view');
   const canHR = usePermission('hr.view');
 
+  const [hasCompanyAccess, setHasCompanyAccess] = useState(false);
+
+  useEffect(() => {
+    const checkCompanyAccess = async () => {
+      try {
+        // Check if user is craven@usa.com first
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user?.email === 'craven@usa.com') {
+          setHasCompanyAccess(true);
+          return;
+        }
+
+        const { fetchUserRoles, hasCompanyPortalAccess } = await import('@/lib/roles');
+        const roles = await fetchUserRoles();
+        const hasAccess = await hasCompanyPortalAccess(roles);
+        setHasCompanyAccess(hasAccess);
+      } catch (error) {
+        console.error('Error checking company access:', error);
+      }
+    };
+    checkCompanyAccess();
+  }, []);
+
   const isPortalAllowed = (id: string): boolean => {
     switch (id) {
+      case 'company': return hasCompanyAccess;
       case 'admin': return canAdmin;
       case 'marketing': return canMarketing;
       case 'board': return canBoard || canCEO; // CEOs can access board

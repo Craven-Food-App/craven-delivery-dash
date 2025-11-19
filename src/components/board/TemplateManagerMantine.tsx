@@ -246,9 +246,6 @@ export const TemplateManager: React.FC = () => {
     }
 
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('Not authenticated');
-
       const templateData = {
         ...emailForm,
         variables: emailForm.variables,
@@ -267,10 +264,7 @@ export const TemplateManager: React.FC = () => {
           color: 'green',
         });
       } else {
-        const { error } = await supabase.from('email_templates').insert({
-          ...templateData,
-          created_by: user.id,
-        });
+        const { error } = await supabase.from('email_templates').insert(templateData);
 
         if (error) throw error;
         notifications.show({
@@ -302,9 +296,6 @@ export const TemplateManager: React.FC = () => {
     }
 
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('Not authenticated');
-
       const templateData = {
         ...documentForm,
         placeholders: documentForm.placeholders,
@@ -323,10 +314,7 @@ export const TemplateManager: React.FC = () => {
           color: 'green',
         });
       } else {
-        const { error } = await supabase.from('document_templates').insert({
-          ...templateData,
-          created_by: user.id,
-        });
+        const { error } = await supabase.from('document_templates').insert(templateData);
 
         if (error) throw error;
         notifications.show({
@@ -999,4 +987,6 @@ export const TemplateManager: React.FC = () => {
     </Container>
   );
 };
+
+
 
