@@ -8,6 +8,7 @@ import {
   Group,
   Modal,
   Input,
+  TextInput,
   Progress,
   Alert,
   Loader,
@@ -423,12 +424,13 @@ const MyDocuments: React.FC = () => {
         if (!currentExec) throw new Error('Executive record not found');
 
         // Check if document already exists
+        // @ts-ignore - Type instantiation depth issue
         const { data: existingDoc } = await supabase
           .from('executive_documents')
           .select('id')
           .eq('appointment_id', selectedDocument.appointment_id)
           .eq('type', selectedDocument.type)
-          .single();
+          .maybeSingle();
 
         if (existingDoc) {
           documentId = existingDoc.id;
@@ -552,7 +554,7 @@ const MyDocuments: React.FC = () => {
                         Created: {dayjs(doc.created_at).format('MMMM D, YYYY')}
                       </Text>
                       {!doc.can_sign && doc.blocking_documents && doc.blocking_documents.length > 0 && (
-                        <Alert color="yellow" size="sm" icon={<IconLock size={16} />}>
+                        <Alert color="yellow" icon={<IconLock size={16} />}>
                           Previous document must be signed first
                         </Alert>
                       )}
@@ -687,7 +689,7 @@ const MyDocuments: React.FC = () => {
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
               <Stack gap="md">
-                <Input
+                <TextInput
                   label="Type your full legal name"
                   placeholder="Full legal name"
                   value={typedName}
