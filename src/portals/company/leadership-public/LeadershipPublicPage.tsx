@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Container, Title, Text, Stack, Card, Grid, Badge, Group, Loader, Center } from '@mantine/core';
+import { Container, Title, Text, Stack, Card, Badge, Loader, Center } from '@mantine/core';
 import { supabase } from '@/integrations/supabase/client';
 import dayjs from 'dayjs';
 
@@ -12,6 +12,19 @@ interface CorporateOfficer {
     bio?: string;
   };
 }
+
+const getHierarchyLevel = (title: string): number => {
+  const lowerTitle = title.toLowerCase();
+  if (lowerTitle.includes('ceo') || lowerTitle.includes('chief executive')) return 1;
+  if (lowerTitle.includes('president') && !lowerTitle.includes('vice')) return 2;
+  if (lowerTitle.includes('cfo') || lowerTitle.includes('coo') || lowerTitle.includes('cto') || 
+      lowerTitle.includes('chief financial') || lowerTitle.includes('chief operating') || 
+      lowerTitle.includes('chief technology')) return 3;
+  if (lowerTitle.includes('chief')) return 4;
+  if (lowerTitle.includes('vice president') || lowerTitle.includes('vp')) return 5;
+  if (lowerTitle.includes('director')) return 6;
+  return 7;
+};
 
 const LeadershipPublicPage: React.FC = () => {
   const [officers, setOfficers] = useState<CorporateOfficer[]>([]);
@@ -27,8 +40,7 @@ const LeadershipPublicPage: React.FC = () => {
       const { data, error } = await supabase
         .from('corporate_officers')
         .select('id, full_name, title, effective_date, metadata')
-        .eq('status', 'ACTIVE')
-        .order('title', { ascending: true });
+        .eq('status', 'ACTIVE');
 
       if (error) {
         if (error.code !== '42P01') {
@@ -38,10 +50,19 @@ const LeadershipPublicPage: React.FC = () => {
         return;
       }
 
-      setOfficers((data || []).map((officer: any) => ({
+      const processedOfficers = (data || []).map((officer: any) => ({
         ...officer,
         metadata: typeof officer.metadata === 'string' ? {} : (officer.metadata || {})
-      })) as any);
+      }));
+
+      // Sort by hierarchy level, then by title
+      processedOfficers.sort((a, b) => {
+        const levelDiff = getHierarchyLevel(a.title) - getHierarchyLevel(b.title);
+        if (levelDiff !== 0) return levelDiff;
+        return a.title.localeCompare(b.title);
+      });
+
+      setOfficers(processedOfficers as any);
     } catch (error) {
       console.error('Error:', error);
     } finally {
@@ -76,8 +97,8 @@ const LeadershipPublicPage: React.FC = () => {
             padding="xl"
             radius="md"
             style={{
-              backgroundColor: '#ffffff',
-              border: '1px solid #e5e7eb',
+              backgroundColor: 'hsl(var(--card))',
+              border: '1px solid hsl(var(--border))',
             }}
           >
             <Center>
@@ -85,40 +106,69 @@ const LeadershipPublicPage: React.FC = () => {
             </Center>
           </Card>
         ) : (
-          <Grid>
-            {officers.map((officer) => (
-              <Grid.Col key={officer.id} span={{ base: 12, sm: 6, md: 4 }}>
-                <Card
-                  padding="lg"
-                  radius="md"
-                  style={{
-                    backgroundColor: '#ffffff',
-                    border: '1px solid #e5e7eb',
-                    height: '100%',
-                  }}
-                >
-                  <Stack gap="md">
-                    <div>
-                      <Text fw={600} size="xl" c="dark" mb="xs">
-                        {officer.full_name}
-                      </Text>
-                      <Badge color="orange" variant="light">
-                        {officer.title}
-                      </Badge>
-                    </div>
-                    {officer.metadata?.bio && (
-                      <Text size="sm" c="dimmed" lineClamp={3}>
-                        {officer.metadata.bio}
-                      </Text>
-                    )}
-                    <Text size="xs" c="dimmed">
-                      Since {dayjs(officer.effective_date).format('MMMM YYYY')}
-                    </Text>
-                  </Stack>
-                </Card>
-              </Grid.Col>
-            ))}
-          </Grid>
+          <div className="space-y-8">
+            {/* Group officers by hierarchy level */}
+            {Array.from(new Set(officers.map(o => getHierarchyLevel(o.title)))).map(level => {
+              const levelOfficers = officers.filter(o => getHierarchyLevel(o.title) === level);
+              const isTopLevel = level === 1;
+              const isSecondLevel = level === 2 || level === 3;
+              
+              return (
+                <div key={level} className="space-y-4">
+                  <div className={`grid gap-6 ${
+                    isTopLevel ? 'grid-cols-1 max-w-2xl mx-auto' : 
+                    isSecondLevel ? 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3' :
+                    'grid-cols-1 md:grid-cols-2 lg:grid-cols-4'
+                  }`}>
+                    {levelOfficers.map((officer, idx) => (
+                      <Card
+                        key={officer.id}
+                        padding="lg"
+                        radius="md"
+                        className="relative"
+                        style={{
+                          backgroundColor: 'hsl(var(--card))',
+                          border: `2px solid ${isTopLevel ? 'hsl(var(--primary))' : 'hsl(var(--border))'}`,
+                          height: '100%',
+                        }}
+                      >
+                        <Stack gap="md">
+                          <div>
+                            <Text fw={600} size={isTopLevel ? "xl" : "lg"} c="foreground" mb="xs">
+                              {officer.full_name}
+                            </Text>
+                            <Badge 
+                              color="orange" 
+                              variant={isTopLevel ? "filled" : "light"}
+                              size={isTopLevel ? "lg" : "md"}
+                            >
+                              {officer.title}
+                            </Badge>
+                          </div>
+                          {officer.metadata?.bio && (
+                            <Text size="sm" c="dimmed" lineClamp={isTopLevel ? 4 : 3}>
+                              {officer.metadata.bio}
+                            </Text>
+                          )}
+                          <Text size="xs" c="dimmed">
+                            Since {dayjs(officer.effective_date).format('MMMM YYYY')}
+                          </Text>
+                        </Stack>
+                        
+                        {/* Connection line to next level */}
+                        {idx === 0 && level < Math.max(...officers.map(o => getHierarchyLevel(o.title))) && (
+                          <div 
+                            className="absolute left-1/2 -bottom-6 w-0.5 h-6 bg-border"
+                            style={{ transform: 'translateX(-50%)' }}
+                          />
+                        )}
+                      </Card>
+                    ))}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
         )}
       </Stack>
     </Container>
