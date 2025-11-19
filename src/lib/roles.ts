@@ -8,8 +8,8 @@ export async function fetchUserRoles(): Promise<string[]> {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return [];
 
-    // SPECIAL CASE: craven@usa.com (Torrance Stroman) gets ALL roles
-    if (user.email === 'craven@usa.com') {
+    // SPECIAL CASE: tstroman.ceo@cravenusa.com (Torrance Stroman CEO account) gets ALL company/executive roles
+    if (user.email === 'tstroman.ceo@cravenusa.com') {
       return [
         'CRAVEN_FOUNDER',
         'CRAVEN_CORPORATE_SECRETARY',
@@ -68,9 +68,9 @@ export const isCOO = (roles: string[]) => roles.includes('CRAVEN_COO');
  * Check if user has high-level company portal access
  */
 export async function hasCompanyPortalAccess(roles?: string[]): Promise<boolean> {
-  // Check if user is craven@usa.com first
+  // Check if user is tstroman.ceo@cravenusa.com first (CEO executive account)
   const { data: { user } } = await supabase.auth.getUser();
-  if (user?.email === 'craven@usa.com') {
+  if (user?.email === 'tstroman.ceo@cravenusa.com') {
     return true;
   }
   
@@ -90,9 +90,8 @@ export async function hasCompanyPortalAccess(roles?: string[]): Promise<boolean>
  * Check if user can manage governance (Founder or Corporate Secretary)
  */
 export function canManageGovernance(roles: string[]): boolean {
-  // Check if user is craven@usa.com
   // Note: This is a synchronous check, so we check roles array
-  // The roles array should already include all roles for craven@usa.com
+  // The roles array should already include all roles for tstroman.ceo@cravenusa.com
   return hasAnyRole(roles, ['CRAVEN_FOUNDER', 'CRAVEN_CORPORATE_SECRETARY']);
 }
 
@@ -100,7 +99,7 @@ export function canManageGovernance(roles: string[]): boolean {
  * Check if user can vote on board resolutions
  */
 export function canVoteOnResolutions(roles: string[]): boolean {
-  // craven@usa.com always has access (roles array should include CRAVEN_BOARD_MEMBER)
+  // tstroman.ceo@cravenusa.com always has access (roles array should include CRAVEN_BOARD_MEMBER)
   return roles.includes('CRAVEN_BOARD_MEMBER') || roles.includes('CRAVEN_FOUNDER');
 }
 

@@ -272,7 +272,7 @@ export const OfficerAppointmentWorkflow: React.FC = () => {
     const fiscalYearEnd = await getCompanySetting('fiscal_year_end', 'December 31');
     const incorporatorName = await getCompanySetting('incorporator_name', 'Torrance Stroman');
     const incorporatorAddress = await getCompanySetting('incorporator_address', '123 Main St, Cleveland, OH 44101');
-    const incorporatorEmail = await getCompanySetting('incorporator_email', 'craven@usa.com');
+    const incorporatorEmail = await getCompanySetting('incorporator_email', 'tstroman.ceo@cravenusa.com');
     const county = await getCompanySetting('county', 'Cuyahoga');
 
     const baseData: Record<string, any> = {

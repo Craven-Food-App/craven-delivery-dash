@@ -145,7 +145,7 @@ export const ExecutiveComms: React.FC = () => {
 
       if (execError) {
         // Try CEO bypass
-        if (user.email === 'craven@usa.com') {
+        if (user.email === 'tstroman.ceo@cravenusa.com') {
           const { data: ceoExec } = await supabase
             .from('exec_users')
             .select('id')

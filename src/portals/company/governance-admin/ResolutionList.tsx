@@ -52,7 +52,7 @@ const ResolutionList: React.FC = () => {
   const checkPermissions = async () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
-      if (user?.email === 'craven@usa.com') {
+      if (user?.email === 'tstroman.ceo@cravenusa.com') {
         setCanManage(true);
         return;
       }

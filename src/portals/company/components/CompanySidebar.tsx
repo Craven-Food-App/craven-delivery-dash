@@ -23,9 +23,9 @@ const CompanySidebar: React.FC = () => {
     let mounted = true;
     const loadRoles = async () => {
       try {
-        // Check if user is craven@usa.com first
+        // Check if user is tstroman.ceo@cravenusa.com first (CEO executive account)
         const { data: { user } } = await supabase.auth.getUser();
-        if (user?.email === 'craven@usa.com' && mounted) {
+        if (user?.email === 'tstroman.ceo@cravenusa.com' && mounted) {
           setUserRoles([
             'CRAVEN_FOUNDER',
             'CRAVEN_CORPORATE_SECRETARY',

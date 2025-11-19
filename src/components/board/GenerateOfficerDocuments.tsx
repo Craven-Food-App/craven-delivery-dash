@@ -233,7 +233,7 @@ const buildStockIssuanceData = (
     related_agreement_name: "Founders' Agreement",
     notice_contact_name: 'Torrance Stroman',
     notice_contact_title: 'CEO',
-    notice_contact_email: 'craven@usa.com',
+    notice_contact_email: 'tstroman.ceo@cravenusa.com',
   };
 };
 
@@ -253,7 +253,7 @@ const generateDocumentData = async (exec: Executive, docType: string) => {
     'incorporator_address',
     '123 Main St, Cleveland, OH 44101'
   );
-  const incorporatorEmail = await getCompanySetting('incorporator_email', 'craven@usa.com');
+  const incorporatorEmail = await getCompanySetting('incorporator_email', 'tstroman.ceo@cravenusa.com');
   const county = await getCompanySetting('county', 'Cuyahoga');
 
   const officersRaw = await getExecutiveData();

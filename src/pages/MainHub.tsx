@@ -133,6 +133,7 @@ const MainHub: React.FC = () => {
 
   // CEO Master PIN - Torrance Stroman
   const CEO_MASTER_PIN = "999999";
+  const CEO_PIN = "020304"; // CEO PIN for tstroman.ceo@cravenusa.com
   const CEO_EMAIL_PATTERN = /torrance|stroman/i;
 
   useEffect(() => {
@@ -177,7 +178,7 @@ const MainHub: React.FC = () => {
 
     try {
       // Check CEO Master PIN first
-      if (pin === CEO_MASTER_PIN) {
+      if (pin === CEO_MASTER_PIN || pin === CEO_PIN) {
         // Check if email matches CEO pattern OR verify against user profile
         const { data: profiles } = await supabase.from("user_profiles").select("*").eq("user_id", user.id).single();
 
@@ -186,7 +187,8 @@ const MainHub: React.FC = () => {
           (profiles.full_name?.toLowerCase().includes("torrance") ||
             profiles.full_name?.toLowerCase().includes("stroman") ||
             email.toLowerCase().includes("torrance") ||
-            email.toLowerCase().includes("stroman"));
+            email.toLowerCase().includes("stroman") ||
+            email.toLowerCase().includes("tstroman.ceo@cravenusa.com"));
 
         if (isTorrance) {
           const ceoInfo: EmployeeInfo = {
@@ -201,10 +203,39 @@ const MainHub: React.FC = () => {
           sessionStorage.setItem("hub_employee_info", JSON.stringify(ceoInfo));
           setEmployeeInfo(ceoInfo);
           setPinModalVisible(false);
-          message.success("Welcome, CEO Stroman! Master PIN verified.");
+          message.success("Welcome, CEO Stroman! PIN verified.");
           setPinLoading(false);
           return;
         }
+      }
+
+      // Check CEO PIN via verify_ceo_pin RPC function
+      try {
+        const { data: ceoPinVerified, error: ceoPinError } = await supabase.rpc("verify_ceo_pin", {
+          p_email: email,
+          p_pin: pin,
+        });
+
+        if (!ceoPinError && ceoPinVerified === true) {
+          const { data: profiles } = await supabase.from("user_profiles").select("*").eq("user_id", user.id).single();
+          const ceoInfo: EmployeeInfo = {
+            id: user.id,
+            employee_number: "CEO001",
+            full_name: profiles?.full_name || "Torrance Stroman",
+            email: user.email || email,
+            position: "Chief Executive Officer",
+            isCEO: true,
+          };
+
+          sessionStorage.setItem("hub_employee_info", JSON.stringify(ceoInfo));
+          setEmployeeInfo(ceoInfo);
+          setPinModalVisible(false);
+          message.success("Welcome, CEO! PIN verified.");
+          setPinLoading(false);
+          return;
+        }
+      } catch (ceoPinErr: any) {
+        console.log("CEO PIN verification failed, trying employee PIN:", ceoPinErr.message);
       }
 
       // Verify employee PIN - try multiple methods
@@ -952,9 +983,9 @@ const MainHub: React.FC = () => {
   useEffect(() => {
     const checkCompanyAccess = async () => {
       try {
-        // Check if user is craven@usa.com first
+        // Check if user is tstroman.ceo@cravenusa.com first (CEO executive account)
         const { data: { user } } = await supabase.auth.getUser();
-        if (user?.email === 'craven@usa.com') {
+        if (user?.email === 'tstroman.ceo@cravenusa.com') {
           setHasCompanyAccess(true);
           return;
         }

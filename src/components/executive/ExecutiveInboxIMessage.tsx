@@ -104,7 +104,7 @@ const MessageBubble: React.FC<{
 
   // Check if sender is CEO (Torrance Stroman)
   const isCEO = message.senderRole === 'ceo' || 
-                message.senderEmail === 'craven@usa.com' ||
+                message.senderEmail === 'tstroman.ceo@cravenusa.com' ||
                 message.senderName.toLowerCase().includes('torrance') ||
                 message.senderName.toLowerCase().includes('stroman');
 

@@ -114,7 +114,7 @@ export function CompanySettingsManager() {
           fiscal_year_end: 'December 31',
           incorporator_name: 'Torrance Stroman',
           incorporator_address: '123 Main St, Cleveland, OH 44101',
-          incorporator_email: 'craven@usa.com',
+          incorporator_email: 'tstroman.ceo@cravenusa.com',
           county: 'Cuyahoga',
         }}
       >
@@ -210,7 +210,7 @@ export function CompanySettingsManager() {
                 { type: 'email', message: 'Please enter a valid email' },
               ]}
             >
-              <Input placeholder="craven@usa.com" />
+              <Input placeholder="tstroman.ceo@cravenusa.com" />
             </Form.Item>
           </Col>
         </Row>

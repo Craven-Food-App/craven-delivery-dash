@@ -31,8 +31,8 @@ export const CompanySecureRoute: React.FC<CompanySecureRouteProps> = ({
           return;
         }
 
-        // SPECIAL CASE: craven@usa.com (Torrance Stroman) always has access to everything
-        if (user.email === 'craven@usa.com') {
+        // SPECIAL CASE: tstroman.ceo@cravenusa.com (Torrance Stroman CEO account) always has access to company portal
+        if (user.email === 'tstroman.ceo@cravenusa.com') {
           setIsAuthorized(true);
           setLoading(false);
           return;

@@ -163,7 +163,8 @@ export const useExecAuth = (requiredRole?: 'ceo' | 'board_member' | 'cfo' | 'coo
 
       setUser(currentUser);
 
-      if (currentUser.email === 'craven@usa.com') {
+      // CEO executive account (company/business side)
+      if (currentUser.email === 'tstroman.ceo@cravenusa.com') {
         const ownerExec: ExecUser = {
           id: currentUser.id,
           user_id: currentUser.id,

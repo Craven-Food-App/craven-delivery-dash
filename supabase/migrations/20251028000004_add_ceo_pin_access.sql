@@ -27,13 +27,18 @@ ON CONFLICT (user_email) DO NOTHING;
 CREATE OR REPLACE FUNCTION public.verify_ceo_pin(p_email TEXT, p_pin TEXT)
 RETURNS BOOLEAN AS $$
 DECLARE
-  stored_hash TEXT;
+  stored_pin TEXT;
 BEGIN
-  SELECT pin_hash INTO stored_hash
+  SELECT pin_hash INTO stored_pin
   FROM public.ceo_access_credentials
   WHERE user_email = p_email;
   
-  IF stored_hash IS NULL THEN
+  IF stored_pin IS NULL THEN
+    RETURN FALSE;
+  END IF;
+  
+  -- Verify PIN (plain text comparison since we're storing plain text)
+  IF stored_pin != p_pin THEN
     RETURN FALSE;
   END IF;
   
@@ -44,8 +49,6 @@ BEGIN
     access_count = access_count + 1
   WHERE user_email = p_email;
   
-  -- In production, use proper bcrypt verification
-  -- For now, doing simple comparison (you'll implement bcrypt in the app)
   RETURN TRUE;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
@@ -66,5 +69,16 @@ GRANT SELECT ON public.ceo_access_credentials TO authenticated;
 GRANT EXECUTE ON FUNCTION public.verify_ceo_pin(TEXT, TEXT) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.is_ceo_authorized(TEXT) TO authenticated;
 
-CREATE INDEX idx_ceo_access_email ON public.ceo_access_credentials(user_email);
+-- Create index if it doesn't exist
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_indexes 
+    WHERE schemaname = 'public' 
+    AND tablename = 'ceo_access_credentials' 
+    AND indexname = 'idx_ceo_access_email'
+  ) THEN
+    CREATE INDEX idx_ceo_access_email ON public.ceo_access_credentials(user_email);
+  END IF;
+END $$;
 
