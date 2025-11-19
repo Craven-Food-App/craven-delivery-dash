@@ -44,6 +44,8 @@ const ExecutiveSigningPortal = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isSigning, setIsSigning] = useState(false);
+  const [documentHtmlContent, setDocumentHtmlContent] = useState<string | null>(null);
+  const [documentLoading, setDocumentLoading] = useState(false);
 
   // Fetch documents by token
   useEffect(() => {
@@ -108,6 +110,22 @@ const ExecutiveSigningPortal = () => {
     );
     const signedDocs = Object.keys(signedDocuments).length;
     return totalDocs > 0 ? Math.round((signedDocs / totalDocs) * 100) : 0;
+  };
+
+  const isHtmlFile = (url: string): boolean => {
+    return url.toLowerCase().endsWith('.html') || url.toLowerCase().includes('.html?');
+  };
+
+  const fetchHtmlContent = async (url: string): Promise<string | null> => {
+    try {
+      const response = await fetch(url);
+      if (!response.ok) return null;
+      const html = await response.text();
+      return html;
+    } catch (error) {
+      console.error('Error fetching HTML content:', error);
+      return null;
+    }
   };
 
   // Handle document signing
@@ -422,12 +440,20 @@ const ExecutiveSigningPortal = () => {
                               </a>
                               {!signed && (
                                 <button
-                                  onClick={() => {
-                                    if (canSign) {
-                                      setCurrentDocument(doc);
-                                      setShowSignModal(true);
-                                    }
-                                  }}
+                              onClick={async () => {
+                                if (canSign) {
+                                  setCurrentDocument(doc);
+                                  setShowSignModal(true);
+                                  setDocumentHtmlContent(null);
+                                  
+                                  if (doc.fileUrl && isHtmlFile(doc.fileUrl)) {
+                                    setDocumentLoading(true);
+                                    const htmlContent = await fetchHtmlContent(doc.fileUrl);
+                                    setDocumentHtmlContent(htmlContent);
+                                    setDocumentLoading(false);
+                                  }
+                                }
+                              }}
                                   disabled={!canSign}
                                   className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
                                     canSign
@@ -510,6 +536,7 @@ const ExecutiveSigningPortal = () => {
             setShowSignModal(false);
             setTypedName('');
             setCurrentDocument(null);
+            setDocumentHtmlContent(null);
           }
         }}
         title={currentDocument ? `Sign: ${currentDocument.name}` : 'Sign Document'}
@@ -522,12 +549,24 @@ const ExecutiveSigningPortal = () => {
           <div className="space-y-6">
             {/* Document Preview */}
             <div className="bg-gray-50 border border-gray-200 rounded-lg overflow-hidden">
-              <iframe
-                src={currentDocument.fileUrl}
-                className="w-full"
-                style={{ height: '400px' }}
-                title="Document Preview"
-              />
+              {documentLoading ? (
+                <div className="flex items-center justify-center" style={{ height: '400px' }}>
+                  <Loader className="w-8 h-8 text-indigo-600 animate-spin" />
+                </div>
+              ) : isHtmlFile(currentDocument.fileUrl) && documentHtmlContent ? (
+                <div
+                  className="w-full overflow-auto p-4 bg-white"
+                  style={{ height: '400px' }}
+                  dangerouslySetInnerHTML={{ __html: documentHtmlContent }}
+                />
+              ) : (
+                <iframe
+                  src={currentDocument.fileUrl}
+                  className="w-full"
+                  style={{ height: '400px' }}
+                  title="Document Preview"
+                />
+              )}
             </div>
 
             {/* Enhanced Signature Pad */}

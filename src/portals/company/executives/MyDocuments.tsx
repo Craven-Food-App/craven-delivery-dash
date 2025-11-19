@@ -68,6 +68,8 @@ const MyDocuments: React.FC = () => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const [isDrawing, setIsDrawing] = useState(false);
   const [isSigning, setIsSigning] = useState(false);
+  const [documentHtmlContent, setDocumentHtmlContent] = useState<string | null>(null);
+  const [documentLoading, setDocumentLoading] = useState(false);
 
   useEffect(() => {
     if (!authLoading && execUser) {
@@ -270,12 +272,36 @@ const MyDocuments: React.FC = () => {
     return <Badge>{doc.status}</Badge>;
   };
 
-  const handleViewDocument = (doc: ExecutiveDocument) => {
-    setSelectedDocument(doc);
-    setViewModalVisible(true);
+  const isHtmlFile = (url: string): boolean => {
+    return url.toLowerCase().endsWith('.html') || url.toLowerCase().includes('.html?');
   };
 
-  const handleSignDocument = (doc: ExecutiveDocument) => {
+  const fetchHtmlContent = async (url: string): Promise<string | null> => {
+    try {
+      const response = await fetch(url);
+      if (!response.ok) return null;
+      const html = await response.text();
+      return html;
+    } catch (error) {
+      console.error('Error fetching HTML content:', error);
+      return null;
+    }
+  };
+
+  const handleViewDocument = async (doc: ExecutiveDocument) => {
+    setSelectedDocument(doc);
+    setViewModalVisible(true);
+    setDocumentHtmlContent(null);
+    
+    if (doc.file_url && isHtmlFile(doc.file_url)) {
+      setDocumentLoading(true);
+      const htmlContent = await fetchHtmlContent(doc.file_url);
+      setDocumentHtmlContent(htmlContent);
+      setDocumentLoading(false);
+    }
+  };
+
+  const handleSignDocument = async (doc: ExecutiveDocument) => {
     if (doc.signature_status === 'signed') {
       notifications.show({
         title: 'Already Signed',
@@ -286,6 +312,14 @@ const MyDocuments: React.FC = () => {
     }
     setSelectedDocument(doc);
     setSignModalVisible(true);
+    setDocumentHtmlContent(null);
+    
+    if (doc.file_url && isHtmlFile(doc.file_url)) {
+      setDocumentLoading(true);
+      const htmlContent = await fetchHtmlContent(doc.file_url);
+      setDocumentHtmlContent(htmlContent);
+      setDocumentLoading(false);
+    }
   };
 
   // Initialize canvas
@@ -648,17 +682,38 @@ const MyDocuments: React.FC = () => {
         onClose={() => {
           setViewModalVisible(false);
           setSelectedDocument(null);
+          setDocumentHtmlContent(null);
         }}
         title={selectedDocument ? `View: ${getDocumentTypeName(selectedDocument.type)}` : 'View Document'}
         size="xl"
       >
         {selectedDocument?.file_url && (
-          <iframe
-            src={selectedDocument.file_url}
-            className="w-full"
-            style={{ height: '600px', border: '1px solid #ddd', borderRadius: '4px' }}
-            title="Document Viewer"
-          />
+          <>
+            {documentLoading ? (
+              <Center h={600}>
+                <Loader size="lg" />
+              </Center>
+            ) : isHtmlFile(selectedDocument.file_url) && documentHtmlContent ? (
+              <div
+                style={{
+                  height: '600px',
+                  border: '1px solid #ddd',
+                  borderRadius: '4px',
+                  overflow: 'auto',
+                  padding: '1rem',
+                  backgroundColor: '#fff',
+                }}
+                dangerouslySetInnerHTML={{ __html: documentHtmlContent }}
+              />
+            ) : (
+              <iframe
+                src={selectedDocument.file_url}
+                className="w-full"
+                style={{ height: '600px', border: '1px solid #ddd', borderRadius: '4px' }}
+                title="Document Viewer"
+              />
+            )}
+          </>
         )}
       </Modal>
 
@@ -670,6 +725,7 @@ const MyDocuments: React.FC = () => {
             setSignModalVisible(false);
             setSelectedDocument(null);
             setTypedName('');
+            setDocumentHtmlContent(null);
             clearCanvas();
           }
         }}
@@ -727,11 +783,32 @@ const MyDocuments: React.FC = () => {
               <div>
                 <Text size="sm" fw={500} mb="xs">Document Preview</Text>
                 {selectedDocument.file_url && (
-                  <iframe
-                    src={selectedDocument.file_url}
-                    style={{ width: '100%', height: '400px', border: '1px solid #ddd', borderRadius: '4px' }}
-                    title="Document Preview"
-                  />
+                  <>
+                    {documentLoading ? (
+                      <Center h={400}>
+                        <Loader size="md" />
+                      </Center>
+                    ) : isHtmlFile(selectedDocument.file_url) && documentHtmlContent ? (
+                      <div
+                        style={{
+                          width: '100%',
+                          height: '400px',
+                          border: '1px solid #ddd',
+                          borderRadius: '4px',
+                          overflow: 'auto',
+                          padding: '1rem',
+                          backgroundColor: '#fff',
+                        }}
+                        dangerouslySetInnerHTML={{ __html: documentHtmlContent }}
+                      />
+                    ) : (
+                      <iframe
+                        src={selectedDocument.file_url}
+                        style={{ width: '100%', height: '400px', border: '1px solid #ddd', borderRadius: '4px' }}
+                        title="Document Preview"
+                      />
+                    )}
+                  </>
                 )}
               </div>
             </div>

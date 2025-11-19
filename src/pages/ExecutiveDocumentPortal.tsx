@@ -39,6 +39,8 @@ export const ExecutiveDocumentPortal: React.FC = () => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const [isDrawing, setIsDrawing] = useState(false);
   const [isSigning, setIsSigning] = useState(false);
+  const [documentHtmlContent, setDocumentHtmlContent] = useState<string | null>(null);
+  const [documentLoading, setDocumentLoading] = useState(false);
 
   useEffect(() => {
     if (!authLoading && !isAuthorized) {
@@ -141,18 +143,50 @@ export const ExecutiveDocumentPortal: React.FC = () => {
       .join(' ');
   };
 
-  const handleViewDocument = (doc: ExecutiveDocument) => {
-    setSelectedDocument(doc);
-    setViewModalVisible(true);
+  const isHtmlFile = (url: string): boolean => {
+    return url.toLowerCase().endsWith('.html') || url.toLowerCase().includes('.html?');
   };
 
-  const handleSignDocument = (doc: ExecutiveDocument) => {
+  const fetchHtmlContent = async (url: string): Promise<string | null> => {
+    try {
+      const response = await fetch(url);
+      if (!response.ok) return null;
+      const html = await response.text();
+      return html;
+    } catch (error) {
+      console.error('Error fetching HTML content:', error);
+      return null;
+    }
+  };
+
+  const handleViewDocument = async (doc: ExecutiveDocument) => {
+    setSelectedDocument(doc);
+    setViewModalVisible(true);
+    setDocumentHtmlContent(null);
+    
+    if (doc.file_url && isHtmlFile(doc.file_url)) {
+      setDocumentLoading(true);
+      const htmlContent = await fetchHtmlContent(doc.file_url);
+      setDocumentHtmlContent(htmlContent);
+      setDocumentLoading(false);
+    }
+  };
+
+  const handleSignDocument = async (doc: ExecutiveDocument) => {
     if (doc.signature_status === 'signed') {
       message.info('This document has already been signed');
       return;
     }
     setSelectedDocument(doc);
     setSignModalVisible(true);
+    setDocumentHtmlContent(null);
+    
+    if (doc.file_url && isHtmlFile(doc.file_url)) {
+      setDocumentLoading(true);
+      const htmlContent = await fetchHtmlContent(doc.file_url);
+      setDocumentHtmlContent(htmlContent);
+      setDocumentLoading(false);
+    }
   };
 
   // Initialize canvas when modal opens
@@ -505,6 +539,7 @@ export const ExecutiveDocumentPortal: React.FC = () => {
         onCancel={() => {
           setViewModalVisible(false);
           setSelectedDocument(null);
+          setDocumentHtmlContent(null);
         }}
         footer={[
           <Button key="close" onClick={() => {
@@ -529,12 +564,30 @@ export const ExecutiveDocumentPortal: React.FC = () => {
       >
         {selectedDocument?.file_url && (
           <div className="mt-4">
-            <iframe
-              src={selectedDocument.file_url}
-              className="w-full"
-              style={{ height: '600px', border: '1px solid #ddd', borderRadius: '4px' }}
-              title="Document Viewer"
-            />
+            {documentLoading ? (
+              <div className="flex items-center justify-center" style={{ height: '600px' }}>
+                <LoadingOutlined style={{ fontSize: 48 }} spin />
+              </div>
+            ) : isHtmlFile(selectedDocument.file_url) && documentHtmlContent ? (
+              <div
+                style={{
+                  height: '600px',
+                  border: '1px solid #ddd',
+                  borderRadius: '4px',
+                  overflow: 'auto',
+                  padding: '1rem',
+                  backgroundColor: '#fff',
+                }}
+                dangerouslySetInnerHTML={{ __html: documentHtmlContent }}
+              />
+            ) : (
+              <iframe
+                src={selectedDocument.file_url}
+                className="w-full"
+                style={{ height: '600px', border: '1px solid #ddd', borderRadius: '4px' }}
+                title="Document Viewer"
+              />
+            )}
           </div>
         )}
       </Modal>
@@ -547,6 +600,7 @@ export const ExecutiveDocumentPortal: React.FC = () => {
           setSignModalVisible(false);
           setSelectedDocument(null);
           setTypedName('');
+          setDocumentHtmlContent(null);
           clearCanvas();
         }}
         footer={null}
@@ -605,12 +659,33 @@ export const ExecutiveDocumentPortal: React.FC = () => {
                 <div className="mb-4">
                   <h4 className="font-semibold mb-2">Document Preview</h4>
                   {selectedDocument.file_url && (
-                    <iframe
-                      src={selectedDocument.file_url}
-                      className="w-full border rounded"
-                      style={{ height: '400px' }}
-                      title="Document Preview"
-                    />
+                    <>
+                      {documentLoading ? (
+                        <div className="flex items-center justify-center" style={{ height: '400px' }}>
+                          <LoadingOutlined style={{ fontSize: 32 }} spin />
+                        </div>
+                      ) : isHtmlFile(selectedDocument.file_url) && documentHtmlContent ? (
+                        <div
+                          style={{
+                            width: '100%',
+                            height: '400px',
+                            border: '1px solid #ddd',
+                            borderRadius: '4px',
+                            overflow: 'auto',
+                            padding: '1rem',
+                            backgroundColor: '#fff',
+                          }}
+                          dangerouslySetInnerHTML={{ __html: documentHtmlContent }}
+                        />
+                      ) : (
+                        <iframe
+                          src={selectedDocument.file_url}
+                          className="w-full border rounded"
+                          style={{ height: '400px' }}
+                          title="Document Preview"
+                        />
+                      )}
+                    </>
                   )}
                 </div>
               </div>
