@@ -13604,6 +13604,10 @@ export type Database = {
         Returns: string
       }
       verify_ceo_master_pin: { Args: { p_pin: string }; Returns: boolean }
+      verify_ceo_pin: {
+        Args: { check_email: string; check_pin: string }
+        Returns: boolean
+      }
       verify_employee_portal_pin: {
         Args: { p_email: string; p_pin: string }
         Returns: {
