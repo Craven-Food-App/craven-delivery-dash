@@ -106,9 +106,9 @@ export function CompanySettingsManager() {
         onFinish={handleSave}
         initialValues={{
           company_name: "Crave'n, Inc.",
-          state_of_incorporation: 'Ohio',
-          registered_office: '123 Main St, Cleveland, OH 44101',
-          state_filing_office: 'Ohio Secretary of State',
+          state_of_incorporation: 'Delaware',
+          registered_office: '123 Main St, Wilmington, DE 19801',
+          state_filing_office: 'Delaware Secretary of State',
           registered_agent_name: 'Torrance Stroman',
           registered_agent_address: '123 Main St, Cleveland, OH 44101',
           fiscal_year_end: 'December 31',

@@ -51,9 +51,9 @@ USING (
 INSERT INTO public.company_settings (setting_key, setting_value)
 VALUES 
   ('incorporation_status', 'pre_incorporation'),
-  ('state_of_incorporation', 'Ohio'),
-  ('registered_office', '123 Main St, Cleveland, OH 44101'),
-  ('state_filing_office', 'Ohio Secretary of State'),
+  ('state_of_incorporation', 'Delaware'),
+  ('registered_office', '123 Main St, Wilmington, DE 19801'),
+  ('state_filing_office', 'Delaware Secretary of State'),
   ('registered_agent_name', 'TBD'),
   ('registered_agent_address', 'TBD'),
   ('fiscal_year_end', 'December 31'),

@@ -160,7 +160,7 @@ export const PersonnelManager: React.FC = () => {
           ${equityLine}
         </ul>
         ${cfoResp}
-        <p>Reporting to: CEO - Torrence Stroman.</p>
+        <p>Reporting to: CEO - Torrance Stroman.</p>
         <p>Sincerely,<br/>Craven Inc HR</p>
       </div>
     `;
@@ -349,7 +349,7 @@ export const PersonnelManager: React.FC = () => {
           department: emp.department?.name || 'Corporate',
           salary: emp.salary || 0,
           startDate: emp.hire_date || new Date().toISOString(),
-          reportingTo: 'CEO - Torrence Stroman',
+          reportingTo: 'CEO - Torrance Stroman',
           signatureToken,
           employeeId: emp.id, // Track in database
         }
@@ -502,7 +502,7 @@ export const PersonnelManager: React.FC = () => {
         resolution_text: `Resolution to appoint ${values.first_name} ${values.last_name} to the position of ${values.position}`,
         effective_date: values.hire_date || new Date().toISOString(),
         board_members: [
-          { name: 'Torrence Stroman', title: 'CEO', vote: 'for' },
+          { name: 'Torrance Stroman', title: 'CEO', vote: 'for' },
           { name: 'Board Member 1', title: 'Independent Director', vote: 'for' },
           { name: 'Board Member 2', title: 'Independent Director', vote: 'for' }
         ],
@@ -640,7 +640,7 @@ export const PersonnelManager: React.FC = () => {
               salary: values.salary,
               equity: isCLevel && values.equity ? values.equity : undefined,
               startDate: values.hire_date || new Date().toISOString(),
-              reportingTo: 'CEO - Torrence Stroman',
+              reportingTo: 'CEO - Torrance Stroman',
               signatureToken,
               deferredSalary: !!values.deferred_salary,
               fundingTrigger: values.funding_trigger || null,

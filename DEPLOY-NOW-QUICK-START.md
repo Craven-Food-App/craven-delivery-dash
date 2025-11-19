@@ -48,7 +48,7 @@ INSERT INTO auth.users (
   NOW(),
   NOW(),
   '{"provider":"email","providers":["email"]}',
-  '{"first_name":"Torrence","last_name":"Stroman","position":"CEO","department":"Executive"}'
+  '{"first_name":"Torrance","last_name":"Stroman","position":"CEO","department":"Executive"}'
 ) RETURNING id;
 ```
 
@@ -70,7 +70,7 @@ INSERT INTO public.employees (
 ) VALUES (
   (SELECT id FROM auth.users WHERE email = 'torrence.stroman@cravenusa.com'),
   'CEO-001',
-  'Torrence',
+  'Torrance',
   'Stroman',
   'torrence.stroman@cravenusa.com',
   'CEO',

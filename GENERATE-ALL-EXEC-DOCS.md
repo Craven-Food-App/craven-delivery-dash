@@ -121,7 +121,7 @@ BEGIN
       emp_record.hire_date,
       emp_record.id,
       '[
-        {"name": "Torrence Stroman", "title": "CEO", "vote": "for"},
+        {"name": "Torrance Stroman", "title": "CEO", "vote": "for"},
         {"name": "Board Member 1", "title": "Independent Director", "vote": "for"},
         {"name": "Board Member 2", "title": "Independent Director", "vote": "for"}
       ]'::jsonb,
@@ -200,7 +200,7 @@ async function generateDocsForExistingExecs() {
           companyName: 'Craven Inc',
           state: 'Ohio',
           boardMembers: [
-            { name: 'Torrence Stroman', title: 'CEO', vote: 'for' },
+            { name: 'Torrance Stroman', title: 'CEO', vote: 'for' },
             { name: 'Board Member 1', title: 'Independent Director', vote: 'for' }
           ],
           equityPercentage: equity?.shares_percentage,

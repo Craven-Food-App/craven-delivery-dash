@@ -50,6 +50,11 @@ interface ExecutiveAppointment {
   board_resolution_url?: string;
   certificate_url?: string;
   employment_agreement_url?: string;
+  deferred_compensation_url?: string;
+  confidentiality_ip_url?: string;
+  stock_subscription_url?: string;
+  pre_incorporation_consent_url?: string;
+  formation_mode?: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -63,6 +68,8 @@ const AppointmentList: React.FC = () => {
   const [documentModalOpen, setDocumentModalOpen] = useState(false);
   const [selectedDocumentUrl, setSelectedDocumentUrl] = useState<string>('');
   const [selectedDocumentName, setSelectedDocumentName] = useState<string>('');
+  const [documentContent, setDocumentContent] = useState<string>('');
+  const [loadingDocument, setLoadingDocument] = useState(false);
 
   useEffect(() => {
     fetchAppointments();
@@ -106,7 +113,7 @@ const AppointmentList: React.FC = () => {
     );
   };
 
-  const handleViewDocument = (url: string, name: string) => {
+  const handleViewDocument = async (url: string, name: string) => {
     if (!url) {
       notifications.show({
         title: 'No Document',
@@ -118,12 +125,38 @@ const AppointmentList: React.FC = () => {
     setSelectedDocumentUrl(url);
     setSelectedDocumentName(name);
     setDocumentModalOpen(true);
+    setLoadingDocument(true);
+    setDocumentContent('');
+    
+    // For HTML files, fetch the content to render properly
+    if (url.includes('.html') || url.endsWith('.html')) {
+      try {
+        const response = await fetch(url);
+        if (response.ok) {
+          const html = await response.text();
+          setDocumentContent(html);
+        } else {
+          console.error('Failed to fetch document:', response.status);
+          setDocumentContent('');
+        }
+      } catch (error) {
+        console.error('Error fetching document:', error);
+        setDocumentContent('');
+      } finally {
+        setLoadingDocument(false);
+      }
+    } else {
+      setLoadingDocument(false);
+    }
   };
 
   const handleRegenerateDocuments = async (appointmentId: string) => {
     try {
       const { data, error } = await supabase.functions.invoke('governance-backfill-appointment-documents', {
-        body: { appointment_id: appointmentId },
+        body: { 
+          appointment_id: appointmentId,
+          force_regenerate: true, // Force regeneration even if documents exist
+        },
       });
 
       if (error) throw error;
@@ -174,10 +207,11 @@ const AppointmentList: React.FC = () => {
         }
       }
 
-      // Refresh after a delay
+      // Refresh immediately and again after a delay to ensure we get the latest data
+      fetchAppointments();
       setTimeout(() => {
         fetchAppointments();
-      }, 2000);
+      }, 3000);
     } catch (error: any) {
       console.error('Error regenerating documents:', error);
       notifications.show({
@@ -189,12 +223,22 @@ const AppointmentList: React.FC = () => {
   };
 
   const getDocumentStatus = (appointment: ExecutiveAppointment) => {
-    const docs = {
+    const docs: Record<string, string | undefined> = {
       'Appointment Letter': appointment.appointment_letter_url,
       'Board Resolution': appointment.board_resolution_url,
       'Certificate': appointment.certificate_url,
       'Employment Agreement': appointment.employment_agreement_url,
+      'Confidentiality & IP': appointment.confidentiality_ip_url,
+      'Stock Subscription': appointment.stock_subscription_url,
+      'Deferred Compensation': appointment.deferred_compensation_url,
     };
+    
+    // Always include formation document in the list if formation_mode is true
+    // This ensures the count shows 8/8 even if the document hasn't been generated yet
+    if (appointment.formation_mode) {
+      docs['Pre-Incorporation Consent'] = appointment.pre_incorporation_consent_url;
+    }
+    
     return docs;
   };
 
@@ -252,6 +296,9 @@ const AppointmentList: React.FC = () => {
                   const docs = getDocumentStatus(appointment);
                   const hasAnyDoc = Object.values(docs).some((url) => url);
                   const docCount = Object.values(docs).filter((url) => url).length;
+                  
+                  // Total document count: 7 normal + 1 formation (if formation_mode is true)
+                  const totalDocCount = appointment.formation_mode ? 8 : 7;
 
                   return (
                     <Table.Tr key={appointment.id}>
@@ -273,7 +320,7 @@ const AppointmentList: React.FC = () => {
                       <Table.Td>
                         {hasAnyDoc ? (
                           <Badge color="green" variant="light">
-                            {docCount} / {Object.keys(docs).length} Generated
+                            {docCount} / {totalDocCount} Generated
                           </Badge>
                         ) : (
                           <Badge color="yellow" variant="light">
@@ -467,6 +514,105 @@ const AppointmentList: React.FC = () => {
                     </Badge>
                   )}
                 </Group>
+
+                <Group justify="space-between">
+                  <Text size="sm">Confidentiality & IP Assignment</Text>
+                  {selectedAppointment.confidentiality_ip_url ? (
+                    <Button
+                      size="xs"
+                      variant="light"
+                      leftSection={<IconEye size={14} />}
+                      onClick={() =>
+                        handleViewDocument(
+                          selectedAppointment.confidentiality_ip_url!,
+                          'Confidentiality & IP Assignment'
+                        )
+                      }
+                    >
+                      View
+                    </Button>
+                  ) : (
+                    <Badge color="yellow" variant="light" size="sm">
+                      Not Generated
+                    </Badge>
+                  )}
+                </Group>
+
+                <Group justify="space-between">
+                  <Text size="sm">Stock Subscription</Text>
+                  {selectedAppointment.stock_subscription_url ? (
+                    <Button
+                      size="xs"
+                      variant="light"
+                      leftSection={<IconEye size={14} />}
+                      onClick={() =>
+                        handleViewDocument(
+                          selectedAppointment.stock_subscription_url!,
+                          'Stock Subscription'
+                        )
+                      }
+                    >
+                      View
+                    </Button>
+                  ) : (
+                    <Badge color="yellow" variant="light" size="sm">
+                      Not Generated
+                    </Badge>
+                  )}
+                </Group>
+
+                <Group justify="space-between">
+                  <Text size="sm">Deferred Compensation</Text>
+                  {selectedAppointment.deferred_compensation_url ? (
+                    <Button
+                      size="xs"
+                      variant="light"
+                      leftSection={<IconEye size={14} />}
+                      onClick={() =>
+                        handleViewDocument(
+                          selectedAppointment.deferred_compensation_url!,
+                          'Deferred Compensation'
+                        )
+                      }
+                    >
+                      View
+                    </Button>
+                  ) : (
+                    <Badge color="yellow" variant="light" size="sm">
+                      Not Generated
+                    </Badge>
+                  )}
+                </Group>
+
+                {selectedAppointment.formation_mode && (
+                  <Group justify="space-between">
+                    <Group gap="xs">
+                      <Text size="sm">Pre-Incorporation Consent</Text>
+                      <Badge color="blue" variant="light" size="xs">
+                        Formation Document
+                      </Badge>
+                    </Group>
+                    {selectedAppointment.pre_incorporation_consent_url ? (
+                      <Button
+                        size="xs"
+                        variant="light"
+                        leftSection={<IconEye size={14} />}
+                        onClick={() =>
+                          handleViewDocument(
+                            selectedAppointment.pre_incorporation_consent_url!,
+                            'Pre-Incorporation Consent'
+                          )
+                        }
+                      >
+                        View
+                      </Button>
+                    ) : (
+                      <Badge color="yellow" variant="light" size="sm">
+                        Not Generated
+                      </Badge>
+                    )}
+                  </Group>
+                )}
               </Stack>
             </div>
 
@@ -491,22 +637,70 @@ const AppointmentList: React.FC = () => {
           setDocumentModalOpen(false);
           setSelectedDocumentUrl('');
           setSelectedDocumentName('');
+          setDocumentContent('');
         }}
         title={selectedDocumentName}
         size="xl"
       >
         {selectedDocumentUrl && (
           <Paper p="md">
-            <iframe
-              src={selectedDocumentUrl}
-              style={{
-                width: '100%',
-                height: '600px',
-                border: '1px solid #e5e7eb',
-                borderRadius: '4px',
-              }}
-              title={selectedDocumentName}
-            />
+            {loadingDocument ? (
+              <div style={{ textAlign: 'center', padding: '40px' }}>
+                <Text>Loading document...</Text>
+              </div>
+            ) : selectedDocumentUrl.includes('.html') || selectedDocumentUrl.endsWith('.html') ? (
+              // For HTML files, render the fetched content in a sandboxed iframe
+              documentContent ? (
+                <div style={{ width: '100%', height: '600px', border: '1px solid #e5e7eb', borderRadius: '4px', overflow: 'hidden' }}>
+                  <iframe
+                    srcDoc={documentContent}
+                    style={{
+                      width: '100%',
+                      height: '100%',
+                      border: 'none',
+                    }}
+                    title={selectedDocumentName}
+                    sandbox="allow-same-origin allow-scripts"
+                  />
+                </div>
+              ) : (
+                <iframe
+                  src={selectedDocumentUrl}
+                  style={{
+                    width: '100%',
+                    height: '600px',
+                    border: '1px solid #e5e7eb',
+                    borderRadius: '4px',
+                  }}
+                  title={selectedDocumentName}
+                  sandbox="allow-same-origin allow-scripts"
+                />
+              )
+            ) : selectedDocumentUrl.endsWith('.pdf') || selectedDocumentUrl.includes('.pdf') ? (
+              // For PDF files, use embed
+              <embed
+                src={selectedDocumentUrl}
+                type="application/pdf"
+                style={{
+                  width: '100%',
+                  height: '600px',
+                  border: '1px solid #e5e7eb',
+                  borderRadius: '4px',
+                }}
+              />
+            ) : (
+              // For other file types, use iframe
+              <iframe
+                src={selectedDocumentUrl}
+                style={{
+                  width: '100%',
+                  height: '600px',
+                  border: '1px solid #e5e7eb',
+                  borderRadius: '4px',
+                }}
+                title={selectedDocumentName}
+              />
+            )}
             <Group justify="flex-end" mt="md">
               <Button
                 variant="light"

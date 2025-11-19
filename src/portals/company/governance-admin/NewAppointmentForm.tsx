@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Container,
   Card,
@@ -23,6 +23,7 @@ import dayjs from 'dayjs';
 const NewAppointmentForm: React.FC = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
+  const [hasArticles, setHasArticles] = useState<boolean>(true);
   const [formData, setFormData] = useState({
     proposed_officer_name: '',
     proposed_officer_email: '',
@@ -49,7 +50,35 @@ const NewAppointmentForm: React.FC = () => {
       exercise_price: '',
     }),
     notes: '',
+    formation_mode: false,
   });
+
+  // Check if company has Articles of Incorporation on file
+  useEffect(() => {
+    const checkArticles = async () => {
+      try {
+        // Check if company has Articles of Incorporation on file
+        const { data, error } = await supabase
+          .from('company_settings')
+          .select('setting_value')
+          .eq('setting_key', 'has_articles_of_incorporation')
+          .single();
+        
+        // If no record exists or value is false/null, default formation_mode to true
+        const hasArticlesOnFile = data?.setting_value === 'true' || data?.setting_value === true;
+        setHasArticles(hasArticlesOnFile);
+        
+        if (!hasArticlesOnFile) {
+          setFormData(prev => ({ ...prev, formation_mode: true }));
+        }
+      } catch (error) {
+        console.warn('Could not check Articles status, defaulting to false:', error);
+        setHasArticles(true); // Default to false (has articles) if check fails
+      }
+    };
+    
+    checkArticles();
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -89,6 +118,7 @@ const NewAppointmentForm: React.FC = () => {
       const { data, error } = await supabase.functions.invoke('governance-create-appointment', {
         body: {
           ...formData,
+          formation_mode: formData.formation_mode || false, // Explicitly include
           compensation_structure: compensationStructure || null,
           equity_details: equityDetails || null,
         },
@@ -229,6 +259,16 @@ const NewAppointmentForm: React.FC = () => {
                     value={formData.appointment_type}
                     onChange={(value) =>
                       setFormData({ ...formData, appointment_type: value || 'NEW' })
+                    }
+                  />
+                </Grid.Col>
+                <Grid.Col span={{ base: 12 }}>
+                  <Checkbox
+                    label="Formation Mode (Pre-Incorporation Consent Required)"
+                    description="Enable if this appointment is part of company formation and Articles of Incorporation are not yet filed"
+                    checked={formData.formation_mode}
+                    onChange={(e) =>
+                      setFormData({ ...formData, formation_mode: e.currentTarget.checked })
                     }
                   />
                 </Grid.Col>

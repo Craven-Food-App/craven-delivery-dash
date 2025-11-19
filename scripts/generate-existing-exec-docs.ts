@@ -90,7 +90,7 @@ async function generateDocumentsForExistingExecs() {
           companyName: 'Craven Inc',
           state: 'Ohio',
           boardMembers: [
-            { name: 'Torrence Stroman', title: 'CEO', vote: 'for' },
+            { name: 'Torrance Stroman', title: 'CEO', vote: 'for' },
             { name: 'Board Member 1', title: 'Independent Director', vote: 'for' },
             { name: 'Board Member 2', title: 'Independent Director', vote: 'for' }
           ],

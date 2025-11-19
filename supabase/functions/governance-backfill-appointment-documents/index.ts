@@ -8,7 +8,14 @@ const corsHeaders = {
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders });
+    return new Response(null, { 
+      status: 204,
+      headers: {
+        ...corsHeaders,
+        'Access-Control-Allow-Methods': 'POST, OPTIONS',
+        'Access-Control-Max-Age': '86400',
+      }
+    });
   }
 
   try {
@@ -71,6 +78,7 @@ serve(async (req) => {
 
     const body = await req.json();
     const appointment_id = body.appointment_id; // Optional: specific appointment, or null for all
+    const force_regenerate = body.force_regenerate || false; // If true, regenerate even if documents exist
 
     const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey, {
       auth: { persistSession: false },
@@ -99,26 +107,34 @@ serve(async (req) => {
       );
     }
 
-    const results = [];
-    const generateDocUrl = `${supabaseUrl}/functions/v1/governance-generate-appointment-document`;
+    interface ResultItem {
+      appointment_id: string;
+      appointment_name: string;
+      status: string;
+      documents_generated: string[];
+      documents_queued: string[];
+      errors: string[] | null;
+      reason_no_docs: string | null;
+    }
 
+    const results: ResultItem[] = [];
+
+    // NORMAL DOCUMENT GENERATION FLOW
     for (const appointment of appointments) {
       const docTypes: string[] = [];
       
       // Determine which documents to generate based on status
-      // Check for null, undefined, or empty string
-      const hasAppointmentLetter = appointment.appointment_letter_url && String(appointment.appointment_letter_url).trim() !== '';
-      const hasBoardResolution = appointment.board_resolution_url && String(appointment.board_resolution_url).trim() !== '';
-      const hasCertificate = appointment.certificate_url && String(appointment.certificate_url).trim() !== '';
-      const hasEmploymentAgreement = appointment.employment_agreement_url && String(appointment.employment_agreement_url).trim() !== '';
-      
-      console.log(`Appointment ${appointment.id} (${appointment.status}) document status:`, {
-        hasAppointmentLetter,
-        hasBoardResolution,
-        hasCertificate,
-        hasEmploymentAgreement,
-        board_resolution_id: appointment.board_resolution_id
-      });
+      // Check for null, undefined, or empty string (unless force_regenerate is true)
+      const hasAppointmentLetter = !force_regenerate && appointment.appointment_letter_url && String(appointment.appointment_letter_url).trim() !== '';
+      const hasBoardResolution = !force_regenerate && appointment.board_resolution_url && String(appointment.board_resolution_url).trim() !== '';
+      const hasCertificate = !force_regenerate && appointment.certificate_url && String(appointment.certificate_url).trim() !== '';
+      const hasEmploymentAgreement = !force_regenerate && appointment.employment_agreement_url && String(appointment.employment_agreement_url).trim() !== '';
+      const hasDeferredCompensation = !force_regenerate && (appointment as any).deferred_compensation_url && String((appointment as any).deferred_compensation_url).trim() !== '';
+      const hasConfidentialityIP = !force_regenerate && (appointment as any).confidentiality_ip_url && String((appointment as any).confidentiality_ip_url).trim() !== '';
+      const hasStockSubscription = !force_regenerate && (appointment as any).stock_subscription_url && String((appointment as any).stock_subscription_url).trim() !== '';
+      const hasPreIncorporationConsent = !force_regenerate && 
+        (appointment as any).pre_incorporation_consent_url && 
+        String((appointment as any).pre_incorporation_consent_url).trim() !== '';
       
       switch (appointment.status) {
         case 'DRAFT':
@@ -139,9 +155,8 @@ serve(async (req) => {
           break;
         
         case 'APPROVED':
-          // All documents for approved appointments
-          // Always try to generate appointment letter, certificate, and employment agreement
-          // Board resolution only if board_resolution_id exists
+          // All documents for approved appointments - complete legal package
+          // Core documents
           if (!hasAppointmentLetter) {
             docTypes.push('appointment_letter');
           }
@@ -155,12 +170,33 @@ serve(async (req) => {
             docTypes.push('employment_agreement');
           }
           
+          // Additional legal documents for complete appointment package
+          if (!hasConfidentialityIP) {
+            docTypes.push('confidentiality_ip');
+          }
+          if (!hasStockSubscription) {
+            docTypes.push('stock_subscription');
+          }
+          // Deferred compensation only if equity is included or compensation is deferred
+          if (!hasDeferredCompensation && (appointment.equity_included || (appointment.compensation_structure && String(appointment.compensation_structure).toLowerCase().includes('deferred')))) {
+            docTypes.push('deferred_compensation');
+          }
+          
+          // Pre-Incorporation Consent - same as other documents
+          if (!hasPreIncorporationConsent) {
+            docTypes.push('pre_incorporation_consent');
+          }
+          
           // If no documents were queued, log a warning
           if (docTypes.length === 0) {
             console.warn(`Appointment ${appointment.id} is APPROVED but all documents appear to exist. Document URLs:`, {
               appointment_letter_url: appointment.appointment_letter_url,
               certificate_url: appointment.certificate_url,
               employment_agreement_url: appointment.employment_agreement_url,
+              confidentiality_ip_url: (appointment as any).confidentiality_ip_url,
+              stock_subscription_url: (appointment as any).stock_subscription_url,
+              deferred_compensation_url: (appointment as any).deferred_compensation_url,
+              pre_incorporation_consent_url: (appointment as any).pre_incorporation_consent_url,
             });
           }
           break;
@@ -181,54 +217,41 @@ serve(async (req) => {
       for (const docType of docTypes) {
         try {
           console.log(`Attempting to generate ${docType} for appointment ${appointment.id}`);
-          const response = await fetch(generateDocUrl, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${supabaseServiceKey}`,
-            },
-            body: JSON.stringify({
-              appointment_id: appointment.id,
-              document_type: docType,
-            }),
-          });
-
-          let data: any;
-          let responseText = '';
-          try {
-            responseText = await response.text();
-            if (responseText) {
-              data = JSON.parse(responseText);
-            } else {
-              data = {};
+          
+          // Call the generate function using fetch
+          // Pass the user's auth token (not service role key) to avoid JWT validation errors
+          const generateResponse = await fetch(
+            `${supabaseUrl}/functions/v1/governance-generate-appointment-document`,
+            {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': authHeader || `Bearer ${supabaseServiceKey}`,
+                'apikey': supabaseAnonKey,
+              },
+              body: JSON.stringify({
+                appointment_id: appointment.id,
+                document_type: docType,
+              }),
             }
-          } catch (parseError) {
-            console.error(`Failed to parse response for ${docType}:`, parseError, responseText);
-            errors.push(`${docType}: Invalid response from server (${response.status}): ${responseText.substring(0, 200)}`);
+          );
+
+          const result = await generateResponse.json();
+
+          if (!generateResponse.ok) {
+            const errorMsg = result?.error || result?.message || 'Failed to generate document';
+            console.error(`Error generating ${docType} for appointment ${appointment.id}:`, errorMsg);
+            errors.push(`${docType}: ${errorMsg}`);
             continue;
           }
 
-          console.log(`Response for ${docType}:`, { status: response.status, data });
+          console.log(`Response for ${docType}:`, result);
           
-          if (response.ok && data.success) {
+          if (result?.success) {
             generatedDocs.push(docType);
             console.log(`Successfully generated ${docType} for appointment ${appointment.id}`);
           } else {
-            // Extract error message with better fallbacks
-            let errorMsg = 'Unknown error';
-            if (data?.error) {
-              errorMsg = String(data.error);
-            } else if (data?.message) {
-              errorMsg = String(data.message);
-            } else if (!response.ok) {
-              errorMsg = `HTTP ${response.status} ${response.statusText}`;
-              if (responseText) {
-                errorMsg += `: ${responseText.substring(0, 200)}`;
-              }
-            } else if (data && typeof data === 'object') {
-              errorMsg = `Unexpected response: ${JSON.stringify(data).substring(0, 200)}`;
-            }
-            
+            const errorMsg = result?.error || result?.message || 'Unknown error';
             console.error(`Failed to generate ${docType} for appointment ${appointment.id}:`, errorMsg);
             errors.push(`${docType}: ${errorMsg}`);
           }

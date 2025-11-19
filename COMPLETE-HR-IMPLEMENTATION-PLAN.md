@@ -112,7 +112,7 @@ const handleHire = async (values: any) => {
           salary: values.salary,
           equity: values.equity,
           startDate: values.hire_date,
-          reportingTo: 'CEO - Torrence Stroman',
+          reportingTo: 'CEO - Torrance Stroman',
           createdBy: user?.id
         },
         alsoEmail: true
