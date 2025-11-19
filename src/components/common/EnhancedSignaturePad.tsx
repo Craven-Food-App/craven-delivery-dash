@@ -218,7 +218,7 @@ export const EnhancedSignaturePad: React.FC<EnhancedSignaturePadProps> = ({
     } finally {
       setIsSaving(false);
     }
-  }, [sigCanvas, typedName, showTypedName, saveToDatabase, documentId, orderId, storageBucket, storagePath, onSave]);
+  }, [sigCanvas, typedNameValue, showTypedName, saveToDatabase, documentId, orderId, storageBucket, storagePath, onSave]);
 
   return (
     <Card p="lg" radius="md" withBorder>
