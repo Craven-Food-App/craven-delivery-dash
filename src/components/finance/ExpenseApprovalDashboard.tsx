@@ -102,12 +102,10 @@ export const ExpenseApprovalDashboard: React.FC = () => {
 
       const formatted = (data || []).map(exp => ({
         ...exp,
-        requester_name: exp.requester
-          ? `${exp.requester.first_name} ${exp.requester.last_name}`
-          : 'Unknown',
+        requester_name: 'Unknown', // No user_profiles relation available
       }));
 
-      setExpenses(formatted);
+      setExpenses(formatted as any);
     } catch (error: any) {
       console.error('Error fetching expenses:', error);
       notifications.show({

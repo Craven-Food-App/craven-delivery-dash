@@ -20,8 +20,7 @@ export const useExpenseRequests = (status?: string) => {
         .select(`
           *,
           expense_category:expense_categories(*),
-          department:departments(*),
-          requester:user_profiles!expense_requests_requester_id_fkey(first_name, last_name, email)
+          department:departments(*)
         `)
         .order('created_at', { ascending: false });
 
@@ -33,14 +32,7 @@ export const useExpenseRequests = (status?: string) => {
 
       if (fetchError) throw fetchError;
 
-      const formatted = (data || []).map(exp => ({
-        ...exp,
-        requester_name: exp.requester
-          ? `${exp.requester.first_name} ${exp.requester.last_name}`
-          : 'Unknown',
-      }));
-
-      setExpenses(formatted);
+      setExpenses((data || []) as ExpenseRequest[]);
     } catch (err: any) {
       setError(err.message);
     } finally {
@@ -84,7 +76,7 @@ export const useBudgets = (year?: number, quarter?: number) => {
       const { data, error: fetchError } = await query;
 
       if (fetchError) throw fetchError;
-      setBudgets(data || []);
+      setBudgets((data || []) as Budget[]);
     } catch (err: any) {
       setError(err.message);
     } finally {

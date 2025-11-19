@@ -25,30 +25,16 @@ export default function DeveloperOnboarding() {
 
   const fetchUsers = async () => {
     try {
-      // Fetch from exec_users or profiles table instead of admin API
+      // Fetch from exec_users table
       const { data: execUsers, error: execError } = await supabase
         .from('exec_users')
-        .select('user_id, user:auth.users!user_id(email)')
+        .select('user_id, email')
         .limit(100);
       
       if (!execError && execUsers) {
         setUsers(execUsers.map((eu: any) => ({
           id: eu.user_id,
-          email: eu.user?.email || 'Unknown',
-        })));
-        return;
-      }
-
-      // Fallback: try profiles table
-      const { data: profiles, error: profileError } = await supabase
-        .from('profiles')
-        .select('id, email')
-        .limit(100);
-      
-      if (!profileError && profiles) {
-        setUsers(profiles.map((p: any) => ({
-          id: p.id,
-          email: p.email || 'Unknown',
+          email: eu.email || 'Unknown',
         })));
       }
     } catch (error) {
