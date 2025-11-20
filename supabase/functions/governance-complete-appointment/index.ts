@@ -175,24 +175,34 @@ serve(async (req) => {
       .eq('metadata->>appointment_id', appointment_id)
       .maybeSingle();
 
-    // Also check executive_appointments for equity details
-    const { data: execAppointment } = await supabaseAdmin
-      .from('executive_appointments')
-      .select('equity_included, equity_details')
-      .eq('id', (appointment as any).executive_appointment_id || '')
-      .maybeSingle();
-
+    // Get equity details from resolution metadata (preferred) or executive_appointments
     let equityDetails = null;
-    if (execAppointment?.equity_included && execAppointment?.equity_details) {
-      try {
-        equityDetails = typeof execAppointment.equity_details === 'string' 
-          ? JSON.parse(execAppointment.equity_details)
-          : execAppointment.equity_details;
-      } catch {
-        equityDetails = execAppointment.equity_details;
-      }
-    } else if (resolution?.metadata) {
+    
+    // First check resolution metadata (this is where it's stored in the new flow)
+    if (resolution?.metadata) {
       equityDetails = (resolution.metadata as any)?.equity_grant_details || null;
+    }
+    
+    // Fallback to executive_appointments if not in resolution metadata
+    if (!equityDetails && resolution?.metadata) {
+      const execAppointmentId = (resolution.metadata as any)?.executive_appointment_id || null;
+      if (execAppointmentId) {
+        const { data: execAppointment } = await supabaseAdmin
+          .from('executive_appointments')
+          .select('equity_included, equity_details')
+          .eq('id', execAppointmentId)
+          .maybeSingle();
+        
+        if (execAppointment?.equity_included && execAppointment?.equity_details) {
+          try {
+            equityDetails = typeof execAppointment.equity_details === 'string' 
+              ? JSON.parse(execAppointment.equity_details)
+              : execAppointment.equity_details;
+          } catch {
+            equityDetails = execAppointment.equity_details;
+          }
+        }
+      }
     }
 
     if (equityDetails && equityDetails.shares_amount) {
