@@ -130,15 +130,26 @@ export async function handleOfficerAppointment(appointmentId: string): Promise<s
     isPreIncorporation: false,
   });
 
-  const baseTemplates: GovernanceTemplateId[] = [
-    'officer_appointment_resolution',
-    'officer_acceptance',
-  ];
+  // Determine which templates to generate based on formation mode
+  const finalTemplates: GovernanceTemplateId[] = [];
 
-  const finalTemplates: GovernanceTemplateId[] = [...baseTemplates];
+  // If formation mode, add pre-incorporation consent
+  // Note: This should be checked from executive_appointments table if available
+  // For now, we'll generate the standard documents
 
-  const isCEO = appt.role_titles.includes('CEO') || 
-                appt.role_titles.includes('Chief Executive Officer');
+  // Always generate appointment letter (via appointment_letter template)
+  // Note: appointment_letter is handled separately, so we focus on board documents here
+
+  // Generate board resolution
+  finalTemplates.push('officer_appointment_resolution');
+
+  // Generate officer acceptance
+  finalTemplates.push('officer_acceptance');
+
+  // If CEO, add CEO-specific resolution
+  const isCEO = appt.role_titles.some((title: string) => 
+    title.includes('CEO') || title.includes('Chief Executive Officer')
+  );
   if (isCEO) {
     finalTemplates.push('ceo_appointment_resolution');
   }

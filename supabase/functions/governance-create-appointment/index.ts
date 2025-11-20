@@ -97,6 +97,61 @@ serve(async (req) => {
       );
     }
 
+    // Get or create user for the appointee
+    let appointeeUserId: string | null = null;
+    if (body.proposed_officer_email) {
+      // Try to find existing user by email
+      const { data: existingUser } = await supabaseAdmin.auth.admin.listUsers();
+      const foundUser = existingUser?.users.find(u => u.email === body.proposed_officer_email);
+      
+      if (foundUser) {
+        appointeeUserId = foundUser.id;
+      } else {
+        // Create new user for the appointee
+        const { data: newUser, error: createUserError } = await supabaseAdmin.auth.admin.createUser({
+          email: body.proposed_officer_email,
+          email_confirm: true,
+          user_metadata: {
+            full_name: body.proposed_officer_name,
+          },
+        });
+        
+        if (!createUserError && newUser?.user) {
+          appointeeUserId = newUser.user.id;
+          
+          // Create user profile
+          await supabaseAdmin
+            .from('user_profiles')
+            .upsert({
+              user_id: newUser.user.id,
+              full_name: body.proposed_officer_name,
+              email: body.proposed_officer_email,
+            }, {
+              onConflict: 'user_id',
+            });
+        }
+      }
+    }
+
+    // Create appointment in new appointments table (for governance system)
+    let newAppointmentId: string | null = null;
+    if (appointeeUserId) {
+      const { data: newAppt, error: newApptError } = await supabaseAdmin
+        .from('appointments')
+        .insert({
+          appointee_user_id: appointeeUserId,
+          role_titles: [body.proposed_title],
+          effective_date: body.effective_date,
+          created_by: user.id,
+        })
+        .select()
+        .single();
+
+      if (!newApptError && newAppt) {
+        newAppointmentId = newAppt.id;
+      }
+    }
+
     // Log the action
     await supabaseAdmin.rpc('log_governance_action', {
       p_action_type: 'appointment_created',
@@ -109,26 +164,50 @@ serve(async (req) => {
         appointment_type: body.appointment_type,
         effective_date: body.effective_date,
         title: body.proposed_title,
+        new_appointment_id: newAppointmentId,
       },
     });
 
-    // Generate appointment letter document (async, don't wait)
-    try {
-      const generateDocUrl = `${supabaseUrl}/functions/v1/governance-generate-appointment-document`;
-      fetch(generateDocUrl, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${supabaseServiceKey}`,
-        },
-        body: JSON.stringify({
-          appointment_id: appointment.id,
-          document_type: 'appointment_letter',
-        }),
-      }).catch(err => console.error('Error generating appointment letter:', err));
-    } catch (err) {
-      console.error('Error calling document generation:', err);
-      // Don't fail the request if document generation fails
+    // Trigger full appointment workflow if we have the new appointment ID
+    if (newAppointmentId) {
+      try {
+        // Call handleOfficerAppointment workflow via edge function
+        const workflowUrl = `${supabaseUrl}/functions/v1/governance-handle-appointment-workflow`;
+        fetch(workflowUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${supabaseServiceKey}`,
+          },
+          body: JSON.stringify({
+            appointment_id: newAppointmentId,
+            executive_appointment_id: appointment.id, // Link to legacy table
+            formation_mode: body.formation_mode || false,
+          }),
+        }).catch(err => console.error('Error triggering appointment workflow:', err));
+      } catch (err) {
+        console.error('Error calling appointment workflow:', err);
+        // Don't fail the request if workflow trigger fails
+      }
+    } else {
+      // Fallback: Generate appointment letter document (async, don't wait)
+      try {
+        const generateDocUrl = `${supabaseUrl}/functions/v1/governance-generate-appointment-document`;
+        fetch(generateDocUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${supabaseServiceKey}`,
+          },
+          body: JSON.stringify({
+            appointment_id: appointment.id,
+            document_type: 'appointment_letter',
+          }),
+        }).catch(err => console.error('Error generating appointment letter:', err));
+      } catch (err) {
+        console.error('Error calling document generation:', err);
+        // Don't fail the request if document generation fails
+      }
     }
 
     return new Response(
