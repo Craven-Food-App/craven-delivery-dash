@@ -56,8 +56,7 @@ export async function compileBoardPlaceholders(
 
   // Director placeholders
   if (templateType === 'initial_director_consent' || templateType === 'organizational_board_minutes') {
-    // Fetch board members (using type assertion for new tables)
-    // @ts-expect-error - board_members table types not yet generated, will work at runtime
+    // Fetch board members
     const { data: boardMembers, error: boardError } = await supabase
       .from('board_members')
       .select('full_name, role_title, appointment_date, email, user_id')
@@ -108,8 +107,7 @@ export async function compileBoardPlaceholders(
 
   // Resolution placeholders
   if (templateType === 'board_resolution_officer_appointment' || templateType === 'board_resolution_stock_issuance' || templateType === 'board_resolution_appointing_ceo' || templateType === 'corporate_banking_resolution') {
-    // Generate resolution number (using type assertion for new tables)
-    // @ts-expect-error - board_documents table types not yet generated, will work at runtime
+    // Generate resolution number
     const { data: resolutions } = await supabase
       .from('board_documents')
       .select('resolution_number')
@@ -121,7 +119,6 @@ export async function compileBoardPlaceholders(
     placeholders['{{resolution_date}}'] = context?.resolution_date || new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
 
     // For officer appointment resolution, also need director and officer info
-    // @ts-expect-error - board_members table types not yet generated, will work at runtime
     const { data: boardMembers } = await supabase
       .from('board_members')
       .select('full_name, role_title, appointment_date, email, user_id')

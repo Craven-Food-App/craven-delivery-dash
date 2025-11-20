@@ -10,10 +10,10 @@ import {
   Select,
   Button,
   Group,
-  DateInput,
   Alert,
   Loader,
 } from '@mantine/core';
+import { DateInput } from '@mantine/dates';
 import { IconFileText, IconCheck, IconAlertCircle } from '@tabler/icons-react';
 import { supabase } from '@/integrations/supabase/client';
 import { notifications } from '@mantine/notifications';
@@ -132,14 +132,14 @@ const ResolutionBuilder: React.FC = () => {
                   label="Meeting Date"
                   placeholder="Select meeting date"
                   value={formData.meeting_date}
-                  onChange={(value) => setFormData({ ...formData, meeting_date: value })}
+                  onChange={(value) => setFormData({ ...formData, meeting_date: value as any })}
                 />
 
                 <DateInput
                   label="Effective Date"
                   placeholder="Select effective date"
                   value={formData.effective_date}
-                  onChange={(value) => setFormData({ ...formData, effective_date: value })}
+                  onChange={(value) => setFormData({ ...formData, effective_date: value as any })}
                 />
               </Group>
 

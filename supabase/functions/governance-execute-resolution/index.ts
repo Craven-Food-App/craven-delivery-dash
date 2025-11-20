@@ -74,6 +74,44 @@ serve(async (req) => {
         .single();
 
       if (appointment && appointment.appointee_user_id) {
+        // Generate all required appointment documents
+        const documentTypes = [
+          'offer_letter',
+          'employment_agreement',
+          'board_resolution',
+          'stock_certificate',
+        ];
+
+        const generatedDocs: string[] = [];
+        
+        for (const docType of documentTypes) {
+          try {
+            console.log(`Generating ${docType} for appointment ${appointmentId}`);
+            const generateResponse = await fetch(`${supabaseUrl}/functions/v1/governance-generate-appointment-document`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${supabaseServiceKey}`,
+              },
+              body: JSON.stringify({
+                appointment_id: appointmentId,
+                document_type: docType,
+              }),
+            });
+
+            if (generateResponse.ok) {
+              const result = await generateResponse.json();
+              console.log(`Generated ${docType} successfully:`, result);
+              generatedDocs.push(docType);
+            } else {
+              const errorText = await generateResponse.text();
+              console.error(`Failed to generate ${docType}:`, errorText);
+            }
+          } catch (err) {
+            console.error(`Error generating ${docType}:`, err);
+          }
+        }
+
         // Create or update executive_onboarding record
         const { data: onboarding } = await supabaseAdmin
           .from('executive_onboarding')
@@ -81,7 +119,7 @@ serve(async (req) => {
             appointment_id: appointmentId,
             user_id: appointment.appointee_user_id,
             status: 'documents_sent',
-            documents_required: metadata.documents_required || [],
+            documents_required: documentTypes,
             signing_deadline: metadata.signing_deadline || null,
           }, {
             onConflict: 'appointment_id,user_id',
@@ -103,7 +141,11 @@ serve(async (req) => {
           console.error('Error sending appointment email:', err);
         }
 
-        executionResult = { onboarding_created: true, onboarding_id: onboarding?.id };
+        executionResult = { 
+          onboarding_created: true, 
+          onboarding_id: onboarding?.id,
+          documents_generated: generatedDocs,
+        };
       }
     } else if (resolutionType === 'EQUITY_GRANT' && metadata.grant_details) {
       // Execute equity grant

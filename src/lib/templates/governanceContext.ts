@@ -79,16 +79,15 @@ export async function buildAppointmentContext(ctx: AppointmentContext) {
 
   const fullName = 
     profile?.full_name || 
-    execUser?.title || 
     user?.email?.split('@')[0] || 
     '';
-  const email = execUser?.email || user?.email || '';
+  const email = user?.email || '';
 
   return {
     ...common,
     officer_name: fullName,
     officer_email: email,
-    officer_address: profile?.address || '',
+    officer_address: '',
     appointee_name: fullName,
     appointee_1_name: fullName,
     appointee_1_email: email,

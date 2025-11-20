@@ -115,6 +115,7 @@ const BoardResolutionDetail: React.FC = () => {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
+      // @ts-ignore - Database query type compatibility
       setVotes(data || []);
     } catch (error: any) {
       console.error('Error fetching votes:', error);
