@@ -27,7 +27,7 @@ serve(async (req) => {
     });
 
     const body = await req.json();
-    const { appointment_id, executive_appointment_id, formation_mode } = body;
+    const { appointment_id, executive_appointment_id, formation_mode, equity_details } = body;
 
     if (!appointment_id) {
       return new Response(
