@@ -50,19 +50,19 @@ export async function handleInitialBoardSetup(directorUserId: string): Promise<s
     execUser?.title || 
     user.email?.split('@')[0] || 
     'Torrance Stroman';
-  const directorEmail = execUser?.email || user.email || '';
+  const directorEmail = user.email || '';
 
   const directorContext = {
     ...common,
     incorporator_name: directorName,
     incorporator_email: directorEmail,
-    incorporator_address: profile?.address || '',
+    incorporator_address: '',
     director_name: directorName,
     director_email: directorEmail,
-    director_address: profile?.address || '',
+    director_address: '',
     officer_name: directorName,
     officer_email: directorEmail,
-    officer_address: profile?.address || '',
+    officer_address: '',
     consent_date: new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }),
     director_consent_date: new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }),
     minutes_date: new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }),
@@ -319,7 +319,7 @@ export async function handleBankingSetup(officerUserId: string): Promise<string 
     execUser?.title || 
     user?.email?.split('@')[0] || 
     '';
-  const officerEmail = execUser?.email || user?.email || '';
+  const officerEmail = user?.email || '';
 
   // Get director info (usually same as founder)
   const { data: boardMembers } = await supabase
@@ -402,7 +402,7 @@ export async function handleRegisteredAgentSetup(
     execUser?.title || 
     user?.email?.split('@')[0] || 
     '';
-  const directorEmail = execUser?.email || user?.email || '';
+  const directorEmail = user?.email || '';
 
   const ctx = {
     ...common,
@@ -410,7 +410,7 @@ export async function handleRegisteredAgentSetup(
     registered_agent_address: agentAddress,
     director_name: directorName,
     director_email: directorEmail,
-    director_address: profile?.address || '',
+    director_address: '',
     resolution_date: new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }),
   };
 
