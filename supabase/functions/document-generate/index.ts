@@ -190,6 +190,25 @@ serve(async (req) => {
       ? required_signers.map((signer: string) => String(signer || '').toLowerCase())
       : [];
 
+    // Build signature layout from template fields first
+    const signatureLayout: Array<Record<string, any>> =
+      signatureFields.length > 0
+        ? signatureFields.map((field, index) => ({
+            id: field.id || `template_${index}_${Date.now()}`,
+            field_type: (field.field_type || 'signature') as TemplateSignatureField['field_type'],
+            signer_role: String(field.signer_role || '').trim() || 'officer',
+            page_number: Number(field.page_number || 1),
+            x_percent: Number(field.x_percent || 0),
+            y_percent: Number(field.y_percent || 0),
+            width_percent: Number(field.width_percent || 0),
+            height_percent: Number(field.height_percent || 0),
+            label: field.label || null,
+            required: field.required !== false,
+            auto_filled: false,
+            rendered_value: null,
+          }))
+        : [];
+
     // Signature placement will be handled after generation during manual tagging.
 
     let computedSignerRoles = signer_roles ?? (normalizedSigners.length > 0
@@ -215,24 +234,6 @@ serve(async (req) => {
         // Continue without anchors - will fall back to percentage-based positioning
       }
     }
-
-    const signatureLayout: Array<Record<string, any>> =
-      signatureFields.length > 0
-        ? signatureFields.map((field, index) => ({
-            id: field.id || `template_${index}_${Date.now()}`,
-            field_type: (field.field_type || 'signature') as TemplateSignatureField['field_type'],
-            signer_role: String(field.signer_role || '').trim() || 'officer',
-            page_number: Number(field.page_number || 1),
-            x_percent: Number(field.x_percent || 0),
-            y_percent: Number(field.y_percent || 0),
-            width_percent: Number(field.width_percent || 0),
-            height_percent: Number(field.height_percent || 0),
-            label: field.label || null,
-            required: field.required !== false,
-            auto_filled: false,
-            rendered_value: null,
-          }))
-        : [];
 
     const requiresSignatureNeeded =
       signatureLayout.some(
@@ -339,8 +340,9 @@ serve(async (req) => {
     );
   } catch (error) {
     console.error('Error generating document:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     return new Response(
-      JSON.stringify({ ok: false, error: error.message }),
+      JSON.stringify({ ok: false, error: errorMessage }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 400,

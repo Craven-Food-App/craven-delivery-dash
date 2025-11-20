@@ -122,8 +122,9 @@ serve(async (req) => {
 
   } catch (error) {
     console.error('Error in approve-equity-grant:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Internal server error';
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: errorMessage }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }

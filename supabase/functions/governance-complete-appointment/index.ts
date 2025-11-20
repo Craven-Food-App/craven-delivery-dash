@@ -170,11 +170,11 @@ serve(async (req) => {
     // If equity is included, issue shares
     const { data: resolution } = await supabaseAdmin
       .from('governance_board_resolutions')
-      .select('metadata')
+      .select('id, metadata')
       .eq('id', appointment_id)
       .maybeSingle();
 
-    const equityDetails = resolution?.metadata?.equity_grant_details || null;
+    const equityDetails = (resolution?.metadata as any)?.equity_grant_details || null;
 
     if (equityDetails && equityDetails.shares_amount) {
       try {
@@ -240,10 +240,11 @@ serve(async (req) => {
       }),
       { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
-  } catch (error: any) {
+  } catch (error) {
     console.error('Error in governance-complete-appointment:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Internal server error';
     return new Response(
-      JSON.stringify({ error: error.message || 'Internal server error' }),
+      JSON.stringify({ error: errorMessage }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
