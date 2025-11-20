@@ -118,41 +118,57 @@ serve(async (req: Request) => {
     );
 
     // Fetch email template from database
+    // Priority: 1) c_suite_executive_appointment (default for appointments), 2) executive_onboarding_packet, 3) fallback
     let emailTemplate: { subject: string; html_content: string } | null = null;
     try {
-      // First try to get from template_usage
-      const { data: usage } = await supabaseClient
-        .from('template_usage')
-        .select('template_id')
-        .eq('template_type', 'email')
-        .eq('usage_context', 'executive_onboarding_packet')
-        .eq('is_default', true)
+      // First try: C-Suite Executive Appointment template (default for appointments)
+      const { data: cSuiteTemplate } = await supabaseClient
+        .from('email_templates')
+        .select('subject, html_content')
+        .eq('template_key', 'c_suite_executive_appointment')
+        .eq('is_active', true)
         .single();
-
-      if (usage?.template_id) {
-        const { data: template } = await supabaseClient
-          .from('email_templates')
-          .select('subject, html_content')
-          .eq('id', usage.template_id)
-          .eq('is_active', true)
-          .single();
-        
-        if (template) {
-          emailTemplate = template;
-        }
-      }
       
-      // Fallback: try by template_key
-      if (!emailTemplate) {
-        const { data: template } = await supabaseClient
-          .from('email_templates')
-          .select('subject, html_content')
-          .eq('template_key', 'executive_onboarding_packet')
-          .eq('is_active', true)
+      if (cSuiteTemplate) {
+        emailTemplate = cSuiteTemplate;
+        console.log('Using C-Suite Executive Appointment email template');
+      } else {
+        // Second try: get from template_usage
+        const { data: usage } = await supabaseClient
+          .from('template_usage')
+          .select('template_id')
+          .eq('template_type', 'email')
+          .eq('usage_context', 'executive_appointment')
+          .eq('is_default', true)
           .single();
+
+        if (usage?.template_id) {
+          const { data: template } = await supabaseClient
+            .from('email_templates')
+            .select('subject, html_content')
+            .eq('id', usage.template_id)
+            .eq('is_active', true)
+            .single();
+          
+          if (template) {
+            emailTemplate = template;
+            console.log('Using template from template_usage');
+          }
+        }
         
-        if (template) {
-          emailTemplate = template;
+        // Third try: executive_onboarding_packet (legacy fallback)
+        if (!emailTemplate) {
+          const { data: template } = await supabaseClient
+            .from('email_templates')
+            .select('subject, html_content')
+            .eq('template_key', 'executive_onboarding_packet')
+            .eq('is_active', true)
+            .single();
+          
+          if (template) {
+            emailTemplate = template;
+            console.log('Using executive_onboarding_packet template (fallback)');
+          }
         }
       }
     } catch (error) {
@@ -492,12 +508,204 @@ serve(async (req: Request) => {
 
     console.log('Using email template from database');
 
+    // Add README file with signing instructions
+    const readmeContent = `# Executive Document Signing Instructions
+
+## Welcome to Your Executive Appointment Signing Portal
+
+This guide will walk you through the process of accessing and signing your executive appointment documents.
+
+---
+
+## 📋 Table of Contents
+
+1. Accessing the Signing Portal
+2. Logging In
+3. Navigating to Your Documents
+4. Reviewing Documents
+5. Signing Documents
+6. Completing the Process
+7. Troubleshooting
+
+---
+
+## 1. Accessing the Signing Portal
+
+### Option A: Direct Link from Email
+- Click the "Access Signing Portal" button in your appointment email
+- This will take you directly to your signing page
+
+### Option B: Manual Access
+1. Navigate to: ${portalUrl}
+2. If you have a signature token, it will be included in the link automatically
+
+---
+
+## 2. Logging In
+
+### If You Already Have an Account
+1. Enter your email address (the one used for your appointment)
+2. Enter your password
+3. Click "Sign In"
+
+### If You Don't Have an Account Yet
+1. Click "Sign Up" or "Create Account"
+2. Enter your email address (must match the email used for your appointment)
+3. Create a secure password (minimum 8 characters)
+4. Verify your email address by clicking the link sent to your inbox
+5. Return to the signing portal and log in
+
+---
+
+## 3. Navigating to Your Documents
+
+Once logged in:
+1. Dashboard View: You'll see a list of documents awaiting your signature
+2. Document Status: Each document will show its status (Pending, Signed, Expired)
+3. Filter Options: Use filters to view only pending documents or sort by date
+
+---
+
+## 4. Reviewing Documents
+
+Before signing, carefully review each document:
+- ✅ Your name, title, and role are correct
+- ✅ Compensation details are accurate
+- ✅ Effective date matches your appointment date
+- ✅ All terms and conditions are understood
+
+---
+
+## 5. Signing Documents
+
+### Step-by-Step Signing Process
+
+#### Step 1: Open the Document
+- Click on the document you wish to sign
+- The document will open in the signing interface
+
+#### Step 2: Locate Signature Fields
+- Signature fields are marked with highlighted boxes or tags
+- Look for fields labeled with your role (CEO, CFO, CTO, COO, Secretary, etc.)
+
+#### Step 3: Choose Your Signing Method
+
+**Option A: Draw Your Signature**
+1. Click the signature field
+2. Select "Draw Signature"
+3. Use your mouse, trackpad, or touchscreen to draw your signature
+4. Click "Save" when satisfied
+5. Click "Apply" to place it in the document
+
+**Option B: Type Your Signature**
+1. Click the signature field
+2. Select "Type Signature"
+3. Choose a font style
+4. Type your full legal name
+5. Click "Apply" to place it in the document
+
+**Option C: Upload Signature Image**
+1. Click the signature field
+2. Select "Upload Image"
+3. Choose a PNG, JPG, or PDF file of your signature
+4. Adjust size and position if needed
+5. Click "Apply" to place it in the document
+
+#### Step 4: Complete All Required Fields
+- Some documents may require initials on specific pages, date fields, or additional information
+- Complete all required fields before proceeding
+
+#### Step 5: Review and Submit
+1. Review the entire document with your signature(s) in place
+2. Ensure all required fields are completed
+3. Click "Submit Signature" or "Sign Document"
+4. Confirm your submission in the popup dialog
+
+---
+
+## 6. Completing the Process
+
+### After Signing All Documents
+
+1. Confirmation Email: You'll receive an email confirmation for each signed document
+2. Document Status: Your dashboard will update to show all documents as "Signed"
+3. Final Review: The board/HR team will review all signatures
+4. Activation: Once all parties have signed, your appointment will be activated
+
+---
+
+## 7. Troubleshooting
+
+### Common Issues and Solutions
+
+**"I can't log in"**
+- Check your email: Ensure you're using the correct email address
+- Reset password: Use the "Forgot Password" feature
+- Contact support: executive@cravenusa.com
+
+**"I don't see my documents"**
+- Check email: Ensure you clicked the correct link from your appointment email
+- Refresh page: Try refreshing your browser
+- Contact support: We can resend your document links
+
+**"Signature field not appearing"**
+- Zoom out: Try zooming out to see the full document
+- Scroll: Signature fields may be on different pages
+- Browser compatibility: Ensure you're using a modern browser
+
+**"I need to make changes"**
+- Before signing: Contact executive@cravenusa.com to request changes
+- After signing: Contact us immediately - we may be able to void and regenerate
+
+---
+
+## 📞 Support Contact Information
+
+**Executive Onboarding Team**
+- Email: executive@cravenusa.com
+- Response Time: Within 24 hours (urgent matters: same day)
+- Hours: Monday - Friday, 9:00 AM - 5:00 PM EST
+
+---
+
+## ✅ Checklist
+
+Before you finish, ensure you have:
+- [ ] Logged into the signing portal
+- [ ] Reviewed all documents carefully
+- [ ] Signed all required documents
+- [ ] Received confirmation emails
+- [ ] Saved copies of signed documents for your records
+
+---
+
+**Last Updated**: ${new Date().getFullYear()}
+**Signing Portal**: ${portalUrl}
+
+For the most up-to-date instructions, visit: ${portalUrl}/instructions
+`;
+
+    // Convert README to base64 for attachment
+    // Use TextEncoder to properly encode UTF-8, then base64
+    const readmeBytes = new TextEncoder().encode(readmeContent);
+    const readmeBase64 = base64Encode(readmeBytes);
+    
+    // Add README to attachments
+    const allAttachments = [
+      ...attachments,
+      {
+        filename: 'EXECUTIVE_SIGNING_INSTRUCTIONS.txt',
+        content: readmeBase64,
+        type: 'text/plain',
+      }
+    ];
+
     const emailResponse = await resend.emails.send({
       from: fromEmail,
       to: [to],
       subject: emailSubject,
       html: emailHtml,
-      attachments: attachments.length > 0 ? attachments : undefined,
+      attachments: allAttachments.length > 0 ? allAttachments : undefined,
     });
 
     console.log(`Email sent successfully to ${to}`);

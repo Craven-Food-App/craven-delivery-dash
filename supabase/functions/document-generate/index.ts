@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { convertLayoutToAnchors, getPdfPageDimensions } from '../_shared/pdfAnchors.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -201,6 +202,19 @@ serve(async (req) => {
     console.log('Converting HTML to PDF...');
     const pdfBuffer: Uint8Array = await convertHtmlToPdf(htmlForPdf);
     console.log('PDF generated successfully, size:', pdfBuffer.length, 'bytes');
+    
+    // Extract PDF page dimensions and convert signature layout to anchors
+    let signatureAnchors = null;
+    if (signatureLayout.length > 0) {
+      try {
+        const pageDimensions = await getPdfPageDimensions(pdfBuffer);
+        signatureAnchors = convertLayoutToAnchors(signatureLayout, pageDimensions);
+        console.log('Signature anchors calculated:', Object.keys(signatureAnchors).length, 'anchors');
+      } catch (anchorError) {
+        console.error('Error calculating signature anchors:', anchorError);
+        // Continue without anchors - will fall back to percentage-based positioning
+      }
+    }
 
     const signatureLayout: Array<Record<string, any>> =
       signatureFields.length > 0
@@ -278,6 +292,7 @@ serve(async (req) => {
         required_signers: Array.isArray(required_signers) ? required_signers : null,
         signer_roles: computedSignerRoles,
         signature_field_layout: signatureLayout,
+        signature_anchors: signatureAnchors,
     };
 
     // Ensure type UUID is always generated

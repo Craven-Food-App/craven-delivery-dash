@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { PDFDocument, StandardFonts, rgb } from "https://esm.sh/pdf-lib@1.17.1?bundle";
+import { determineSignerRole } from '../_shared/pdfAnchors.ts';
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -493,6 +494,19 @@ serve(async (req) => {
         ? await pdfDoc.embedPng(base64ToUint8Array(signature_png_base64))
         : null;
 
+      // Check if document has signature anchors (anchor-based positioning)
+      const signatureAnchors = document.signature_anchors || null;
+      const signerRole = determineSignerRole(document.role);
+      
+      // Try to use anchor-based positioning first
+      let useAnchors = false;
+      if (signatureAnchors && signatureAnchors[signerRole]) {
+        useAnchors = true;
+        console.log(`Using anchor-based positioning for ${signerRole}`);
+      } else {
+        console.log(`No anchor found for ${signerRole}, using percentage-based positioning`);
+      }
+
       const documentRoleLower = (document.role || '').toLowerCase();
       const matchesOfficerField = (roleLabel: any) => {
         if (!roleLabel) return true;
@@ -553,7 +567,7 @@ serve(async (req) => {
         });
       };
 
-      if (officerFields.length > 0) {
+      if (officerFields.length > 0 || useAnchors) {
         const signedDate = new Date(signedAtISO);
         const formattedDate = signedDate.toLocaleDateString('en-US');
         const signerDisplayName = typed_name || document.officer_name || 'Executive';
@@ -563,82 +577,219 @@ serve(async (req) => {
           .join('')
           .slice(0, 3) || 'ES';
 
-        for (const field of officerFields) {
-          const pageNumber = Math.max(1, Number(field.page_number) || 1);
-          const pageIndex = Math.min(pageNumber - 1, pages.length - 1);
+        // Use anchor-based positioning if available
+        if (useAnchors && signatureAnchors[signerRole] && signatureImage) {
+          const anchor = signatureAnchors[signerRole];
+          const pageIndex = Math.min(anchor.page - 1, pages.length - 1);
           const page = pages[pageIndex];
           const { width, height } = page.getSize();
-          const { boxX, boxY, boxWidth, boxHeight } = getBox(field, width, height);
-
+          
+          // Use anchor dimensions if available, otherwise use defaults
+          const sigWidth = anchor.width || 200;
+          const sigHeight = anchor.height || (signatureImage.height / signatureImage.width) * sigWidth;
+          
+          // Calculate signature image dimensions maintaining aspect ratio
+          const aspectRatio = signatureImage.width / signatureImage.height;
+          let drawWidth = sigWidth;
+          let drawHeight = sigHeight;
+          
+          if (aspectRatio > (sigWidth / sigHeight)) {
+            drawHeight = sigWidth / aspectRatio;
+            drawWidth = sigWidth;
+          } else {
+            drawWidth = sigHeight * aspectRatio;
+            drawHeight = sigHeight;
+          }
+          
+          // Remove tag text area (draw white rectangle over it)
+          // Use anchor width/height if available, otherwise use signature dimensions
+          const tagAreaWidth = anchor.width || sigWidth;
+          const tagAreaHeight = anchor.height || 20; // Approximate height of tag text
+          
+          // anchor.y is the top of the signature field area in PDF coordinates (from bottom)
+          // Draw white rectangle to cover tag text area
           page.drawRectangle({
-            x: boxX,
-            y: boxY,
-            width: boxWidth,
-            height: boxHeight,
-            color: rgb(1, 1, 1),
+            x: anchor.x,
+            y: anchor.y - tagAreaHeight, // Position rectangle below anchor.y
+            width: tagAreaWidth,
+            height: tagAreaHeight,
+            color: rgb(1, 1, 1), // White
             opacity: 1,
           });
+          
+          // Draw electronic signature stamp beside the signature
+          const stampText = 'Electronically Signed';
+          const stampFontSize = 8;
+          const stampTextWidth = fontRegular.widthOfTextAtSize(stampText, stampFontSize);
+          const stampPadding = 8;
+          const stampBoxWidth = stampTextWidth + (stampPadding * 2);
+          const stampBoxHeight = 20;
+          
+          // Position stamp to the right of signature
+          const stampX = anchor.x + drawWidth + 10; // 10pt gap between signature and stamp
+          const stampY = anchor.y - stampBoxHeight; // Align top with signature area
+          
+          // Draw stamp background (light gray)
           page.drawRectangle({
-            x: boxX,
-            y: boxY,
-            width: boxWidth,
-            height: boxHeight,
-            borderColor: rgb(0.18, 0.32, 0.58),
-            borderWidth: 1.3,
+            x: stampX,
+            y: stampY,
+            width: stampBoxWidth,
+            height: stampBoxHeight,
+            color: rgb(0.95, 0.95, 0.95), // Light gray
+            borderColor: rgb(0.7, 0.7, 0.7),
+            borderWidth: 1,
           });
+          
+          // Draw stamp text
+          page.drawText(stampText, {
+            x: stampX + stampPadding,
+            y: stampY + (stampBoxHeight - stampFontSize) / 2,
+            size: stampFontSize,
+            font: fontRegular,
+            color: rgb(0.3, 0.3, 0.3),
+          });
+          
+          // Draw signature at anchor position
+          // anchor.y represents the top of the signature area
+          // Position signature so its top aligns with anchor.y, then adjust downward
+          // We want the signature to fill the area, so position it at anchor.y - drawHeight
+          const imageY = anchor.y - drawHeight;
+          
+          page.drawImage(signatureImage, {
+            x: anchor.x,
+            y: imageY,
+            width: drawWidth,
+            height: drawHeight,
+          });
+          
+          console.log(`Signature placed at anchor for ${signerRole}:`, {
+            page: anchor.page,
+            x: anchor.x,
+            y: anchor.y,
+            imageY,
+            drawWidth,
+            drawHeight,
+          });
+          
+          // Mark as completed
+          completedFieldValues.set(`anchor_${signerRole}`, 'Signature');
+        } else {
+          // Fallback to percentage-based positioning
+          for (const field of officerFields) {
+            const pageNumber = Math.max(1, Number(field.page_number) || 1);
+            const pageIndex = Math.min(pageNumber - 1, pages.length - 1);
+            const page = pages[pageIndex];
+            const { width, height } = page.getSize();
+            const { boxX, boxY, boxWidth, boxHeight } = getBox(field, width, height);
 
-          const fieldType = String(field.field_type || 'signature').toLowerCase();
-          const fieldKey = String(field.id ?? `${pageNumber}-${fieldType}`);
-          let renderedValue: string | null = null;
+            page.drawRectangle({
+              x: boxX,
+              y: boxY,
+              width: boxWidth,
+              height: boxHeight,
+              color: rgb(1, 1, 1),
+              opacity: 1,
+            });
+            page.drawRectangle({
+              x: boxX,
+              y: boxY,
+              width: boxWidth,
+              height: boxHeight,
+              borderColor: rgb(0.18, 0.32, 0.58),
+              borderWidth: 1.3,
+            });
 
-          if (fieldType === 'signature') {
-            if (signatureImage) {
-              // Fill the entire signature box while maintaining aspect ratio
-              const aspectRatio = signatureImage.width / signatureImage.height;
-              const boxAspectRatio = boxWidth / boxHeight;
-              
-              let drawWidth = boxWidth;
-              let drawHeight = boxHeight;
-              
-              // Fit to box dimensions while maintaining aspect ratio
-              if (aspectRatio > boxAspectRatio) {
-                // Signature is wider - fit to width
-                drawHeight = boxWidth / aspectRatio;
-                drawWidth = boxWidth;
+            const fieldType = String(field.field_type || 'signature').toLowerCase();
+            const fieldKey = String(field.id ?? `${pageNumber}-${fieldType}`);
+            let renderedValue: string | null = null;
+
+            if (fieldType === 'signature') {
+              if (signatureImage) {
+                // Fill the signature box while maintaining aspect ratio
+                // Leave space for the electronic signature stamp beside it
+                const aspectRatio = signatureImage.width / signatureImage.height;
+                const boxAspectRatio = boxWidth / boxHeight;
+                
+                // Reserve space for stamp (about 30% of box width)
+                const stampSpace = boxWidth * 0.3;
+                const availableWidth = boxWidth - stampSpace - 10; // 10pt gap
+                
+                let drawWidth = availableWidth;
+                let drawHeight = boxHeight;
+                
+                // Fit to available dimensions while maintaining aspect ratio
+                if (aspectRatio > (availableWidth / boxHeight)) {
+                  // Signature is wider - fit to width
+                  drawHeight = availableWidth / aspectRatio;
+                  drawWidth = availableWidth;
+                } else {
+                  // Signature is taller - fit to height
+                  drawWidth = boxHeight * aspectRatio;
+                  drawHeight = boxHeight;
+                }
+                
+                // Center the signature vertically in the box, align left
+                const imageX = boxX;
+                const imageY = boxY + (boxHeight - drawHeight) / 2;
+                
+                // Draw signature image
+                page.drawImage(signatureImage, {
+                  x: imageX,
+                  y: imageY,
+                  width: drawWidth,
+                  height: drawHeight,
+                });
+                
+                // Draw electronic signature stamp beside the signature
+                const stampText = 'Electronically Signed';
+                const stampFontSize = 8;
+                const stampTextWidth = fontRegular.widthOfTextAtSize(stampText, stampFontSize);
+                const stampPadding = 6;
+                const stampBoxWidth = stampTextWidth + (stampPadding * 2);
+                const stampBoxHeight = 18;
+                
+                // Position stamp to the right of signature
+                const stampX = imageX + drawWidth + 10; // 10pt gap
+                const stampY = boxY + (boxHeight - stampBoxHeight) / 2; // Center vertically
+                
+                // Draw stamp background (light gray)
+                page.drawRectangle({
+                  x: stampX,
+                  y: stampY,
+                  width: stampBoxWidth,
+                  height: stampBoxHeight,
+                  color: rgb(0.95, 0.95, 0.95), // Light gray
+                  borderColor: rgb(0.7, 0.7, 0.7),
+                  borderWidth: 1,
+                });
+                
+                // Draw stamp text
+                page.drawText(stampText, {
+                  x: stampX + stampPadding,
+                  y: stampY + (stampBoxHeight - stampFontSize) / 2,
+                  size: stampFontSize,
+                  font: fontRegular,
+                  color: rgb(0.3, 0.3, 0.3),
+                });
+                
+                renderedValue = 'Signature';
               } else {
-                // Signature is taller - fit to height
-                drawWidth = boxHeight * aspectRatio;
-                drawHeight = boxHeight;
+                // No signature image - don't render anything (signature is required)
+                renderedValue = null;
               }
-              
-              // Center the signature in the box
-              const imageX = boxX + (boxWidth - drawWidth) / 2;
-              const imageY = boxY + (boxHeight - drawHeight) / 2;
-              
-              // Draw signature image (transparent background already handled by canvas)
-              page.drawImage(signatureImage, {
-                x: imageX,
-                y: imageY,
-                width: drawWidth,
-                height: drawHeight,
-              });
-              renderedValue = 'Signature';
+            } else if (fieldType === 'initials') {
+              drawCenteredText(page, initials, boxX, boxY + (boxHeight - 12) / 2, boxWidth, fontBold, 12);
+              renderedValue = initials;
+            } else if (fieldType === 'date') {
+              drawCenteredText(page, formattedDate, boxX, boxY + (boxHeight - 10) / 2, boxWidth, fontRegular, 10);
+              renderedValue = formattedDate;
             } else {
-              // No signature image - don't render anything (signature is required)
-              renderedValue = null;
+              drawCenteredText(page, signerDisplayName, boxX, boxY + (boxHeight - 10) / 2, boxWidth, fontRegular, 10);
+              renderedValue = signerDisplayName;
             }
-          } else if (fieldType === 'initials') {
-            drawCenteredText(page, initials, boxX, boxY + (boxHeight - 12) / 2, boxWidth, fontBold, 12);
-            renderedValue = initials;
-          } else if (fieldType === 'date') {
-            drawCenteredText(page, formattedDate, boxX, boxY + (boxHeight - 10) / 2, boxWidth, fontRegular, 10);
-            renderedValue = formattedDate;
-          } else {
-            drawCenteredText(page, signerDisplayName, boxX, boxY + (boxHeight - 10) / 2, boxWidth, fontRegular, 10);
-            renderedValue = signerDisplayName;
-          }
 
-          completedFieldValues.set(fieldKey, renderedValue);
+            completedFieldValues.set(fieldKey, renderedValue);
+          }
         }
 
         signedPdfBytes = await pdfDoc.save();

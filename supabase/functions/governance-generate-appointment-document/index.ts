@@ -503,6 +503,53 @@ serve(async (req) => {
     // Render HTML (replace placeholders)
     let html = htmlContent;
     
+    // Add CSS to hide signature tags but preserve them in PDF
+    const signatureTagCSS = `
+<style>
+  [data-sig] {
+    font-size: 0px !important;
+    color: transparent !important;
+    visibility: hidden !important;
+    position: absolute !important;
+    width: 0px !important;
+    height: 0px !important;
+    overflow: hidden !important;
+    line-height: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+</style>
+`;
+    
+    // Inject CSS into HTML head if it exists, otherwise before body
+    if (html.includes('</head>')) {
+      html = html.replace('</head>', signatureTagCSS + '</head>');
+    } else if (html.includes('<body')) {
+      html = html.replace('<body', signatureTagCSS + '<body');
+    } else if (html.includes('<!DOCTYPE') || html.includes('<html')) {
+      // Insert after opening html tag
+      html = html.replace(/(<html[^>]*>)/i, '$1' + signatureTagCSS);
+    } else {
+      // Prepend to HTML if no structure found
+      html = signatureTagCSS + html;
+    }
+    
+    // Add data-sig attributes to signature tags before replacing placeholders
+    // This preserves the tags as anchor points in the PDF
+    const signatureTagMap: Record<string, RegExp> = {
+      'CEO': /\{\{SIGNATURE_CEO\}\}/gi,
+      'CFO': /\{\{SIGNATURE_CFO\}\}/gi,
+      'CTO': /\{\{SIGNATURE_CTO\}\}/gi,
+      'CXO': /\{\{SIGNATURE_CXO\}\}/gi,
+      'COO': /\{\{SIGNATURE_COO\}\}/gi,
+      'SECRETARY': /\{\{SIGNATURE_SECRETARY\}\}/gi,
+      'BOARD': /\{\{SIGNATURE_BOARD\}\}/gi,
+    };
+    
+    Object.entries(signatureTagMap).forEach(([role, pattern]) => {
+      html = html.replace(pattern, `<span data-sig="${role}">$&</span>`);
+    });
+    
     // First pass: Replace all known placeholders
     Object.keys(templateData).forEach((key) => {
       const value = templateData[key];

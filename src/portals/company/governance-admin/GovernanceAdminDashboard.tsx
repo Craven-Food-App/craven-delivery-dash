@@ -1,16 +1,36 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Container, Title, Text, Stack, Tabs, Card } from '@mantine/core';
-import { IconShield, IconUsers, IconFileText, IconUserCheck, IconHistory, IconChecklist, IconTags } from '@tabler/icons-react';
-import { useNavigate } from 'react-router-dom';
+import { IconShield, IconUsers, IconFileText, IconUserCheck, IconHistory, IconChecklist, IconTags, IconKey } from '@tabler/icons-react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import AppointmentList from './AppointmentList';
 import ResolutionList from './ResolutionList';
 import OfficerLedger from './OfficerLedger';
 import GovernanceLogList from './GovernanceLogList';
 import OfficerValidation from './OfficerValidation';
 import DocumentTemplates from './DocumentTemplates';
+import RoleManagement from './RoleManagement';
+import { BoardSetupModule } from '@/components/board/BoardSetupModule';
 
 const GovernanceAdminDashboard: React.FC = () => {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [activeTab, setActiveTab] = useState<string>(searchParams.get('tab') || 'appointments');
+
+  // Update active tab when URL changes
+  useEffect(() => {
+    const tabFromUrl = searchParams.get('tab');
+    if (tabFromUrl) {
+      setActiveTab(tabFromUrl);
+    }
+  }, [searchParams]);
+
+  // Handle tab change
+  const handleTabChange = (value: string | null) => {
+    if (value) {
+      setActiveTab(value);
+      setSearchParams({ tab: value });
+    }
+  };
 
   return (
     <Container size="xl" py="xl">
@@ -34,7 +54,7 @@ const GovernanceAdminDashboard: React.FC = () => {
             border: '1px solid #e5e7eb',
           }}
         >
-          <Tabs defaultValue="appointments">
+          <Tabs value={activeTab} onChange={handleTabChange}>
             <Tabs.List>
               <Tabs.Tab value="appointments" leftSection={<IconUsers size={16} />}>
                 Appointments
@@ -53,6 +73,12 @@ const GovernanceAdminDashboard: React.FC = () => {
               </Tabs.Tab>
               <Tabs.Tab value="templates" leftSection={<IconTags size={16} />}>
                 Document Templates
+              </Tabs.Tab>
+              <Tabs.Tab value="roles" leftSection={<IconKey size={16} />}>
+                Role Management
+              </Tabs.Tab>
+              <Tabs.Tab value="board-setup" leftSection={<IconUsers size={16} />}>
+                Board Setup
               </Tabs.Tab>
             </Tabs.List>
 
@@ -78,6 +104,14 @@ const GovernanceAdminDashboard: React.FC = () => {
 
             <Tabs.Panel value="templates" pt="md">
               <DocumentTemplates />
+            </Tabs.Panel>
+
+            <Tabs.Panel value="roles" pt="md">
+              <RoleManagement />
+            </Tabs.Panel>
+
+            <Tabs.Panel value="board-setup" pt="md">
+              <BoardSetupModule />
             </Tabs.Panel>
           </Tabs>
         </Card>

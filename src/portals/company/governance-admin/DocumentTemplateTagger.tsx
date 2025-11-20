@@ -127,7 +127,7 @@ const DocumentTemplateTagger: React.FC<DocumentTemplateTaggerProps> = ({
       const defaultDocHeight = 1000;
       const convertedFields = (data || []).map(f => ({
         ...f,
-        field_type: f.field_type as any,
+        field_type: (f.field_type === 'initials' ? 'initial' : f.field_type) as any, // Map 'initials' from DB to 'initial' for UI
         x: f.x_percent ? (f.x_percent / 100) * defaultDocWidth : 0,
         y: f.y_percent ? (f.y_percent / 100) * defaultDocHeight : 0,
         width: f.width_percent ? (f.width_percent / 100) * defaultDocWidth : 150,
@@ -162,7 +162,7 @@ const DocumentTemplateTagger: React.FC<DocumentTemplateTaggerProps> = ({
 
     const newField: SignatureField = {
       id: Date.now().toString(),
-      field_type: draggedField.type,
+      field_type: draggedField.type === 'initial' ? 'initials' : draggedField.type, // Map 'initial' to 'initials' for database
       signer_role: selectedRole,
       page_number: 1,
       x: Math.max(0, x),
@@ -249,7 +249,7 @@ const DocumentTemplateTagger: React.FC<DocumentTemplateTaggerProps> = ({
 
         const fieldsToInsert = fields.map(f => ({
           template_id: templateId,
-          field_type: f.field_type,
+          field_type: f.field_type === 'initial' ? 'initials' : f.field_type, // Map 'initial' to 'initials' for database
           signer_role: f.signer_role,
           page_number: f.page_number,
           x_percent: (f.x / docWidth) * 100,

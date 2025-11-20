@@ -311,6 +311,10 @@ function ExecutiveSigningFlow({ documents, onComplete }: ExecutiveSigningFlowPro
   const [loading, setLoading] = useState(false);
   const [userInfo, setUserInfo] = useState<any>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const [draggingField, setDraggingField] = useState<string | null>(null);
+  const [dragStart, setDragStart] = useState<{ x: number; y: number } | null>(null);
+  const [fieldPositions, setFieldPositions] = useState<Record<string, { x_percent: number; y_percent: number }>>({});
+  const documentContainerRef = useRef<HTMLDivElement>(null);
   const initialsCanvasRef = useRef<HTMLCanvasElement>(null);
 
   // Fetch signature fields function
@@ -520,6 +524,20 @@ function ExecutiveSigningFlow({ documents, onComplete }: ExecutiveSigningFlowPro
         for (const doc of documents) {
           const docFields = allFields.filter(f => f.documentId === doc.id && f.completed);
           if (docFields.length > 0) {
+            // Include updated field positions if any were dragged
+            const updatedFieldLayout = (signatureFields[doc.id] || []).map(field => {
+              const fieldKey = `${doc.id}_${field.id}`;
+              const draggedPosition = fieldPositions[fieldKey];
+              if (draggedPosition) {
+                return {
+                  ...field,
+                  x_percent: draggedPosition.x_percent,
+                  y_percent: draggedPosition.y_percent,
+                };
+              }
+              return field;
+            });
+            
             await supabase.functions.invoke('submit-executive-document-signature', {
               body: {
                 document_id: doc.id,
@@ -528,6 +546,7 @@ function ExecutiveSigningFlow({ documents, onComplete }: ExecutiveSigningFlowPro
                 signer_ip: null,
                 signer_user_agent: navigator.userAgent,
                 signature_token: null,
+                signature_field_layout: updatedFieldLayout.length > 0 ? updatedFieldLayout : undefined,
               },
             });
           }
@@ -902,9 +921,85 @@ function ExecutiveSigningFlow({ documents, onComplete }: ExecutiveSigningFlowPro
             </div>
             <div className="flex-1 overflow-auto p-6" style={{ minHeight: 0, height: '100%' }}>
               <div className="max-w-4xl mx-auto w-full">
-                <div className="bg-white rounded-lg shadow-lg relative w-full" style={{ minHeight: '1000px', position: 'relative', padding: '60px 80px' }}>
+                    <div className="bg-white rounded-lg shadow-lg relative w-full" style={{ minHeight: '1000px', position: 'relative', padding: '60px 80px' }}>
                   {currentDocument.fileUrl ? (
-                    <div className="relative w-full" style={{ position: 'relative', width: '100%', height: '100%' }}>
+                    <div 
+                      ref={documentContainerRef}
+                      className="relative w-full" 
+                      style={{ position: 'relative', width: '100%', height: '100%' }}
+                      onMouseMove={(e) => {
+                        if (!draggingField || !dragStart || !documentContainerRef.current) return;
+                        e.preventDefault();
+                        e.stopPropagation();
+                        
+                        const container = documentContainerRef.current;
+                        const rect = container.getBoundingClientRect();
+                        const containerWidth = rect.width;
+                        const containerHeight = rect.height;
+                        
+                        const currentX = e.clientX - rect.left;
+                        const currentY = e.clientY - rect.top;
+                        
+                        const deltaX = currentX - dragStart.x;
+                        const deltaY = currentY - dragStart.y;
+                        
+                        const currentPosition = fieldPositions[draggingField] || {
+                          x_percent: (signatureFields[currentDocument.id] || []).find(f => `${currentDocument.id}_${f.id}` === draggingField)?.x_percent || 0,
+                          y_percent: (signatureFields[currentDocument.id] || []).find(f => `${currentDocument.id}_${f.id}` === draggingField)?.y_percent || 0,
+                        };
+                        
+                        const newXPercent = Math.max(0, Math.min(100, currentPosition.x_percent + (deltaX / containerWidth) * 100));
+                        const newYPercent = Math.max(0, Math.min(100, currentPosition.y_percent + (deltaY / containerHeight) * 100));
+                        
+                        setFieldPositions({
+                          ...fieldPositions,
+                          [draggingField]: { x_percent: newXPercent, y_percent: newYPercent },
+                        });
+                        
+                        setDragStart({
+                          x: currentX,
+                          y: currentY,
+                        });
+                      }}
+                      onMouseUp={() => {
+                        if (draggingField) {
+                          const updatedFields = { ...signatureFields };
+                          if (updatedFields[currentDocument.id]) {
+                            const fieldId = draggingField.replace(`${currentDocument.id}_`, '');
+                            const fieldIndex = updatedFields[currentDocument.id].findIndex(f => f.id === fieldId);
+                            if (fieldIndex >= 0 && fieldPositions[draggingField]) {
+                              updatedFields[currentDocument.id][fieldIndex] = {
+                                ...updatedFields[currentDocument.id][fieldIndex],
+                                x_percent: fieldPositions[draggingField].x_percent,
+                                y_percent: fieldPositions[draggingField].y_percent,
+                              };
+                              setSignatureFields(updatedFields);
+                            }
+                          }
+                          setDraggingField(null);
+                          setDragStart(null);
+                        }
+                      }}
+                      onMouseLeave={() => {
+                        if (draggingField) {
+                          const updatedFields = { ...signatureFields };
+                          if (updatedFields[currentDocument.id]) {
+                            const fieldId = draggingField.replace(`${currentDocument.id}_`, '');
+                            const fieldIndex = updatedFields[currentDocument.id].findIndex(f => f.id === fieldId);
+                            if (fieldIndex >= 0 && fieldPositions[draggingField]) {
+                              updatedFields[currentDocument.id][fieldIndex] = {
+                                ...updatedFields[currentDocument.id][fieldIndex],
+                                x_percent: fieldPositions[draggingField].x_percent,
+                                y_percent: fieldPositions[draggingField].y_percent,
+                              };
+                              setSignatureFields(updatedFields);
+                            }
+                          }
+                          setDraggingField(null);
+                          setDragStart(null);
+                        }
+                      }}
+                    >
                       <div style={{ width: '100%', position: 'relative', overflow: 'visible', height: '100%' }}>
                         <div style={{ position: 'relative', width: '100%', height: '100%' }}>
                           <DocumentViewer url={currentDocument.fileUrl} />
@@ -913,22 +1008,51 @@ function ExecutiveSigningFlow({ documents, onComplete }: ExecutiveSigningFlowPro
                           {(signatureFields[currentDocument.id] || []).map((field) => {
                             const fieldState = allFields.find(f => f.id === `${currentDocument.id}_${field.id}`);
                             const isCompleted = fieldState?.completed || false;
+                            const fieldKey = `${currentDocument.id}_${field.id}`;
+                            
+                            // Use dragged position if available, otherwise use original position
+                            const position = fieldPositions[fieldKey] || { 
+                              x_percent: field.x_percent, 
+                              y_percent: field.y_percent 
+                            };
+                            
+                            const isDragging = draggingField === fieldKey;
+                            
+                            const handleMouseDown = (e: React.MouseEvent) => {
+                              if (!isCompleted) return; // Only allow dragging completed signatures
+                              e.preventDefault();
+                              e.stopPropagation();
+                              setDraggingField(fieldKey);
+                              const container = documentContainerRef.current;
+                              if (container) {
+                                const rect = container.getBoundingClientRect();
+                                const fieldRect = e.currentTarget.getBoundingClientRect();
+                                setDragStart({
+                                  x: fieldRect.left - rect.left + (fieldRect.width / 2),
+                                  y: fieldRect.top - rect.top + (fieldRect.height / 2),
+                                });
+                              }
+                            };
                             
                             return (
                               <div
                                 key={field.id}
+                                onMouseDown={handleMouseDown}
                                 style={{
                                   position: 'absolute',
-                                  left: `${field.x_percent}%`,
-                                  top: `${field.y_percent}%`,
+                                  left: `${position.x_percent}%`,
+                                  top: `${position.y_percent}%`,
                                   width: `${field.width_percent}%`,
                                   height: `${field.height_percent}%`,
                                   border: isCompleted ? '2px solid #10b981' : '2px solid #f59e0b',
                                   backgroundColor: isCompleted ? '#d1fae5' : '#fef3c7',
                                   borderRadius: '4px',
                                   padding: '8px',
-                                  pointerEvents: 'none',
-                                  zIndex: 10,
+                                  pointerEvents: isCompleted ? 'auto' : 'none',
+                                  cursor: isCompleted ? (isDragging ? 'grabbing' : 'grab') : 'default',
+                                  zIndex: isDragging ? 20 : 10,
+                                  transition: isDragging ? 'none' : 'left 0.1s, top 0.1s',
+                                  userSelect: 'none',
                                 }}
                               >
                                 {isCompleted && fieldState?.value && (
@@ -946,6 +1070,11 @@ function ExecutiveSigningFlow({ documents, onComplete }: ExecutiveSigningFlowPro
                                     {field.field_type !== 'signature' && field.field_type !== 'initial' && (
                                       <div>{fieldState.value}</div>
                                     )}
+                                  </div>
+                                )}
+                                {isCompleted && (
+                                  <div className="absolute top-1 right-1 text-xs text-gray-500">
+                                    Drag to reposition
                                   </div>
                                 )}
                               </div>
