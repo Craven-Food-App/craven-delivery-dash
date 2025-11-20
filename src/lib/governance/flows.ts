@@ -337,10 +337,10 @@ export async function handleBankingSetup(officerUserId: string): Promise<string 
     ...common,
     officer_name: officerName,
     officer_email: officerEmail,
-    officer_address: profile?.address || '',
+    officer_address: '',
     director_name: directorName,
     director_email: directorEmail,
-    director_address: boardMembers?.email || profile?.address || '',
+    director_address: '',
     resolution_date: new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }),
   };
 

@@ -132,14 +132,14 @@ const ResolutionBuilder: React.FC = () => {
                   label="Meeting Date"
                   placeholder="Select meeting date"
                   value={formData.meeting_date}
-                  onChange={(value) => setFormData({ ...formData, meeting_date: value })}
+                  onChange={(value) => setFormData({ ...formData, meeting_date: value as Date | null })}
                 />
 
                 <DateInput
                   label="Effective Date"
                   placeholder="Select effective date"
                   value={formData.effective_date}
-                  onChange={(value) => setFormData({ ...formData, effective_date: value })}
+                  onChange={(value) => setFormData({ ...formData, effective_date: value as Date | null })}
                 />
               </Group>
 

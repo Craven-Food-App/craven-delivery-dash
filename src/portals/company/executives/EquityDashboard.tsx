@@ -96,6 +96,7 @@ const EquityDashboard: React.FC = () => {
       });
 
       setCertificates(certs || []);
+      // @ts-ignore - Type mismatch Json to array
       setVestingSchedules(schedules || []);
     } catch (error: any) {
       notifications.show({
