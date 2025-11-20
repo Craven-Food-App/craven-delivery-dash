@@ -158,106 +158,42 @@ serve(async (req) => {
         },
       });
 
-      // If this is an appointment resolution and it was adopted, finalize the appointment
+      // If this is an appointment resolution and it was adopted, trigger execution
+      // Step 10: Resolution executed → governance-execute-resolution
+      // This will update onboarding status and send email to executive
       if (newStatus === 'ADOPTED' && resolution.type === 'EXECUTIVE_APPOINTMENT' && resolution.metadata?.appointment_id) {
         const appointmentId = resolution.metadata.appointment_id;
 
-        // Update appointment status to APPROVED
-        await supabaseAdmin
+        // Update executive_appointments status to APPROVED (for legacy compatibility)
+        const { data: execAppointment } = await supabaseAdmin
           .from('executive_appointments')
-          .update({
-            status: 'APPROVED',
-            updated_at: new Date().toISOString(),
-          })
-          .eq('id', appointmentId);
+          .select('id')
+          .eq('id', resolution.metadata?.executive_appointment_id)
+          .maybeSingle();
 
-        // Create corporate officer record if appointment is approved
-        const { data: appointment } = await supabaseAdmin
-          .from('executive_appointments')
-          .select('*')
-          .eq('id', appointmentId)
-          .single();
+        if (execAppointment) {
+          await supabaseAdmin
+            .from('executive_appointments')
+            .update({
+              status: 'APPROVED',
+              updated_at: new Date().toISOString(),
+            })
+            .eq('id', execAppointment.id);
+        }
 
-        if (appointment) {
-          // Check if officer already exists
-          const { data: existingOfficer } = await supabaseAdmin
-            .from('corporate_officers')
-            .select('id')
-            .eq('email', appointment.proposed_officer_email)
-            .eq('status', 'ACTIVE')
-            .single();
-
-          if (!existingOfficer && appointment.proposed_officer_email) {
-            // Create corporate officer record
-            await supabaseAdmin.from('corporate_officers').insert({
-              full_name: appointment.proposed_officer_name,
-              email: appointment.proposed_officer_email,
-              title: appointment.proposed_title,
-              appointed_by: resolution_id,
-              effective_date: appointment.effective_date,
-              term_end: appointment.term_length_months
-                ? new Date(new Date(appointment.effective_date).getTime() + appointment.term_length_months * 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
-                : null,
-              status: 'ACTIVE',
-              metadata: {
-                appointment_id: appointmentId,
-                appointment_type: appointment.appointment_type,
-                authority_granted: appointment.authority_granted,
-                compensation_structure: appointment.compensation_structure,
-                equity_included: appointment.equity_included,
-                equity_details: appointment.equity_details,
-              },
-            });
-
-            // Log officer creation
-            await supabaseAdmin.rpc('log_governance_action', {
-              p_action_type: 'officer_appointed',
-              p_action_category: 'executive',
-              p_target_type: 'officer',
-              p_target_id: appointmentId,
-              p_target_name: appointment.proposed_officer_name,
-              p_description: `Corporate officer ${appointment.proposed_officer_name} appointed as ${appointment.proposed_title}`,
-              p_metadata: {
-                resolution_id: resolution_id,
-                appointment_id: appointmentId,
-                title: appointment.proposed_title,
-              },
-            });
-
-            // Generate final documents (certificate and employment agreement)
-            try {
-              const generateDocUrl = `${supabaseUrl}/functions/v1/governance-generate-appointment-document`;
-              
-              // Generate certificate
-              fetch(generateDocUrl, {
-                method: 'POST',
-                headers: {
-                  'Content-Type': 'application/json',
-                  'Authorization': `Bearer ${supabaseServiceKey}`,
-                },
-                body: JSON.stringify({
-                  appointment_id: appointmentId,
-                  document_type: 'certificate',
-                }),
-              }).catch(err => console.error('Error generating certificate:', err));
-
-              // Generate employment agreement
-              fetch(generateDocUrl, {
-                method: 'POST',
-                headers: {
-                  'Content-Type': 'application/json',
-                  'Authorization': `Bearer ${supabaseServiceKey}`,
-                },
-                body: JSON.stringify({
-                  appointment_id: appointmentId,
-                  document_type: 'employment_agreement',
-                }),
-              }).catch(err => console.error('Error generating employment agreement:', err));
-            } catch (err) {
-              console.error('Error calling document generation:', err);
-              // Don't fail the request if document generation fails
-            }
-          }
+        // Trigger resolution execution (this will handle onboarding and email)
+        try {
+          await fetch(`${supabaseUrl}/functions/v1/governance-execute-resolution`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${supabaseServiceKey}`,
+            },
+            body: JSON.stringify({ resolution_id: resolution_id }),
+          });
+        } catch (err) {
+          console.error('Error executing resolution:', err);
+          // Don't fail the finalization if execution fails
         }
       }
 

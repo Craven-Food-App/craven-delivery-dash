@@ -74,77 +74,55 @@ serve(async (req) => {
         .single();
 
       if (appointment && appointment.appointee_user_id) {
-        // Generate all required appointment documents
-        const documentTypes = [
-          'offer_letter',
-          'employment_agreement',
-          'board_resolution',
-          'stock_certificate',
-        ];
-
-        const generatedDocs: string[] = [];
+        // Step 10: Resolution executed → governance-execute-resolution
+        // Documents are already generated in step 3 (governance-handle-appointment-workflow)
+        // We just need to update onboarding status and send email
         
-        for (const docType of documentTypes) {
+        // Get existing documents for this appointment (already generated)
+        const { data: existingDocuments } = await supabaseAdmin
+          .from('board_documents')
+          .select('id, type, title')
+          .eq('related_appointment_id', appointmentId);
+
+        const documentIds = existingDocuments?.map(d => d.id) || [];
+
+        // Step 11: Update onboarding status to documents_sent
+        const { data: onboarding } = await supabaseAdmin
+          .from('executive_onboarding')
+          .update({
+            status: 'documents_sent',
+            updated_at: new Date().toISOString(),
+          })
+          .eq('appointment_id', appointmentId)
+          .eq('user_id', appointment.appointee_user_id)
+          .select()
+          .single();
+
+        // Step 7: Send email notification to appointee with documents
+        // This happens AFTER resolution is executed (step 10), not during document generation
+        if (documentIds.length > 0) {
           try {
-            console.log(`Generating ${docType} for appointment ${appointmentId}`);
-            const generateResponse = await fetch(`${supabaseUrl}/functions/v1/governance-generate-appointment-document`, {
+            await fetch(`${supabaseUrl}/functions/v1/send-appointment-documents-email`, {
               method: 'POST',
               headers: {
                 'Content-Type': 'application/json',
                 'Authorization': `Bearer ${supabaseServiceKey}`,
               },
-              body: JSON.stringify({
-                appointment_id: appointmentId,
-                document_type: docType,
+              body: JSON.stringify({ 
+                appointmentId: appointmentId,
+                documentIds: documentIds,
               }),
             });
-
-            if (generateResponse.ok) {
-              const result = await generateResponse.json();
-              console.log(`Generated ${docType} successfully:`, result);
-              generatedDocs.push(docType);
-            } else {
-              const errorText = await generateResponse.text();
-              console.error(`Failed to generate ${docType}:`, errorText);
-            }
           } catch (err) {
-            console.error(`Error generating ${docType}:`, err);
+            console.error('Error sending appointment email:', err);
           }
         }
 
-        // Create or update executive_onboarding record
-        const { data: onboarding } = await supabaseAdmin
-          .from('executive_onboarding')
-          .upsert({
-            appointment_id: appointmentId,
-            user_id: appointment.appointee_user_id,
-            status: 'documents_sent',
-            documents_required: documentTypes,
-            signing_deadline: metadata.signing_deadline || null,
-          }, {
-            onConflict: 'appointment_id,user_id',
-          })
-          .select()
-          .single();
-
-        // Trigger document generation and email sending
-        try {
-          await fetch(`${supabaseUrl}/functions/v1/send-appointment-documents-email`, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${supabaseServiceKey}`,
-            },
-            body: JSON.stringify({ appointmentId }),
-          });
-        } catch (err) {
-          console.error('Error sending appointment email:', err);
-        }
-
         executionResult = { 
-          onboarding_created: true, 
+          onboarding_updated: true, 
           onboarding_id: onboarding?.id,
-          documents_generated: generatedDocs,
+          documents_sent: documentIds.length,
+          status: 'documents_sent',
         };
       }
     } else if (resolutionType === 'EQUITY_GRANT' && metadata.grant_details) {

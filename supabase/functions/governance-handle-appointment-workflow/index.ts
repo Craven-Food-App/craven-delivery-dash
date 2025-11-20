@@ -236,6 +236,7 @@ serve(async (req) => {
             appointment_id: appointment_id,
             executive_appointment_id: executive_appointment_id,
             role_titles: appointment.role_titles,
+            equity_grant_details: equity_details || null,
           },
         })
         .select()
@@ -265,19 +266,9 @@ serve(async (req) => {
       console.error('Error creating onboarding record:', error);
     }
 
-    // Step 4: Send email notification
-    if (documentIds.length > 0 && officerEmail) {
-      try {
-        await supabaseAdmin.functions.invoke('send-appointment-documents-email', {
-          body: {
-            appointmentId: appointment_id,
-            documentIds: documentIds,
-          },
-        });
-      } catch (error) {
-        console.error('Error sending email:', error);
-      }
-    }
+    // Step 4: DO NOT send email here - email will be sent after resolution is executed (step 10)
+    // Email is sent in governance-execute-resolution after board votes and resolution is adopted
+    // This ensures the executive only receives documents after board approval
 
     return new Response(
       JSON.stringify({

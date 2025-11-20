@@ -168,13 +168,32 @@ serve(async (req) => {
     }
 
     // If equity is included, issue shares
+    // Get resolution linked to this appointment
     const { data: resolution } = await supabaseAdmin
       .from('governance_board_resolutions')
       .select('id, metadata')
-      .eq('id', appointment_id)
+      .eq('metadata->>appointment_id', appointment_id)
       .maybeSingle();
 
-    const equityDetails = (resolution?.metadata as any)?.equity_grant_details || null;
+    // Also check executive_appointments for equity details
+    const { data: execAppointment } = await supabaseAdmin
+      .from('executive_appointments')
+      .select('equity_included, equity_details')
+      .eq('id', (appointment as any).executive_appointment_id || '')
+      .maybeSingle();
+
+    let equityDetails = null;
+    if (execAppointment?.equity_included && execAppointment?.equity_details) {
+      try {
+        equityDetails = typeof execAppointment.equity_details === 'string' 
+          ? JSON.parse(execAppointment.equity_details)
+          : execAppointment.equity_details;
+      } catch {
+        equityDetails = execAppointment.equity_details;
+      }
+    } else if (resolution?.metadata) {
+      equityDetails = (resolution.metadata as any)?.equity_grant_details || null;
+    }
 
     if (equityDetails && equityDetails.shares_amount) {
       try {

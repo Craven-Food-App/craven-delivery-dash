@@ -183,6 +183,9 @@ serve(async (req) => {
             appointment_id: newAppointmentId,
             executive_appointment_id: appointment.id, // Link to legacy table
             formation_mode: body.formation_mode || false,
+            equity_details: body.equity_included && body.equity_details 
+              ? (typeof body.equity_details === 'string' ? JSON.parse(body.equity_details) : body.equity_details)
+              : null,
           }),
         }).catch(err => console.error('Error triggering appointment workflow:', err));
       } catch (err) {
