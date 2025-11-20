@@ -1,8 +1,250 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useLocation } from 'react-router-dom';
-import { FileText, Check, ChevronRight, AlertCircle, Download, Mail, Calendar, Clock, X, Upload } from 'lucide-react';
+import { FileText, Check, ChevronRight, AlertCircle, Download, Mail, Calendar, Upload } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { message } from 'antd';
+
+// Component to properly display documents (PDFs, images, HTML)
+const DocumentViewer: React.FC<{ url: string; onContentSizeChange?: (width: number, height: number) => void }> = ({ url, onContentSizeChange }) => {
+  const [documentUrl, setDocumentUrl] = useState<string>(url);
+  const [htmlContent, setHtmlContent] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const contentRef = useRef<HTMLDivElement>(null);
+
+  const isHtmlFile = (url: string): boolean => {
+    return url.toLowerCase().endsWith('.html') || url.toLowerCase().includes('.html?');
+  };
+
+  const fetchHtmlContent = async (url: string): Promise<string | null> => {
+    try {
+      const response = await fetch(url);
+      if (!response.ok) return null;
+      const html = await response.text();
+      return html;
+    } catch (error) {
+      console.error('Error fetching HTML content:', error);
+      return null;
+    }
+  };
+
+  useEffect(() => {
+    const loadDocument = async () => {
+      setLoading(true);
+      setError(null);
+      setHtmlContent(null);
+
+      console.log('DocumentViewer: Loading document from URL:', url);
+
+      try {
+        // Handle HTML files - fetch and render content
+        if (isHtmlFile(url)) {
+          console.log('DocumentViewer: Detected HTML file, fetching content...');
+          const html = await fetchHtmlContent(url);
+          if (html) {
+            console.log('DocumentViewer: HTML content fetched successfully, length:', html.length);
+            setHtmlContent(html);
+            setLoading(false);
+            return;
+          } else {
+            console.error('DocumentViewer: Failed to fetch HTML content');
+            setError('Failed to load HTML document');
+            setLoading(false);
+            return;
+          }
+        }
+
+        // Check if it's a storage bucket URL that needs signing
+        try {
+          const urlObj = new URL(url);
+          const match = urlObj.pathname.match(/\/storage\/v1\/object\/(?:public|sign|private)?\/([^/]+)\/(.+)/);
+          
+          if (match) {
+            const bucket = match[1];
+            const path = match[2];
+            const { data, error: signError } = await supabase.storage
+              .from(bucket)
+              .createSignedUrl(path, 3600);
+            
+            if (signError) throw signError;
+            setDocumentUrl(data?.signedUrl || url);
+          } else {
+            // Try to parse as "bucket/path" format
+            const parts = url.split('/');
+            const bucketIndex = parts.findIndex(p => p.includes('storage') || p.includes('bucket'));
+            if (bucketIndex >= 0 && bucketIndex < parts.length - 1) {
+              const bucket = parts[bucketIndex + 1];
+              const path = parts.slice(bucketIndex + 2).join('/');
+              if (bucket && path) {
+                const { data, error: signError } = await supabase.storage
+                  .from(bucket)
+                  .createSignedUrl(path, 3600);
+                
+                if (!signError && data?.signedUrl) {
+                  setDocumentUrl(data.signedUrl);
+                }
+              }
+            }
+          }
+        } catch (urlError) {
+          // If URL parsing fails, use original URL
+          console.warn('URL parsing failed, using original URL:', urlError);
+        }
+      } catch (err: any) {
+        console.error('Error loading document:', err);
+        setError('Failed to load document. Using original URL.');
+        // Keep original URL as fallback
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadDocument();
+  }, [url]);
+
+  // Measure content size after render - must be outside conditional
+  useEffect(() => {
+    if (htmlContent && contentRef.current && onContentSizeChange) {
+      const rect = contentRef.current.getBoundingClientRect();
+      // Account for padding: 60px top/bottom, 80px left/right (matches DocumentTemplateTagger)
+      const contentWidth = rect.width - 160; // 80px padding on each side
+      const contentHeight = rect.height - 120; // 60px padding on top/bottom
+      onContentSizeChange(contentWidth, contentHeight);
+    }
+  }, [htmlContent, onContentSizeChange]);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center" style={{ width: '100%', height: '800px', flexShrink: 0 }}>
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading document...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex items-center justify-center" style={{ width: '100%', height: '800px', flexShrink: 0 }}>
+        <div className="text-center">
+          <AlertCircle className="mx-auto text-red-500 mb-4" size={48} />
+          <p className="text-red-600">{error}</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Render HTML content
+  if (htmlContent) {
+    // Inject styles to override document styles and ensure it fits the container
+    // Match DocumentTemplateTagger padding: 60px top/bottom, 80px left/right
+    const constrainedHtml = htmlContent.replace(
+      /<style>([\s\S]*?)<\/style>/i,
+      (match, styles) => {
+        const constrainedStyles = `
+          <style>
+            ${styles}
+            @page { margin: 0; }
+            body {
+              max-width: 100% !important;
+              margin: 0 !important;
+              padding: 60px 80px !important;
+              width: 100% !important;
+              height: auto !important;
+              box-sizing: border-box !important;
+              position: relative !important;
+            }
+            * {
+              box-sizing: border-box !important;
+            }
+          </style>
+        `;
+        return constrainedStyles;
+      }
+    );
+
+    return (
+      <div
+        ref={contentRef}
+        style={{
+          width: '100%',
+          minHeight: '100%',
+          padding: '0',
+          backgroundColor: '#fff',
+          boxSizing: 'border-box',
+          flexShrink: 0,
+          position: 'relative',
+        }}
+        dangerouslySetInnerHTML={{ __html: constrainedHtml }}
+      />
+    );
+  }
+
+  const isPdf = documentUrl.toLowerCase().endsWith('.pdf') || 
+                documentUrl.toLowerCase().includes('.pdf?') ||
+                documentUrl.toLowerCase().includes('application/pdf');
+  
+  const isImage = /\.(jpg|jpeg|png|gif|webp|bmp)(\?|$)/i.test(documentUrl);
+
+  if (isPdf) {
+    return (
+      <iframe
+        src={documentUrl}
+        style={{ 
+          width: '100%',
+          minHeight: '800px',
+          height: '100%',
+          border: 'none',
+          display: 'block'
+        }}
+        title="Document Preview"
+        type="application/pdf"
+      />
+    );
+  }
+
+  if (isImage) {
+    return (
+      <div style={{ 
+        width: '100%', 
+        minHeight: '800px',
+        height: '100%',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        overflow: 'auto',
+        backgroundColor: '#fff'
+      }}>
+        <img
+          src={documentUrl}
+          alt="Document"
+          style={{ 
+            maxWidth: '100%', 
+            maxHeight: '100%', 
+            objectFit: 'contain',
+            display: 'block'
+          }}
+          onError={() => setError('Failed to load image')}
+        />
+      </div>
+    );
+  }
+
+  // Fallback: try to display as PDF or image based on content type
+  return (
+    <iframe
+      src={documentUrl}
+      style={{ 
+        width: '100%',
+        minHeight: '800px',
+        height: '100%',
+        border: 'none',
+        display: 'block'
+      }}
+      title="Document Preview"
+    />
+  );
+};
 
 interface SignatureField {
   id: string;
@@ -22,25 +264,8 @@ interface Document {
   name: string;
   fileUrl: string;
   templateId?: string;
-  sender?: string;
-  senderEmail?: string;
-  sentDate?: string;
-  expiryDate?: string;
-  message?: string;
-  recipient?: string;
-  recipientEmail?: string;
+  type?: string;
   signature_status?: string;
-  signed_file_url?: string;
-  signing_stage?: number;
-  signing_order?: number;
-  depends_on_document_id?: string;
-}
-
-interface DocumentStage {
-  id: number;
-  name: string;
-  description: string;
-  documents: Document[];
 }
 
 interface FieldState {
@@ -63,8 +288,12 @@ const signatureFonts = [
   { name: 'Caveat', value: 'Caveat, cursive' },
 ];
 
-const ExecutiveSigningPortal = () => {
-  const location = useLocation();
+interface ExecutiveSigningFlowProps {
+  documents: Document[];
+  onComplete?: () => void;
+}
+
+function ExecutiveSigningFlow({ documents, onComplete }: ExecutiveSigningFlowProps) {
   const [currentStep, setCurrentStep] = useState<'landing' | 'adopt' | 'signing' | 'review' | 'complete'>('landing');
   const [currentDocumentIndex, setCurrentDocumentIndex] = useState(0);
   const [currentFieldIndex, setCurrentFieldIndex] = useState(0);
@@ -77,156 +306,96 @@ const ExecutiveSigningPortal = () => {
   const [tempInitials, setTempInitials] = useState('');
   const [selectedFont, setSelectedFont] = useState(signatureFonts[0].value);
   const [isDrawing, setIsDrawing] = useState(false);
-  const [documentStages, setDocumentStages] = useState<DocumentStage[]>([]);
   const [allFields, setAllFields] = useState<FieldState[]>([]);
   const [signatureFields, setSignatureFields] = useState<Record<string, SignatureField[]>>({});
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [authToken, setAuthToken] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
   const [userInfo, setUserInfo] = useState<any>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const initialsCanvasRef = useRef<HTMLCanvasElement>(null);
 
-  useEffect(() => {
-    const initializeSession = async () => {
-      const urlParams = new URLSearchParams(location.search);
-      const token = urlParams.get('token');
+  // Fetch signature fields function
+  const fetchSignatureFields = async () => {
+    const fieldsMap: Record<string, SignatureField[]> = {};
+    const allFieldStates: FieldState[] = [];
 
-      if (!token) {
-        setError('Missing authentication token');
-        setLoading(false);
-        return;
-      }
+    for (const doc of documents) {
+      const { data: docData } = await supabase
+        .from('executive_documents')
+        .select('template_id')
+        .eq('id', doc.id)
+        .single();
 
-      try {
-        const { data, error: fnError } = await supabase.functions.invoke('get-executive-documents-by-token', {
-          body: { token },
-        });
+      const templateId = docData?.template_id;
+      
+      if (templateId) {
+        const { data: fieldsData } = await supabase
+          .from('document_template_signature_fields')
+          .select('*')
+          .eq('template_id', templateId)
+          .order('page_number', { ascending: true });
 
-        if (fnError) {
-          console.error('Edge function error:', fnError);
-          // Handle different error types
-          if (fnError.message?.includes('404') || fnError.message?.includes('Invalid')) {
-            setError('Invalid or expired signing link. Please request a new signing link.');
-          } else if (fnError.message?.includes('410')) {
-            setError('This signing link has expired. Please request a new signing link.');
-          } else {
-            setError(fnError.message || 'Failed to load signing session. Please check your signing link.');
-          }
-          setLoading(false);
-          return;
-        }
-
-        if (!data || !data.ok) {
-          console.error('Edge function returned error:', data);
-          if (data?.error?.includes('expired')) {
-            setError('This signing link has expired. Please request a new signing link.');
-          } else if (data?.error?.includes('Invalid')) {
-            setError('Invalid signing link. Please check your link and try again.');
-          } else {
-            setError(data?.error || 'Failed to load signing session. Please check your signing link.');
-          }
-          setLoading(false);
-          return;
-        }
-
-        setAuthToken(token);
-        setUserInfo(data.user);
-        setDocumentStages(data.documentFlow || []);
-        
-        // Fetch signature fields for all documents with templates
-        const allDocs: Document[] = [];
-        (data.documentFlow || []).forEach((stage: DocumentStage) => {
-          stage.documents.forEach((doc: Document) => {
-            allDocs.push(doc);
+        if (fieldsData) {
+          fieldsMap[doc.id] = fieldsData;
+          
+          fieldsData.forEach((f) => {
+            allFieldStates.push({
+              id: `${doc.id}_${f.id}`,
+              type: f.field_type,
+              label: f.label || `${f.field_type} (Page ${f.page_number})`,
+              required: f.required,
+              page: f.page_number,
+              completed: false,
+              documentId: doc.id,
+            });
           });
+        }
+      }
+    }
+
+    setSignatureFields(fieldsMap);
+    setAllFields(allFieldStates);
+  };
+
+  useEffect(() => {
+    const initialize = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { data: profile } = await supabase
+          .from('user_profiles')
+          .select('full_name')
+          .eq('user_id', user.id)
+          .single();
+        
+        setUserInfo({
+          id: user.id,
+          email: user.email,
+          name: profile?.full_name || user.email?.split('@')[0] || 'Executive',
         });
 
-        // Fetch signature fields for each document
-        const fieldsMap: Record<string, SignatureField[]> = {};
-        const allFieldStates: FieldState[] = [];
-
-        for (const doc of allDocs) {
-          if (doc.templateId) {
-            const { data: fieldsData } = await supabase
-              .from('document_template_signature_fields')
-              .select('*')
-              .eq('template_id', doc.templateId)
-              .order('page_number', { ascending: true });
-
-            if (fieldsData) {
-              fieldsMap[doc.id] = fieldsData;
-              
-              // Convert to field states
-              fieldsData.forEach((f) => {
-                allFieldStates.push({
-                  id: `${doc.id}_${f.id}`,
-                  type: f.field_type,
-                  label: f.label || `${f.field_type} (Page ${f.page_number})`,
-                  required: f.required,
-                  page: f.page_number,
-                  completed: false,
-                  documentId: doc.id,
-                });
-              });
-            }
-          }
-        }
-
-        setSignatureFields(fieldsMap);
-        setAllFields(allFieldStates);
-        setLoading(false);
-      } catch (err: any) {
-        setError('Failed to load signing session. Please contact support.');
-        setLoading(false);
-      }
-    };
-
-    initializeSession();
-  }, [location.search]);
-
-  // Check if user has saved signature
-  useEffect(() => {
-    const checkSavedSignature = async () => {
-      if (userInfo?.id) {
-        const { data } = await supabase
+        const { data: savedSig } = await supabase
           .from('executive_saved_signatures')
           .select('*')
-          .eq('user_id', userInfo.id)
+          .eq('user_id', user.id)
           .eq('is_default', true)
           .single();
 
-        if (data?.signature_data_url) {
-          setAdoptedSignature(data.signature_data_url);
-          // If signature exists, skip adopt step
-          if (currentStep === 'landing') {
-            // Will go to signing after landing
-          }
+        if (savedSig?.signature_data_url) {
+          setAdoptedSignature(savedSig.signature_data_url);
         }
       }
+
+      await fetchSignatureFields();
     };
 
-    if (userInfo && currentStep === 'landing') {
-      checkSavedSignature();
-    }
-  }, [userInfo, currentStep]);
+    initialize();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [documents]);
 
   const completedFields = allFields.filter(f => f.completed).length;
   const totalFields = allFields.filter(f => f.required).length;
   const progress = totalFields > 0 ? (completedFields / totalFields) * 100 : 0;
 
-  const getAllDocuments = (): Document[] => {
-    const docs: Document[] = [];
-    documentStages.forEach(stage => {
-      stage.documents.forEach(doc => {
-        docs.push(doc);
-      });
-    });
-    return docs;
-  };
-
   const handleStartSigning = () => {
-    // If signature already exists, go straight to signing
     if (adoptedSignature) {
       setCurrentStep('signing');
     } else {
@@ -246,7 +415,6 @@ const ExecutiveSigningPortal = () => {
       setAdoptedSignature(tempSignature);
       setAdoptedInitials(tempInitials);
       
-      // Save to database
       if (userInfo?.id) {
         await supabase
           .from('executive_saved_signatures')
@@ -268,7 +436,6 @@ const ExecutiveSigningPortal = () => {
         setAdoptedSignature(signatureDataUrl);
         setAdoptedInitials(initialsDataUrl);
         
-        // Save to database
         if (userInfo?.id) {
           await supabase
             .from('executive_saved_signatures')
@@ -282,9 +449,6 @@ const ExecutiveSigningPortal = () => {
         
         setCurrentStep('signing');
       }
-    } else if (signatureStyle === 'upload') {
-      // Handle upload
-      setCurrentStep('signing');
     }
   };
 
@@ -292,9 +456,7 @@ const ExecutiveSigningPortal = () => {
     const canvas = canvasRef.current;
     if (canvas) {
       const ctx = canvas.getContext('2d');
-      if (ctx) {
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-      }
+      if (ctx) ctx.clearRect(0, 0, canvas.width, canvas.height);
     }
   };
 
@@ -302,16 +464,13 @@ const ExecutiveSigningPortal = () => {
     const canvas = initialsCanvasRef.current;
     if (canvas) {
       const ctx = canvas.getContext('2d');
-      if (ctx) {
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-      }
+      if (ctx) ctx.clearRect(0, 0, canvas.width, canvas.height);
     }
   };
 
   const startDrawing = (e: React.MouseEvent<HTMLCanvasElement>, canvas: HTMLCanvasElement) => {
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
-    
     const rect = canvas.getBoundingClientRect();
     ctx.beginPath();
     ctx.moveTo(e.clientX - rect.left, e.clientY - rect.top);
@@ -322,7 +481,6 @@ const ExecutiveSigningPortal = () => {
     if (!isDrawing) return;
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
-    
     const rect = canvas.getBoundingClientRect();
     ctx.lineTo(e.clientX - rect.left, e.clientY - rect.top);
     ctx.strokeStyle = '#000';
@@ -330,22 +488,19 @@ const ExecutiveSigningPortal = () => {
     ctx.stroke();
   };
 
-  const stopDrawing = () => {
-    setIsDrawing(false);
-  };
+  const stopDrawing = () => setIsDrawing(false);
 
   const goToNextField = () => {
-    const currentDoc = getAllDocuments()[currentDocumentIndex];
+    const currentDoc = documents[currentDocumentIndex];
     const docFields = allFields.filter(f => f.documentId === currentDoc?.id && !f.completed);
     
     if (docFields.length > 0) {
       const nextField = docFields[0];
       setCurrentFieldIndex(allFields.findIndex(f => f.id === nextField.id));
     } else {
-      // Move to next document
-      if (currentDocumentIndex < getAllDocuments().length - 1) {
+      if (currentDocumentIndex < documents.length - 1) {
         setCurrentDocumentIndex(currentDocumentIndex + 1);
-        const nextDoc = getAllDocuments()[currentDocumentIndex + 1];
+        const nextDoc = documents[currentDocumentIndex + 1];
         const nextDocFields = allFields.filter(f => f.documentId === nextDoc.id && !f.completed);
         if (nextDocFields.length > 0) {
           setCurrentFieldIndex(allFields.findIndex(f => f.id === nextDocFields[0].id));
@@ -362,72 +517,41 @@ const ExecutiveSigningPortal = () => {
     if (completedFields === totalFields && agreedToTerms) {
       // Submit all signatures
       try {
-        if (authToken) {
-          // Submit signatures for each document
-          for (const doc of getAllDocuments()) {
-            const docFields = allFields.filter(f => f.documentId === doc.id && f.completed);
-            if (docFields.length > 0) {
-              // Submit signature via edge function
-              await supabase.functions.invoke('submit-executive-document-signature', {
-                body: {
-                  document_id: doc.id,
-                  typed_name: userInfo?.name || 'Signed',
-                  signature_png_base64: adoptedSignature,
-                  signer_ip: null,
-                  signer_user_agent: navigator.userAgent,
-                  signature_token: authToken,
-                },
-              });
-            }
+        for (const doc of documents) {
+          const docFields = allFields.filter(f => f.documentId === doc.id && f.completed);
+          if (docFields.length > 0) {
+            await supabase.functions.invoke('submit-executive-document-signature', {
+              body: {
+                document_id: doc.id,
+                typed_name: userInfo?.name || 'Signed',
+                signature_png_base64: adoptedSignature,
+                signer_ip: null,
+                signer_user_agent: navigator.userAgent,
+                signature_token: null,
+              },
+            });
           }
         }
         setCurrentStep('complete');
+        if (onComplete) onComplete();
       } catch (err: any) {
         message.error('Failed to complete signing. Please try again.');
       }
     }
   };
 
-  const currentDocument = getAllDocuments()[currentDocumentIndex];
-  const currentDocFields = allFields.filter(f => f.documentId === currentDocument?.id);
+  const currentDocument = documents[currentDocumentIndex];
   const currentField = allFields[currentFieldIndex];
+  const pendingDocs = documents.filter(d => d.signature_status !== 'signed');
 
-  if (loading) {
+  if (documents.length === 0) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading your documents...</p>
-        </div>
+      <div className="text-center py-12">
+        <FileText className="mx-auto text-gray-400 mb-4" size={48} />
+        <p className="text-gray-600">No documents to sign</p>
       </div>
     );
   }
-
-  if (error) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-        <div className="bg-white rounded-lg shadow-lg p-8 max-w-md w-full text-center">
-          <AlertCircle className="w-16 h-16 text-red-600 mx-auto mb-4" />
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">Session Error</h1>
-          <p className="text-gray-600 mb-6">{error}</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (documentStages.length === 0) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-        <div className="bg-white rounded-lg shadow-lg p-8 max-w-md w-full text-center">
-          <AlertCircle className="w-16 h-16 text-yellow-600 mx-auto mb-4" />
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">No Documents Found</h1>
-          <p className="text-gray-600">Please check your signing link.</p>
-        </div>
-      </div>
-    );
-  }
-
-  const firstDocument = getAllDocuments()[0];
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -463,7 +587,6 @@ const ExecutiveSigningPortal = () => {
       {currentStep === 'landing' && (
         <div className="max-w-4xl mx-auto px-6 py-12">
           <div className="bg-white rounded-lg shadow-lg overflow-hidden">
-            {/* Document Header */}
             <div className="bg-orange-50 border-b border-orange-200 p-8">
               <div className="flex items-start gap-4">
                 <div className="w-16 h-16 bg-orange-600 rounded-lg flex items-center justify-center flex-shrink-0">
@@ -471,12 +594,12 @@ const ExecutiveSigningPortal = () => {
                 </div>
                 <div className="flex-1">
                   <h2 className="text-2xl font-bold text-gray-900 mb-2">
-                    {getAllDocuments().length === 1 ? firstDocument.name : `${getAllDocuments().length} Documents to Sign`}
+                    {documents.length === 1 ? documents[0].name : `${documents.length} Documents to Sign`}
                   </h2>
                   <div className="flex items-center gap-6 text-sm text-gray-700">
                     <div className="flex items-center gap-2">
                       <Mail size={16} />
-                      <span>From: <strong>{userInfo?.name || 'Sarah Chen'}</strong></span>
+                      <span>From: <strong>Crave'n, Inc.</strong></span>
                     </div>
                     <div className="flex items-center gap-2">
                       <Calendar size={16} />
@@ -487,17 +610,15 @@ const ExecutiveSigningPortal = () => {
               </div>
             </div>
 
-            {/* Message */}
             <div className="p-8 border-b border-gray-200">
-              <h3 className="font-semibold text-gray-900 mb-2">Message from {userInfo?.name || 'Sender'}</h3>
+              <h3 className="font-semibold text-gray-900 mb-2">Message</h3>
               <p className="text-gray-700">Please review and sign the following documents. All fields are required for completion.</p>
             </div>
 
-            {/* Document List */}
             <div className="p-8 border-b border-gray-200">
               <h3 className="font-semibold text-gray-900 mb-4">Documents to Sign</h3>
               <div className="space-y-3">
-                {getAllDocuments().map((doc, idx) => (
+                {documents.map((doc, idx) => (
                   <div key={doc.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
                     <div className="flex items-center gap-3">
                       <FileText className="text-gray-400" size={20} />
@@ -508,13 +629,14 @@ const ExecutiveSigningPortal = () => {
                         </p>
                       </div>
                     </div>
-                    <span className="text-sm text-orange-600 font-medium">Pending</span>
+                    <span className="text-sm text-orange-600 font-medium">
+                      {doc.signature_status === 'signed' ? 'Signed' : 'Pending'}
+                    </span>
                   </div>
                 ))}
               </div>
             </div>
 
-            {/* Document Info */}
             <div className="p-8 border-b border-gray-200">
               <h3 className="font-semibold text-gray-900 mb-4">Document Details</h3>
               <div className="grid grid-cols-2 gap-4 text-sm">
@@ -529,16 +651,17 @@ const ExecutiveSigningPortal = () => {
                 </div>
                 <div>
                   <span className="text-gray-600">Documents:</span>
-                  <p className="font-medium text-gray-900">{getAllDocuments().length} document{getAllDocuments().length !== 1 ? 's' : ''}</p>
+                  <p className="font-medium text-gray-900">{documents.length} document{documents.length !== 1 ? 's' : ''}</p>
                 </div>
                 <div>
                   <span className="text-gray-600">Status:</span>
-                  <p className="font-medium text-orange-600">Waiting for you</p>
+                  <p className="font-medium text-orange-600">
+                    {pendingDocs.length > 0 ? 'Waiting for you' : 'All signed'}
+                  </p>
                 </div>
               </div>
             </div>
 
-            {/* Actions */}
             <div className="p-8 bg-gray-50">
               <div className="flex items-center gap-4">
                 <button
@@ -547,10 +670,6 @@ const ExecutiveSigningPortal = () => {
                 >
                   Review and Sign
                   <ChevronRight size={20} />
-                </button>
-                <button className="px-6 py-4 border-2 border-gray-300 rounded-lg hover:bg-gray-100 font-medium flex items-center gap-2 transition">
-                  <Download size={20} />
-                  Download
                 </button>
               </div>
               <p className="text-xs text-gray-500 text-center mt-4">
@@ -561,7 +680,7 @@ const ExecutiveSigningPortal = () => {
         </div>
       )}
 
-      {/* Adopt Signature Screen - ONLY SHOWN ONCE */}
+      {/* Adopt Signature Screen */}
       {currentStep === 'adopt' && (
         <div className="max-w-5xl mx-auto px-6 py-12">
           <div className="bg-white rounded-lg shadow-lg overflow-hidden">
@@ -571,7 +690,6 @@ const ExecutiveSigningPortal = () => {
             </div>
 
             <div className="p-8">
-              {/* Signature Type Selector */}
               <div className="flex gap-4 mb-8 border-b border-gray-200 pb-6">
                 <button
                   onClick={() => setSignatureStyle('type')}
@@ -605,10 +723,8 @@ const ExecutiveSigningPortal = () => {
                 </button>
               </div>
 
-              {/* Type Signature */}
               {signatureStyle === 'type' && (
                 <div className="space-y-8">
-                  {/* Font Selection */}
                   <div>
                     <label className="block text-sm font-semibold text-gray-900 mb-3">Signature Font Style</label>
                     <div className="grid grid-cols-3 gap-3 mb-4">
@@ -680,7 +796,6 @@ const ExecutiveSigningPortal = () => {
                 </div>
               )}
 
-              {/* Draw Signature */}
               {signatureStyle === 'draw' && (
                 <div className="space-y-8">
                   <div>
@@ -731,7 +846,6 @@ const ExecutiveSigningPortal = () => {
                 </div>
               )}
 
-              {/* Upload Signature */}
               {signatureStyle === 'upload' && (
                 <div className="space-y-8">
                   <div>
@@ -756,7 +870,6 @@ const ExecutiveSigningPortal = () => {
                 </div>
               )}
 
-              {/* Action Buttons */}
               <div className="flex gap-4 mt-8 pt-6 border-t border-gray-200">
                 <button
                   onClick={() => setCurrentStep('landing')}
@@ -777,72 +890,86 @@ const ExecutiveSigningPortal = () => {
         </div>
       )}
 
-      {/* Signing Screen - Field by Field for ALL Documents */}
+      {/* Signing Screen */}
       {currentStep === 'signing' && currentDocument && (
-        <div className="flex h-[calc(100vh-89px)]">
-          {/* Document Preview */}
-          <div className="flex-1 overflow-y-auto bg-gray-100 p-8">
-            <div className="max-w-3xl mx-auto">
-              <div className="mb-4 flex items-center justify-between">
-                <h3 className="text-lg font-semibold text-gray-900">
-                  Document {currentDocumentIndex + 1} of {getAllDocuments().length}: {currentDocument.name}
-                </h3>
-              </div>
-              <div className="bg-white rounded-lg shadow-lg p-12 min-h-[1000px] relative">
-                <iframe
-                  src={currentDocument.fileUrl}
-                  className="w-full"
-                  style={{ minHeight: '1000px', border: 'none' }}
-                  title="Document Preview"
-                />
-                
-                {/* Render signature fields overlay */}
-                {(signatureFields[currentDocument.id] || []).map((field) => {
-                  const fieldState = allFields.find(f => f.id === `${currentDocument.id}_${field.id}`);
-                  const isCompleted = fieldState?.completed || false;
-                  
-                  return (
-                    <div
-                      key={field.id}
-                      style={{
-                        position: 'absolute',
-                        left: `${field.x_percent}%`,
-                        top: `${field.y_percent}%`,
-                        width: `${field.width_percent}%`,
-                        height: `${field.height_percent}%`,
-                        border: isCompleted ? '2px solid #10b981' : '2px solid #f59e0b',
-                        backgroundColor: isCompleted ? '#d1fae5' : '#fef3c7',
-                        borderRadius: '4px',
-                        padding: '8px',
-                        pointerEvents: 'none',
-                      }}
-                    >
-                      {isCompleted && fieldState?.value && (
-                        <div className="text-sm text-gray-900">
-                          {field.field_type === 'signature' && (
-                            <div style={{ fontFamily: selectedFont, fontStyle: 'italic', fontSize: '16px' }}>
-                              {fieldState.value}
-                            </div>
-                          )}
-                          {field.field_type === 'initial' && (
-                            <div style={{ fontFamily: selectedFont, fontStyle: 'italic', fontSize: '14px' }}>
-                              {fieldState.value}
-                            </div>
-                          )}
-                          {field.field_type !== 'signature' && field.field_type !== 'initial' && (
-                            <div>{fieldState.value}</div>
-                          )}
+        <div className="flex h-[calc(100vh-89px)] overflow-hidden bg-gray-100">
+          {/* Document Preview Area - Left Side */}
+          <div className="flex-1 flex flex-col overflow-hidden" style={{ minHeight: 0 }}>
+            <div className="p-4 border-b border-gray-200 bg-white flex-shrink-0">
+              <h3 className="text-lg font-semibold text-gray-900">
+                Document {currentDocumentIndex + 1} of {documents.length}: {currentDocument.name}
+              </h3>
+            </div>
+            <div className="flex-1 overflow-auto p-6" style={{ minHeight: 0, height: '100%' }}>
+              <div className="max-w-4xl mx-auto w-full">
+                <div className="bg-white rounded-lg shadow-lg relative w-full" style={{ minHeight: '1000px', position: 'relative', padding: '60px 80px' }}>
+                  {currentDocument.fileUrl ? (
+                    <div className="relative w-full" style={{ position: 'relative', width: '100%', height: '100%' }}>
+                      <div style={{ width: '100%', position: 'relative', overflow: 'visible', height: '100%' }}>
+                        <div style={{ position: 'relative', width: '100%', height: '100%' }}>
+                          <DocumentViewer url={currentDocument.fileUrl} />
+                          
+                          {/* Signature field overlays - positioned relative to this content area (percentages are relative to content area, not padded container) */}
+                          {(signatureFields[currentDocument.id] || []).map((field) => {
+                            const fieldState = allFields.find(f => f.id === `${currentDocument.id}_${field.id}`);
+                            const isCompleted = fieldState?.completed || false;
+                            
+                            return (
+                              <div
+                                key={field.id}
+                                style={{
+                                  position: 'absolute',
+                                  left: `${field.x_percent}%`,
+                                  top: `${field.y_percent}%`,
+                                  width: `${field.width_percent}%`,
+                                  height: `${field.height_percent}%`,
+                                  border: isCompleted ? '2px solid #10b981' : '2px solid #f59e0b',
+                                  backgroundColor: isCompleted ? '#d1fae5' : '#fef3c7',
+                                  borderRadius: '4px',
+                                  padding: '8px',
+                                  pointerEvents: 'none',
+                                  zIndex: 10,
+                                }}
+                              >
+                                {isCompleted && fieldState?.value && (
+                                  <div className="text-sm text-gray-900">
+                                    {field.field_type === 'signature' && (
+                                      <div style={{ fontFamily: selectedFont, fontStyle: 'italic', fontSize: '16px' }}>
+                                        {fieldState.value}
+                                      </div>
+                                    )}
+                                    {field.field_type === 'initial' && (
+                                      <div style={{ fontFamily: selectedFont, fontStyle: 'italic', fontSize: '14px' }}>
+                                        {fieldState.value}
+                                      </div>
+                                    )}
+                                    {field.field_type !== 'signature' && field.field_type !== 'initial' && (
+                                      <div>{fieldState.value}</div>
+                                    )}
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          })}
                         </div>
-                      )}
+                      </div>
                     </div>
-                  );
-                })}
+                ) : (
+                  <div className="flex items-center justify-center min-h-[600px]">
+                    <div className="text-center">
+                      <AlertCircle className="mx-auto text-gray-400 mb-4" size={48} />
+                      <p className="text-gray-600">No document URL available</p>
+                      <p className="text-sm text-gray-500 mt-2">Document ID: {currentDocument.id}</p>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           </div>
+          </div>
 
-          {/* Right Sidebar - Field Entry */}
-          <div className="w-96 bg-white border-l border-gray-200 flex flex-col">
+          {/* Field Completion Sidebar - Right Side */}
+          <div className="w-96 bg-white border-l border-gray-200 flex flex-col flex-shrink-0">
             <div className="p-6 border-b border-gray-200">
               <h3 className="font-semibold text-gray-900 mb-2">Complete Required Fields</h3>
               <p className="text-sm text-gray-600">{completedFields} of {totalFields} completed</p>
@@ -862,7 +989,6 @@ const ExecutiveSigningPortal = () => {
                     )}
                   </div>
 
-                  {/* Field Input */}
                   {currentField.type === 'signature' && (
                     <div className="space-y-4">
                       <div className="border-2 border-orange-500 rounded-lg p-6 bg-orange-50 min-h-[120px] flex items-center justify-center">
@@ -895,9 +1021,7 @@ const ExecutiveSigningPortal = () => {
 
                   {currentField.type === 'date' && (
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Select date
-                      </label>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Select date</label>
                       <input
                         type="date"
                         defaultValue={new Date().toISOString().split('T')[0]}
@@ -960,7 +1084,6 @@ const ExecutiveSigningPortal = () => {
                 </div>
               )}
 
-              {/* Field List */}
               <div className="mt-8 pt-6 border-t border-gray-200">
                 <h4 className="text-sm font-semibold text-gray-700 mb-3">All Fields</h4>
                 <div className="space-y-2 max-h-64 overflow-y-auto">
@@ -992,64 +1115,68 @@ const ExecutiveSigningPortal = () => {
 
       {/* Review Screen */}
       {currentStep === 'review' && (
-        <div className="max-w-4xl mx-auto px-6 py-12">
-          <div className="bg-white rounded-lg shadow-lg overflow-hidden">
-            <div className="bg-orange-50 border-b border-orange-200 p-8">
-              <h2 className="text-2xl font-bold text-gray-900 mb-2">Review Before Signing</h2>
-              <p className="text-gray-700">Please review all your entries before finalizing the documents</p>
-            </div>
-
-            <div className="p-8">
-              <div className="space-y-4 mb-8">
-                {allFields.map(field => (
-                  <div key={field.id} className="border border-gray-200 rounded-lg p-4 flex items-center justify-between">
-                    <div>
-                      <p className="font-medium text-gray-900">{field.label}</p>
-                      <p className="text-sm text-gray-600 mt-1">
-                        {field.type === 'signature' || field.type === 'initial' ? (
-                          <span className="italic" style={{ fontFamily: selectedFont }}>
-                            {signatureData[field.id]?.startsWith('data:') ? '✓ Signature applied' : signatureData[field.id]}
-                          </span>
-                        ) : (
-                          signatureData[field.id]
-                        )}
-                      </p>
-                    </div>
-                    <Check className="text-green-600" size={24} />
-                  </div>
-                ))}
-              </div>
-
-              <div className="border-t border-gray-200 pt-6">
-                <div className="flex items-start gap-3 mb-6">
-                  <input
-                    type="checkbox"
-                    id="terms"
-                    checked={agreedToTerms}
-                    onChange={(e) => setAgreedToTerms(e.target.checked)}
-                    className="mt-1"
-                  />
-                  <label htmlFor="terms" className="text-sm text-gray-700">
-                    I agree that by clicking "Finish and Sign", I am electronically signing these documents. 
-                    My electronic signature is the legal equivalent of my manual signature on these documents. 
-                    I consent to be legally bound by these documents' agreements and to conduct this transaction electronically.
-                  </label>
+        <div className="flex h-[calc(100vh-89px)] overflow-hidden bg-gray-100">
+          <div className="flex-1 overflow-auto p-8">
+            <div className="w-full max-w-7xl mx-auto">
+              <div className="bg-white rounded-lg shadow-lg overflow-hidden h-full flex flex-col">
+                <div className="bg-orange-50 border-b border-orange-200 p-8 flex-shrink-0">
+                  <h2 className="text-2xl font-bold text-gray-900 mb-2">Review Before Signing</h2>
+                  <p className="text-gray-700">Please review all your entries before finalizing the documents</p>
                 </div>
 
-                <div className="flex gap-4">
-                  <button
-                    onClick={() => setCurrentStep('signing')}
-                    className="px-6 py-3 border-2 border-gray-300 rounded-lg hover:bg-gray-100 font-medium transition"
-                  >
-                    Back to Edit
-                  </button>
-                  <button
-                    onClick={handleFinish}
-                    disabled={!agreedToTerms}
-                    className="flex-1 bg-orange-600 text-white py-3 px-6 rounded-lg hover:bg-orange-700 font-semibold disabled:bg-gray-300 disabled:cursor-not-allowed transition"
-                  >
-                    Finish and Sign
-                  </button>
+                <div className="flex-1 overflow-y-auto p-8">
+                  <div className="space-y-4 mb-8">
+                    {allFields.map(field => (
+                      <div key={field.id} className="border border-gray-200 rounded-lg p-4 flex items-center justify-between">
+                        <div>
+                          <p className="font-medium text-gray-900">{field.label}</p>
+                          <p className="text-sm text-gray-600 mt-1">
+                            {field.type === 'signature' || field.type === 'initial' ? (
+                              <span className="italic" style={{ fontFamily: selectedFont }}>
+                                {signatureData[field.id]?.startsWith('data:') ? '✓ Signature applied' : signatureData[field.id]}
+                              </span>
+                            ) : (
+                              signatureData[field.id]
+                            )}
+                          </p>
+                        </div>
+                        <Check className="text-green-600" size={24} />
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="border-t border-gray-200 pt-6 flex-shrink-0">
+                    <div className="flex items-start gap-3 mb-6">
+                      <input
+                        type="checkbox"
+                        id="terms"
+                        checked={agreedToTerms}
+                        onChange={(e) => setAgreedToTerms(e.target.checked)}
+                        className="mt-1"
+                      />
+                      <label htmlFor="terms" className="text-sm text-gray-700">
+                        I agree that by clicking "Finish and Sign", I am electronically signing these documents. 
+                        My electronic signature is the legal equivalent of my manual signature on these documents. 
+                        I consent to be legally bound by these documents' agreements and to conduct this transaction electronically.
+                      </label>
+                    </div>
+
+                    <div className="flex gap-4">
+                      <button
+                        onClick={() => setCurrentStep('signing')}
+                        className="px-6 py-3 border-2 border-gray-300 rounded-lg hover:bg-gray-100 font-medium transition"
+                      >
+                        Back to Edit
+                      </button>
+                      <button
+                        onClick={handleFinish}
+                        disabled={!agreedToTerms}
+                        className="flex-1 bg-orange-600 text-white py-3 px-6 rounded-lg hover:bg-orange-700 font-semibold disabled:bg-gray-300 disabled:cursor-not-allowed transition"
+                      >
+                        Finish and Sign
+                      </button>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -1070,13 +1197,15 @@ const ExecutiveSigningPortal = () => {
             
             <div className="border-t border-gray-200 pt-8 mt-8">
               <div className="flex items-center justify-center gap-4">
-                <button className="px-6 py-3 bg-orange-600 text-white rounded-lg hover:bg-orange-700 font-semibold flex items-center gap-2 transition">
+                <button 
+                  onClick={() => {
+                    if (onComplete) onComplete();
+                    setCurrentStep('landing');
+                  }}
+                  className="px-6 py-3 bg-orange-600 text-white rounded-lg hover:bg-orange-700 font-semibold flex items-center gap-2 transition"
+                >
                   <Download size={20} />
-                  Download Documents
-                </button>
-                <button className="px-6 py-3 border-2 border-gray-300 rounded-lg hover:bg-gray-100 font-medium flex items-center gap-2 transition">
-                  <Mail size={20} />
-                  Email Copy
+                  Done
                 </button>
               </div>
             </div>
@@ -1087,4 +1216,5 @@ const ExecutiveSigningPortal = () => {
   );
 };
 
-export default ExecutiveSigningPortal;
+export default ExecutiveSigningFlow;
+

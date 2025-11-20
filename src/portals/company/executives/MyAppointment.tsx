@@ -14,6 +14,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { notifications } from '@mantine/notifications';
 import { IconFileText, IconDownload } from '@tabler/icons-react';
 import dayjs from 'dayjs';
+import ActivationTimeline from './ActivationTimeline';
 
 interface CorporateOfficer {
   id: string;
@@ -27,8 +28,18 @@ interface CorporateOfficer {
   appointed_by?: string;
 }
 
+interface Appointment {
+  id: string;
+  proposed_officer_name: string;
+  proposed_title: string;
+  proposed_officer_email: string;
+  effective_date: string;
+  status: string;
+}
+
 const MyAppointment: React.FC = () => {
   const [officer, setOfficer] = useState<CorporateOfficer | null>(null);
+  const [appointmentId, setAppointmentId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -108,6 +119,9 @@ const MyAppointment: React.FC = () => {
       }
 
       if (appointment && !appointmentError) {
+        // Store appointment ID for timeline
+        setAppointmentId(appointment.id);
+        
         // Convert appointment to officer format
         const appointmentOfficer: CorporateOfficer = {
           id: appointment.id,
@@ -121,6 +135,20 @@ const MyAppointment: React.FC = () => {
         setOfficer(appointmentOfficer);
         setLoading(false);
         return;
+      }
+      
+      // If we have a corporate officer, try to find the appointment_id from officer_ledger
+      if (corporateOfficer) {
+        const { data: ledgerEntry } = await supabase
+          .from('officer_ledger')
+          .select('appointment_id')
+          .eq('name', corporateOfficer.full_name)
+          .eq('title', corporateOfficer.title)
+          .maybeSingle();
+        
+        if (ledgerEntry?.appointment_id) {
+          setAppointmentId(ledgerEntry.appointment_id);
+        }
       }
 
       // If neither found, set to null
@@ -253,6 +281,11 @@ const MyAppointment: React.FC = () => {
           )}
         </Stack>
       </Card>
+
+      {/* Activation Timeline */}
+      {appointmentId && (
+        <ActivationTimeline appointmentId={appointmentId} />
+      )}
     </Stack>
   );
 };

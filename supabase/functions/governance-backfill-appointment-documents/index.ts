@@ -78,7 +78,7 @@ serve(async (req) => {
 
     const body = await req.json();
     const appointment_id = body.appointment_id; // Optional: specific appointment, or null for all
-    const force_regenerate = body.force_regenerate || false; // If true, regenerate even if documents exist
+    const force_regenerate = body.force_regenerate === true; // If true, regenerate even if documents exist
 
     const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey, {
       auth: { persistSession: false },
@@ -124,7 +124,7 @@ serve(async (req) => {
       const docTypes: string[] = [];
       
       // Determine which documents to generate based on status
-      // Check for null, undefined, or empty string (unless force_regenerate is true)
+      // If force_regenerate is true, ignore existing documents and regenerate all
       const hasAppointmentLetter = !force_regenerate && appointment.appointment_letter_url && String(appointment.appointment_letter_url).trim() !== '';
       const hasBoardResolution = !force_regenerate && appointment.board_resolution_url && String(appointment.board_resolution_url).trim() !== '';
       const hasCertificate = !force_regenerate && appointment.certificate_url && String(appointment.certificate_url).trim() !== '';
@@ -135,6 +135,8 @@ serve(async (req) => {
       const hasPreIncorporationConsent = !force_regenerate && 
         (appointment as any).pre_incorporation_consent_url && 
         String((appointment as any).pre_incorporation_consent_url).trim() !== '';
+      
+      console.log(`Force regenerate: ${force_regenerate}, Appointment status: ${appointment.status}`);
       
       switch (appointment.status) {
         case 'DRAFT':
@@ -182,13 +184,33 @@ serve(async (req) => {
             docTypes.push('deferred_compensation');
           }
           
-          // Pre-Incorporation Consent - same as other documents
-          if (!hasPreIncorporationConsent) {
+          // Pre-Incorporation Consent - check formation_mode
+          if (!hasPreIncorporationConsent && (appointment as any).formation_mode) {
             docTypes.push('pre_incorporation_consent');
           }
           
-          // If no documents were queued, log a warning
-          if (docTypes.length === 0) {
+          // If force_regenerate and APPROVED, ensure ALL documents are regenerated
+          if (force_regenerate && docTypes.length === 0) {
+            // Force regenerate all documents for APPROVED appointments
+            docTypes.push('appointment_letter');
+            if (appointment.board_resolution_id) {
+              docTypes.push('board_resolution');
+            }
+            docTypes.push('certificate');
+            docTypes.push('employment_agreement');
+            docTypes.push('confidentiality_ip');
+            docTypes.push('stock_subscription');
+            if (appointment.equity_included || (appointment.compensation_structure && String(appointment.compensation_structure).toLowerCase().includes('deferred'))) {
+              docTypes.push('deferred_compensation');
+            }
+            if ((appointment as any).formation_mode) {
+              docTypes.push('pre_incorporation_consent');
+            }
+            console.log(`Force regenerating all documents for APPROVED appointment ${appointment.id}`);
+          }
+          
+          // If no documents were queued (and not force regenerating), log a warning
+          if (docTypes.length === 0 && !force_regenerate) {
             console.warn(`Appointment ${appointment.id} is APPROVED but all documents appear to exist. Document URLs:`, {
               appointment_letter_url: appointment.appointment_letter_url,
               certificate_url: appointment.certificate_url,

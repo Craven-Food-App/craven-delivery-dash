@@ -1,11 +1,13 @@
 import React from 'react';
 import { Container, Title, Text, Stack, Tabs, Card } from '@mantine/core';
-import { IconShield, IconUsers, IconFileText, IconUserCheck, IconHistory } from '@tabler/icons-react';
+import { IconShield, IconUsers, IconFileText, IconUserCheck, IconHistory, IconChecklist, IconTags } from '@tabler/icons-react';
 import { useNavigate } from 'react-router-dom';
 import AppointmentList from './AppointmentList';
 import ResolutionList from './ResolutionList';
 import OfficerLedger from './OfficerLedger';
 import GovernanceLogList from './GovernanceLogList';
+import OfficerValidation from './OfficerValidation';
+import DocumentTemplates from './DocumentTemplates';
 
 const GovernanceAdminDashboard: React.FC = () => {
   const navigate = useNavigate();
@@ -37,6 +39,9 @@ const GovernanceAdminDashboard: React.FC = () => {
               <Tabs.Tab value="appointments" leftSection={<IconUsers size={16} />}>
                 Appointments
               </Tabs.Tab>
+              <Tabs.Tab value="validation" leftSection={<IconChecklist size={16} />}>
+                Officer Validation
+              </Tabs.Tab>
               <Tabs.Tab value="resolutions" leftSection={<IconFileText size={16} />}>
                 Resolutions
               </Tabs.Tab>
@@ -46,10 +51,17 @@ const GovernanceAdminDashboard: React.FC = () => {
               <Tabs.Tab value="logs" leftSection={<IconHistory size={16} />}>
                 Governance Logs
               </Tabs.Tab>
+              <Tabs.Tab value="templates" leftSection={<IconTags size={16} />}>
+                Document Templates
+              </Tabs.Tab>
             </Tabs.List>
 
             <Tabs.Panel value="appointments" pt="md">
               <AppointmentList />
+            </Tabs.Panel>
+
+            <Tabs.Panel value="validation" pt="md">
+              <OfficerValidation />
             </Tabs.Panel>
 
             <Tabs.Panel value="resolutions" pt="md">
@@ -62,6 +74,10 @@ const GovernanceAdminDashboard: React.FC = () => {
 
             <Tabs.Panel value="logs" pt="md">
               <GovernanceLogList />
+            </Tabs.Panel>
+
+            <Tabs.Panel value="templates" pt="md">
+              <DocumentTemplates />
             </Tabs.Panel>
           </Tabs>
         </Card>

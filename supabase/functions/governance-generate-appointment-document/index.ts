@@ -575,6 +575,10 @@ serve(async (req) => {
       });
     }
 
+    // Keep signature field tags in place - they will be replaced during signing
+    // Format: {{SIGNATURE_FIELD:role:type}} - these are board-tagged signature fields
+    // We leave them as-is so the signing function can find and replace them
+
     // Upload HTML to storage
     const htmlBlob = new Blob([html], { type: 'text/html' });
     

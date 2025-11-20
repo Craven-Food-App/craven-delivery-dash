@@ -14,6 +14,7 @@ import {
   Loader,
   Center,
   Divider,
+  Select,
 } from '@mantine/core';
 import {
   IconFileText,
@@ -28,6 +29,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { notifications } from '@mantine/notifications';
 import { useExecAuth } from '@/hooks/useExecAuth';
 import dayjs from 'dayjs';
+import ExecutiveSigningFlow from '@/components/executive/ExecutiveSigningFlow';
 
 interface ExecutiveDocument {
   id: string;
@@ -65,18 +67,147 @@ const MyDocuments: React.FC = () => {
   const [selectedDocument, setSelectedDocument] = useState<ExecutiveDocument | null>(null);
   const [viewModalVisible, setViewModalVisible] = useState(false);
   const [signModalVisible, setSignModalVisible] = useState(false);
+  const [showNewSigningFlow, setShowNewSigningFlow] = useState(false);
   const [typedName, setTypedName] = useState('');
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const [isDrawing, setIsDrawing] = useState(false);
   const [isSigning, setIsSigning] = useState(false);
   const [documentHtmlContent, setDocumentHtmlContent] = useState<string | null>(null);
   const [documentLoading, setDocumentLoading] = useState(false);
+  const [savedSignatures, setSavedSignatures] = useState<Array<{ id: string; signature_name: string; signature_data_url: string; is_default: boolean }>>([]);
+  const [selectedSavedSignature, setSelectedSavedSignature] = useState<string | null>(null);
+  const [showSaveSignatureModal, setShowSaveSignatureModal] = useState(false);
+  const [signatureName, setSignatureName] = useState('My Signature');
 
   useEffect(() => {
     if (!authLoading && execUser) {
       fetchDocuments();
+      fetchSavedSignatures();
     }
   }, [authLoading, execUser]);
+
+  const fetchSavedSignatures = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { data, error } = await supabase
+        .from('executive_saved_signatures')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('is_default', { ascending: false })
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('Error fetching saved signatures:', error);
+        return;
+      }
+
+      setSavedSignatures(data || []);
+      
+      // Auto-load default signature if available
+      const defaultSig = data?.find(s => s.is_default);
+      if (defaultSig && canvasRef.current) {
+        loadSignatureToCanvas(defaultSig.signature_data_url);
+        setSelectedSavedSignature(defaultSig.id);
+      }
+    } catch (err) {
+      console.error('Error fetching saved signatures:', err);
+    }
+  };
+
+  const loadSignatureToCanvas = (dataUrl: string) => {
+    if (!canvasRef.current) return;
+    
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    const img = new Image();
+    img.onload = () => {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+    };
+    img.src = dataUrl;
+  };
+
+  const saveSignature = async () => {
+    if (!canvasRef.current) {
+      notifications.show({
+        title: 'Error',
+        message: 'Please draw a signature first',
+        color: 'red',
+      });
+      return;
+    }
+
+    const signatureDataUrl = canvasRef.current.toDataURL('image/png');
+    if (!signatureDataUrl || signatureDataUrl === 'data:,') {
+      notifications.show({
+        title: 'Error',
+        message: 'Please draw a signature first',
+        color: 'red',
+      });
+      return;
+    }
+
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { data: currentExec } = await supabase
+        .from('exec_users')
+        .select('id')
+        .eq('user_id', user.id)
+        .single();
+
+      // If this is set as default, unset other defaults
+      if (savedSignatures.length === 0) {
+        // First signature is always default
+        const { error } = await supabase
+          .from('executive_saved_signatures')
+          .insert({
+            user_id: user.id,
+            executive_id: currentExec?.id,
+            signature_name: signatureName || 'My Signature',
+            signature_data_url: signatureDataUrl,
+            is_default: true,
+          });
+
+        if (error) throw error;
+      } else {
+        const { error } = await supabase
+          .from('executive_saved_signatures')
+          .upsert({
+            user_id: user.id,
+            executive_id: currentExec?.id,
+            signature_name: signatureName || 'My Signature',
+            signature_data_url: signatureDataUrl,
+            is_default: false,
+          }, {
+            onConflict: 'user_id,signature_name',
+          });
+
+        if (error) throw error;
+      }
+
+      notifications.show({
+        title: 'Success',
+        message: 'Signature saved successfully',
+        color: 'green',
+      });
+
+      setShowSaveSignatureModal(false);
+      await fetchSavedSignatures();
+    } catch (err: any) {
+      console.error('Error saving signature:', err);
+      notifications.show({
+        title: 'Error',
+        message: err.message || 'Failed to save signature',
+        color: 'red',
+      });
+    }
+  };
 
   const fetchDocuments = async () => {
     if (!execUser) return;
@@ -89,26 +220,48 @@ const MyDocuments: React.FC = () => {
       // Get exec_users.id for current user
       const { data: currentExec, error: execError } = await supabase
         .from('exec_users')
-        .select('id')
+        .select('id, user_id, role')
         .eq('user_id', user.id)
         .single();
 
       if (execError || !currentExec) {
         console.error('Unable to verify executive status:', execError);
+        console.error('User ID:', user.id, 'Email:', user.email);
         setLoading(false);
         return;
       }
 
+      console.log('Current exec_user:', currentExec);
+
       // Fetch documents from executive_documents table
-      const { data: execDocs, error: execDocsError } = await supabase
+      let { data: execDocs, error: execDocsError } = await supabase
         .from('executive_documents')
         .select('*')
         .eq('executive_id', currentExec.id)
         .order('created_at', { ascending: false });
 
+      // Also try fetching ALL documents to see what's available
+      const { data: allDocsDebug, error: allDocsError } = await supabase
+        .from('executive_documents')
+        .select('id, type, executive_id, appointment_id, signature_status')
+        .order('created_at', { ascending: false })
+        .limit(20);
+      
+      console.log('All executive_documents (first 20):', allDocsDebug);
+      console.log('Looking for executive_id:', currentExec.id);
+
       if (execDocsError) {
         console.error('Error fetching executive documents:', execDocsError);
       }
+      
+      console.log('Fetched executive_documents:', execDocs?.length || 0, execDocs);
+      console.log('execDocs details:', execDocs?.map((d: any) => ({
+        id: d.id,
+        type: d.type,
+        executive_id: d.executive_id,
+        appointment_id: d.appointment_id,
+        signature_status: d.signature_status
+      })));
 
       // Fetch appointment documents for this executive
       // Try exact email match first
@@ -116,7 +269,7 @@ const MyDocuments: React.FC = () => {
         .from('executive_appointments')
         .select('id, proposed_officer_email, proposed_officer_name, formation_mode, status')
         .eq('proposed_officer_email', user.email)
-        .in('status', ['APPROVED', 'SENT_TO_BOARD', 'ACTIVE', 'DRAFT']);
+        .in('status', ['APPROVED', 'SENT_TO_BOARD', 'ACTIVE', 'DRAFT', 'AWAITING_SIGNATURES', 'READY_FOR_SECRETARY_REVIEW']);
 
       // If no exact match, try case-insensitive match
       if ((!appointments || appointments.length === 0) && user.email) {
@@ -124,7 +277,7 @@ const MyDocuments: React.FC = () => {
           .from('executive_appointments')
           .select('id, proposed_officer_email, proposed_officer_name, formation_mode, status')
           .ilike('proposed_officer_email', user.email)
-          .in('status', ['APPROVED', 'SENT_TO_BOARD', 'ACTIVE', 'DRAFT']);
+          .in('status', ['APPROVED', 'SENT_TO_BOARD', 'ACTIVE', 'DRAFT', 'AWAITING_SIGNATURES', 'READY_FOR_SECRETARY_REVIEW']);
         
         if (appointmentsCaseInsensitive && appointmentsCaseInsensitive.length > 0) {
           appointments = appointmentsCaseInsensitive;
@@ -138,6 +291,38 @@ const MyDocuments: React.FC = () => {
         console.log('Found appointments:', appointments?.length || 0, 'for email:', user.email);
         if (appointments && appointments.length > 0) {
           console.log('Appointment details:', appointments);
+        }
+      }
+      
+      // Try to backfill documents if none exist or if appointments have documents
+      if (appointments && appointments.length > 0 && user.email) {
+        console.log('Checking if backfill is needed...');
+        try {
+          // Call the backfill function via RPC for this specific user
+          const { data: backfillCount, error: backfillError } = await supabase.rpc('backfill_my_executive_documents', {
+            p_user_email: user.email
+          });
+          if (backfillError) {
+            console.error('Backfill error:', backfillError);
+          } else {
+            console.log('Backfill created', backfillCount, 'documents');
+            if (backfillCount > 0) {
+              // Re-fetch documents after backfill
+              const { data: newExecDocs, error: refetchError } = await supabase
+                .from('executive_documents')
+                .select('*')
+                .eq('executive_id', currentExec.id)
+                .order('created_at', { ascending: false });
+              if (refetchError) {
+                console.error('Error refetching after backfill:', refetchError);
+              } else if (newExecDocs) {
+                execDocs = newExecDocs;
+                console.log('After backfill, found documents:', newExecDocs.length);
+              }
+            }
+          }
+        } catch (backfillErr) {
+          console.error('Error running backfill:', backfillErr);
         }
       }
 
@@ -157,7 +342,22 @@ const MyDocuments: React.FC = () => {
 
         appointments.forEach((appointment, index) => {
           const appointmentData = appointmentDataResults[index]?.data;
-          if (!appointmentData) return;
+          if (!appointmentData) {
+            console.log('No appointment data for appointment:', appointment.id);
+            return;
+          }
+
+          console.log(`Processing appointment ${appointment.id}:`, {
+            formation_mode: appointment.formation_mode,
+            pre_incorporation_consent_url: appointmentData.pre_incorporation_consent_url,
+            appointment_letter_url: appointmentData.appointment_letter_url,
+            board_resolution_url: appointmentData.board_resolution_url,
+            certificate_url: appointmentData.certificate_url,
+            employment_agreement_url: appointmentData.employment_agreement_url,
+            confidentiality_ip_url: appointmentData.confidentiality_ip_url,
+            stock_subscription_url: appointmentData.stock_subscription_url,
+            deferred_compensation_url: appointmentData.deferred_compensation_url,
+          });
 
           // Pre-Incorporation Consent
           if (appointment.formation_mode && appointmentData.pre_incorporation_consent_url) {
@@ -173,6 +373,7 @@ const MyDocuments: React.FC = () => {
               appointment_id: appointment.id,
               can_sign: true,
             });
+            console.log('Added pre_incorporation_consent document');
           }
 
           // Other appointment documents
@@ -201,36 +402,82 @@ const MyDocuments: React.FC = () => {
                 appointment_id: appointment.id,
                 can_sign: true,
               });
+              console.log(`Added ${type} document`);
             }
           });
         });
+        
+        console.log('Total appointment documents found:', appointmentDocuments.length);
       }
 
-      // Filter out appointment documents that already exist in executive_documents
-      const existingAppointmentDocIds = new Set(
-        (execDocs || [])
-          .filter((d: any) => d.appointment_id && d.type)
-          .map((d: any) => `${d.appointment_id}-${d.type}`)
-      );
+      // Map existing execDocs by appointment_id-type for quick lookup
+      const existingDocsMap = new Map<string, any>();
+      (execDocs || []).forEach((d: any) => {
+        if (d.appointment_id && d.type) {
+          const key = `${d.appointment_id}-${d.type}`;
+          existingDocsMap.set(key, d);
+        }
+      });
 
-      const newAppointmentDocs = appointmentDocuments.filter(
-        (doc) => !existingAppointmentDocIds.has(`${doc.appointment_id}-${doc.type}`)
-      );
+      // Merge appointment documents with existing ones
+      // If an appointment doc exists in executive_documents, use that version (it has signature status)
+      // Otherwise, add the appointment doc as a new pending document
+      const mergedAppointmentDocs = appointmentDocuments.map((apptDoc) => {
+        const key = `${apptDoc.appointment_id}-${apptDoc.type}`;
+        const existingDoc = existingDocsMap.get(key);
+        if (existingDoc) {
+          // Use existing document from executive_documents (has signature status, etc.)
+          return {
+            ...existingDoc,
+            signature_status: existingDoc.signature_status || 'pending',
+            can_sign: !existingDoc.depends_on_document_id || 
+              execDocs?.find((dep: any) => dep.id === existingDoc.depends_on_document_id && dep.signature_status === 'signed'),
+          };
+        }
+        // New appointment document not yet in executive_documents
+        return {
+          ...apptDoc,
+          signature_status: 'pending' as const,
+          can_sign: true,
+        };
+      });
 
-      // Combine and sort documents
-      const allDocs = [
-        ...(execDocs || []).map((d: any) => ({
-          ...d,
-          signature_status: d.signature_status || 'pending',
-          can_sign: !d.depends_on_document_id || 
-            execDocs?.find((dep: any) => dep.id === d.depends_on_document_id && dep.signature_status === 'signed'),
-        })),
-        ...newAppointmentDocs,
-      ].sort((a, b) => {
+      // Get execDocs that are NOT already in mergedAppointmentDocs
+      // If we have appointment documents, use those. Otherwise, use execDocs directly.
+      const mergedAppointmentDocKeys = new Set(mergedAppointmentDocs.map(d => `${d.appointment_id}-${d.type}`));
+      
+      // Documents from executive_documents that aren't in merged appointment docs
+      const standaloneDocs = (execDocs || []).filter((d: any) => {
+        if (!d.appointment_id || !d.type) {
+          return true; // Include documents without appointment_id
+        }
+        // Exclude if already in mergedAppointmentDocs
+        return !mergedAppointmentDocKeys.has(`${d.appointment_id}-${d.type}`);
+      });
+
+      // If no appointments found but we have execDocs, use execDocs directly
+      const documentsToShow = mergedAppointmentDocs.length > 0 
+        ? [...standaloneDocs, ...mergedAppointmentDocs]
+        : (execDocs || []); // Show all execDocs if no appointments found
+
+      // Combine all documents
+      const allDocs = documentsToShow.map((d: any) => ({
+        ...d,
+        signature_status: d.signature_status || 'pending',
+        can_sign: !d.depends_on_document_id || 
+          execDocs?.find((dep: any) => dep.id === d.depends_on_document_id && dep.signature_status === 'signed'),
+      })).sort((a, b) => {
         if (a.signing_stage !== b.signing_stage) {
           return (a.signing_stage || 999) - (b.signing_stage || 999);
         }
         return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+      });
+
+      console.log('Final document list:', {
+        standaloneDocs: standaloneDocs.length,
+        mergedAppointmentDocs: mergedAppointmentDocs.length,
+        totalDocs: allDocs.length,
+        docTypes: allDocs.map(d => d.type),
       });
 
       setDocuments(allDocs);
@@ -294,9 +541,14 @@ const MyDocuments: React.FC = () => {
     setViewModalVisible(true);
     setDocumentHtmlContent(null);
     
-    if (doc.file_url && isHtmlFile(doc.file_url)) {
+    // Use signed_file_url if document is signed, otherwise use file_url
+    const urlToView = doc.signature_status === 'signed' && doc.signed_file_url 
+      ? doc.signed_file_url 
+      : doc.file_url;
+    
+    if (urlToView && isHtmlFile(urlToView)) {
       setDocumentLoading(true);
-      const htmlContent = await fetchHtmlContent(doc.file_url);
+      const htmlContent = await fetchHtmlContent(urlToView);
       setDocumentHtmlContent(htmlContent);
       setDocumentLoading(false);
     }
@@ -543,6 +795,26 @@ const MyDocuments: React.FC = () => {
     );
   }
 
+  // Show new signing flow if enabled
+  if (showNewSigningFlow) {
+    const pendingDocs = documents.filter(d => d.signature_status !== 'signed');
+    return (
+      <ExecutiveSigningFlow
+        documents={pendingDocs.map(d => ({
+          id: d.id,
+          name: d.type?.replace(/_/g, ' ') || 'Document',
+          fileUrl: d.file_url,
+          type: d.type,
+          signature_status: d.signature_status,
+        }))}
+        onComplete={() => {
+          setShowNewSigningFlow(false);
+          fetchDocuments();
+        }}
+      />
+    );
+  }
+
   const pendingDocs = documents.filter(d => d.signature_status === 'pending');
   const signedDocs = documents.filter(d => d.signature_status === 'signed');
   const totalDocs = documents.length;
@@ -562,6 +834,24 @@ const MyDocuments: React.FC = () => {
             <Text size="xs" c="dimmed">
               {pendingDocs.length} document{pendingDocs.length !== 1 ? 's' : ''} requiring signature
             </Text>
+          </Stack>
+        </Card>
+      )}
+
+      {/* New Signing Flow Button */}
+      {pendingDocs.length > 0 && (
+        <Card padding="lg" radius="md" withBorder>
+          <Stack gap="md">
+            <Group justify="space-between">
+              <Text fw={600} size="lg">Documents Requiring Signature</Text>
+              <Button
+                onClick={() => setShowNewSigningFlow(true)}
+                leftSection={<IconPencil size={16} />}
+                size="md"
+              >
+                Start Signing Flow
+              </Button>
+            </Group>
           </Stack>
         </Card>
       )}
@@ -689,34 +979,43 @@ const MyDocuments: React.FC = () => {
         title={selectedDocument ? `View: ${getDocumentTypeName(selectedDocument.type)}` : 'View Document'}
         size="xl"
       >
-        {selectedDocument?.file_url && (
-          <>
-            {documentLoading ? (
-              <Center h={600}>
-                <Loader size="lg" />
-              </Center>
-            ) : isHtmlFile(selectedDocument.file_url) && documentHtmlContent ? (
-              <div
-                style={{
-                  height: '600px',
-                  border: '1px solid #ddd',
-                  borderRadius: '4px',
-                  overflow: 'auto',
-                  padding: '1rem',
-                  backgroundColor: '#fff',
-                }}
-                dangerouslySetInnerHTML={{ __html: documentHtmlContent }}
-              />
-            ) : (
-              <iframe
-                src={selectedDocument.file_url}
-                className="w-full"
-                style={{ height: '600px', border: '1px solid #ddd', borderRadius: '4px' }}
-                title="Document Viewer"
-              />
-            )}
-          </>
-        )}
+        {selectedDocument && (() => {
+          // Use signed_file_url if document is signed, otherwise use file_url
+          const urlToView = selectedDocument.signature_status === 'signed' && selectedDocument.signed_file_url 
+            ? selectedDocument.signed_file_url 
+            : selectedDocument.file_url;
+          
+          if (!urlToView) return null;
+          
+          return (
+            <>
+              {documentLoading ? (
+                <Center h={600}>
+                  <Loader size="lg" />
+                </Center>
+              ) : isHtmlFile(urlToView) && documentHtmlContent ? (
+                <div
+                  style={{
+                    height: '600px',
+                    border: '1px solid #ddd',
+                    borderRadius: '4px',
+                    overflow: 'auto',
+                    padding: '1rem',
+                    backgroundColor: '#fff',
+                  }}
+                  dangerouslySetInnerHTML={{ __html: documentHtmlContent }}
+                />
+              ) : (
+                <iframe
+                  src={urlToView}
+                  className="w-full"
+                  style={{ height: '600px', border: '1px solid #ddd', borderRadius: '4px' }}
+                  title="Document Viewer"
+                />
+              )}
+            </>
+          );
+        })()}
       </Modal>
 
       {/* Sign Document Modal */}
@@ -792,8 +1091,42 @@ const MyDocuments: React.FC = () => {
                 required
                 size="md"
               />
+              
+              {/* Saved Signatures Selector */}
+              {savedSignatures.length > 0 && (
+                <Select
+                  label="Load Saved Signature"
+                  placeholder="Select a saved signature"
+                  data={savedSignatures.map(sig => ({
+                    value: sig.id,
+                    label: `${sig.signature_name}${sig.is_default ? ' (Default)' : ''}`,
+                  }))}
+                  value={selectedSavedSignature}
+                  onChange={(value) => {
+                    setSelectedSavedSignature(value);
+                    if (value) {
+                      const sig = savedSignatures.find(s => s.id === value);
+                      if (sig) {
+                        loadSignatureToCanvas(sig.signature_data_url);
+                      }
+                    }
+                  }}
+                  clearable
+                  size="md"
+                />
+              )}
+
               <div>
-                <Text size="sm" fw={500} mb="xs">Draw your signature</Text>
+                <Group justify="space-between" mb="xs">
+                  <Text size="sm" fw={500}>Draw your signature</Text>
+                  <Button
+                    variant="subtle"
+                    size="xs"
+                    onClick={() => setShowSaveSignatureModal(true)}
+                  >
+                    Save Signature
+                  </Button>
+                </Group>
                 <div style={{ border: '2px dashed #ccc', borderRadius: '8px', padding: '1.5rem', background: 'white' }}>
                   <canvas
                     ref={canvasRef}
@@ -848,6 +1181,41 @@ const MyDocuments: React.FC = () => {
             </Group>
           </Stack>
         )}
+      </Modal>
+
+      {/* Save Signature Modal */}
+      <Modal
+        opened={showSaveSignatureModal}
+        onClose={() => {
+          setShowSaveSignatureModal(false);
+          setSignatureName('My Signature');
+        }}
+        title="Save Signature"
+        size="sm"
+      >
+        <Stack gap="md">
+          <TextInput
+            label="Signature Name"
+            placeholder="My Signature"
+            value={signatureName}
+            onChange={(e) => setSignatureName(e.target.value)}
+            required
+          />
+          <Group justify="flex-end">
+            <Button
+              variant="light"
+              onClick={() => {
+                setShowSaveSignatureModal(false);
+                setSignatureName('My Signature');
+              }}
+            >
+              Cancel
+            </Button>
+            <Button onClick={saveSignature}>
+              Save
+            </Button>
+          </Group>
+        </Stack>
       </Modal>
     </Stack>
   );

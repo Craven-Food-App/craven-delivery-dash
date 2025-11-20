@@ -78,31 +78,91 @@ serve(async (req) => {
       }
     }
 
-    if (document.signature_status === 'signed') {
+    // Quick check if document is HTML (before detailed check)
+    const quickHtmlCheck = (document.file_url || '').toLowerCase().includes('.html');
+    
+    // Allow re-signing if it's an HTML document without a signed_file_url (signature wasn't embedded)
+    const canReSign = document.signature_status === 'signed' && 
+                      quickHtmlCheck && 
+                      (!document.signed_file_url || document.signed_file_url === document.file_url);
+    
+    if (document.signature_status === 'signed' && !canReSign) {
       return new Response(
         JSON.stringify({ ok: false, error: 'Document already signed' }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
       );
     }
+    
+    if (canReSign) {
+      console.log('Re-signing HTML document to embed signature');
+    }
 
-    const signatureLayoutRaw = Array.isArray(document.signature_field_layout)
-      ? (document.signature_field_layout as Array<any>)
-      : [];
+    // Fetch signature fields from template (DocuSign-style tagged fields)
+    let templateSignatureFields: Array<any> = [];
+    let templateId: string | null = null;
+    
+    // Try to get template_id from document, or find by type
+    if ((document as any).template_id) {
+      templateId = (document as any).template_id;
+    } else {
+      // Find template by document type
+      const { data: template } = await supabaseClient
+        .from('document_templates')
+        .select('id')
+        .eq('template_key', document.type)
+        .single();
+      
+      if (template) {
+        templateId = template.id;
+      }
+    }
+    
+    // Fetch signature fields from template
+    if (templateId) {
+      const { data: fields } = await supabaseClient
+        .from('document_template_signature_fields')
+        .select('*')
+        .eq('template_id', templateId)
+        .order('page_number', { ascending: true })
+        .order('y_percent', { ascending: true });
+      
+      if (fields) {
+        templateSignatureFields = fields;
+        console.log(`Found ${fields.length} signature fields from template`);
+      }
+    }
 
-    const { data: signature, error: sigError } = await supabaseClient
-      .from('signatures')
-      .insert({
-        document_id: document_id,
-        signed_by: typed_name || document.officer_name,
-        signature_data_url: signature_png_base64,
-        ip: signer_ip || null,
-      })
-      .select()
-      .single();
+    // Fallback to document's signature_field_layout if no template fields found
+    const signatureLayoutRaw = templateSignatureFields.length > 0 
+      ? templateSignatureFields
+      : (Array.isArray(document.signature_field_layout)
+          ? (document.signature_field_layout as Array<any>)
+          : []);
 
-    if (sigError) {
-      console.error('Error creating signature:', sigError);
-      throw sigError;
+    let signature: any = null;
+    try {
+      const { data: sigData, error: sigError } = await supabaseClient
+        .from('signatures')
+        .insert({
+          document_id: document_id,
+          signed_by: typed_name || document.officer_name,
+          signature_data_url: signature_png_base64,
+          ip: signer_ip || null,
+        })
+        .select()
+        .single();
+
+      if (sigError) {
+        console.error('Error creating signature record:', sigError);
+        // Don't throw - continue with document update even if signature record fails
+        // This allows the document to be marked as signed even if signature table insert fails
+        console.warn('Continuing without signature record due to error:', sigError.message);
+      } else {
+        signature = sigData;
+      }
+    } catch (sigErr: any) {
+      console.error('Exception creating signature:', sigErr);
+      // Continue anyway - signature record is optional for document signing
     }
 
     const signedAtISO = new Date().toISOString();
@@ -138,20 +198,290 @@ serve(async (req) => {
       return bytes;
     };
 
-    const pdfResponse = await fetch(document.file_url);
-    if (!pdfResponse.ok) {
-      throw new Error('Failed to fetch original PDF');
+    // Check if document is HTML (not PDF) - check multiple ways
+    const fileUrlLower = (document.file_url || '').toLowerCase();
+    const contentType = document.file_url ? 
+      (await fetch(document.file_url, { method: 'HEAD' }).then(r => r.headers.get('content-type')).catch(() => null)) : null;
+    
+    const isHtmlFile = 
+      fileUrlLower.includes('.html') || 
+      fileUrlLower.endsWith('.html') ||
+      contentType?.includes('text/html') ||
+      contentType?.includes('html');
+    
+    console.log('Document file check:', {
+      file_url: document.file_url,
+      isHtmlFile,
+      contentType,
+      fileUrlLower
+    });
+    
+    let pdfBlob: ArrayBuffer | null = null;
+    if (!isHtmlFile) {
+      try {
+        // Only fetch PDF if it's not HTML
+        const pdfResponse = await fetch(document.file_url);
+        if (!pdfResponse.ok) {
+          throw new Error(`Failed to fetch original PDF: ${pdfResponse.status} ${pdfResponse.statusText}`);
+        }
+        const contentTypeHeader = pdfResponse.headers.get('content-type') || '';
+        if (contentTypeHeader.includes('text/html') || contentTypeHeader.includes('html')) {
+          console.log('Detected HTML from Content-Type header, skipping PDF processing');
+          pdfBlob = null;
+        } else {
+          pdfBlob = await pdfResponse.arrayBuffer();
+          // Quick check: PDF files start with %PDF
+          const firstBytes = new Uint8Array(pdfBlob.slice(0, 4));
+          const pdfHeader = String.fromCharCode(...firstBytes);
+          if (!pdfHeader.startsWith('%PDF')) {
+            console.log('File does not have PDF header, treating as HTML');
+            pdfBlob = null;
+          }
+        }
+      } catch (fetchError: any) {
+        console.error('Error fetching document file:', fetchError);
+        // If fetch fails, assume it might be HTML and continue
+        pdfBlob = null;
+      }
     }
-    const pdfBlob = await pdfResponse.arrayBuffer();
 
     let signedPdfBytes: Uint8Array | null = null;
     let updatedLayout = signatureLayoutRaw;
     let officerFields: Array<any> = [];
     const completedFieldValues = new Map<string, string | null>();
+    
+    // Initialize signedPublicUrl - will be updated if signature is successfully embedded
+    let signedPublicUrl = document.file_url;
 
-    try {
-      const pdfDoc = await PDFDocument.load(pdfBlob);
-      let pages = pdfDoc.getPages();
+    // For HTML documents, embed signature into HTML
+    if (isHtmlFile) {
+      console.log('Document is HTML, embedding signature into HTML');
+      try {
+        // Fetch the HTML content
+        const htmlResponse = await fetch(document.file_url);
+        if (htmlResponse.ok) {
+          let htmlContent = await htmlResponse.text();
+          
+          // Create a data URL for the signature image
+          const signatureDataUrl = signature_png_base64 || '';
+          const signerName = typed_name || document.officer_name || 'Executive';
+          const signedDate = new Date(signedAtISO).toLocaleDateString('en-US', { 
+            year: 'numeric', 
+            month: 'long', 
+            day: 'numeric' 
+          });
+          
+          // Create signature HTML components
+          const signatureImageHtml = `<img src="${signatureDataUrl}" alt="Signature" style="max-width: 250px; height: auto; display: block; margin-bottom: 4px;" />`;
+          const signatureWithNameHtml = `<div style="display: inline-block; vertical-align: bottom; margin-bottom: 8px;">
+            ${signatureImageHtml}
+            <div style="font-size: 11px; margin-top: 2px; border-top: 1px solid #222; padding-top: 2px; text-align: center;">${signerName}</div>
+          </div>`;
+          
+          // Determine signer role from document
+          const documentRole = (document.role || '').toLowerCase();
+          let signerRole = 'officer'; // default
+          if (documentRole.includes('incorporator') || documentRole.includes('founder')) {
+            signerRole = 'incorporator';
+          } else if (documentRole.includes('notary')) {
+            signerRole = 'notary';
+          } else if (documentRole.includes('officer') || documentRole.includes('executive') || documentRole.includes('appointee')) {
+            signerRole = 'officer';
+          }
+          
+          let signaturePlaced = false;
+          
+          // Strategy 1: Use DocuSign-style tagged signature fields with exact coordinates
+          // Filter fields that match the signer's role and are on page 1 (or current page)
+          const relevantFields = templateSignatureFields.filter((field: any) => 
+            field.signer_role.toLowerCase() === signerRole.toLowerCase() &&
+            field.page_number === 1 // For HTML, assume single page or page 1
+          );
+          
+          if (relevantFields.length > 0) {
+            console.log(`Placing signatures using ${relevantFields.length} tagged fields for role: ${signerRole}`);
+            
+            // Create a wrapper div to position signatures absolutely
+            // We'll inject a style block and position signatures using absolute positioning
+            const signatureStyleBlock = `
+<style>
+  .signature-field-overlay {
+    position: absolute;
+    z-index: 1000;
+  }
+</style>`;
+            
+            // Inject style block if not already present
+            if (!htmlContent.includes('signature-field-overlay')) {
+              htmlContent = htmlContent.replace('</head>', signatureStyleBlock + '</head>');
+              if (!htmlContent.includes('</head>')) {
+                htmlContent = htmlContent.replace('<body>', signatureStyleBlock + '<body>');
+              }
+            }
+            
+            // Place each signature field at its exact coordinates
+            relevantFields.forEach((field: any) => {
+              let fieldContent = '';
+              
+              if (field.field_type === 'signature') {
+                fieldContent = signatureWithNameHtml;
+              } else if (field.field_type === 'date') {
+                fieldContent = `<span style="font-size: 12px;">${signedDate}</span>`;
+              } else if (field.field_type === 'text') {
+                fieldContent = `<span style="font-size: 12px;">${signerName}</span>`;
+              } else if (field.field_type === 'initials') {
+                const initials = signerName.split(' ').map(n => n.charAt(0).toUpperCase()).join('');
+                fieldContent = `<span style="font-size: 12px; font-weight: bold;">${initials}</span>`;
+              }
+              
+              // Create positioned signature div
+              const signatureDiv = `
+<div class="signature-field-overlay" style="left: ${field.x_percent}%; top: ${field.y_percent}%; width: ${field.width_percent}%; height: ${field.height_percent}%;">
+  ${fieldContent}
+</div>`;
+              
+              // Try to find and replace signature field tags first
+              const fieldTagPattern = new RegExp(`\\{\\{SIGNATURE_FIELD:${field.signer_role}:${field.field_type}\\}\\}`, 'gi');
+              if (fieldTagPattern.test(htmlContent)) {
+                htmlContent = htmlContent.replace(fieldTagPattern, fieldContent);
+                signaturePlaced = true;
+              } else {
+                // If no tag found, append to body (will be positioned absolutely)
+                if (htmlContent.includes('</body>')) {
+                  htmlContent = htmlContent.replace('</body>', signatureDiv + '</body>');
+                } else if (htmlContent.includes('</html>')) {
+                  htmlContent = htmlContent.replace('</html>', signatureDiv + '</html>');
+                } else {
+                  htmlContent += signatureDiv;
+                }
+                signaturePlaced = true;
+              }
+            });
+            
+            if (signaturePlaced) {
+              console.log(`Signatures placed using DocuSign-style tagged fields`);
+            }
+          }
+          
+          // Strategy 2: Fallback to explicit signature field tags (backward compatibility)
+          if (!signaturePlaced) {
+            const signatureFieldPattern = /\{\{SIGNATURE_FIELD:([^:]+):([^}]+)\}\}/gi;
+            const signatureFieldMatches = htmlContent.match(signatureFieldPattern);
+            
+            if (signatureFieldMatches && signatureFieldMatches.length > 0) {
+              htmlContent = htmlContent.replace(signatureFieldPattern, (match, fieldRole, fieldType) => {
+                // Only replace fields that match the current signer's role
+                if (fieldRole.toLowerCase() === signerRole.toLowerCase()) {
+                  signaturePlaced = true;
+                  if (fieldType.toLowerCase() === 'signature') {
+                    return signatureWithNameHtml;
+                  } else if (fieldType.toLowerCase() === 'date') {
+                    return signedDate;
+                  } else if (fieldType.toLowerCase() === 'text') {
+                    return signerName;
+                  }
+                }
+                return match;
+              });
+              
+              if (signaturePlaced) {
+                console.log(`Signature placed using explicit field tags for role: ${signerRole}`);
+              }
+            }
+          }
+          
+          // Strategy 2: Fallback to signature line replacement (for documents without tags)
+          if (!signaturePlaced) {
+            // Find signature lines in appointee sections
+            const appointeePattern = /<div[^>]*class=["']signature-line["'][^>]*><\/div>[\s\S]*?Signature of Appointee/gi;
+            if (appointeePattern.test(htmlContent) && signerRole === 'officer') {
+              htmlContent = htmlContent.replace(
+                /<div[^>]*class=["']signature-line["'][^>]*><\/div>/,
+                signatureWithNameHtml,
+                1 // Only replace first occurrence
+              );
+              signaturePlaced = true;
+              console.log('Signature placed in appointee section (fallback)');
+            }
+          }
+          
+          // Strategy 3: Replace placeholder patterns (backward compatibility)
+          if (!signaturePlaced) {
+            const signaturePlaceholders = [
+              /\{\{signature\}\}/gi,
+              /\{\{SIGNATURE\}\}/g,
+              /\{\{executive_signature\}\}/gi,
+              /\{\{officer_signature\}\}/gi,
+              /\[SIGNATURE\]/gi,
+              /\[signature\]/gi,
+              /<!-- SIGNATURE PLACEHOLDER -->/gi,
+            ];
+            
+            for (const pattern of signaturePlaceholders) {
+              if (pattern.test(htmlContent)) {
+                htmlContent = htmlContent.replace(pattern, signatureWithNameHtml);
+                signaturePlaced = true;
+                console.log('Signature placed using placeholder pattern');
+                break;
+              }
+            }
+          }
+          
+          // Strategy 4: Replace first signature line found (last resort)
+          if (!signaturePlaced) {
+            htmlContent = htmlContent.replace(
+              /<div[^>]*class=["']signature-line["'][^>]*><\/div>/,
+              signatureWithNameHtml
+            );
+            signaturePlaced = true;
+            console.log('Signature placed in first available signature line');
+          }
+          
+          // Add signature metadata at the end for audit trail
+          const signatureMetadata = `
+<div style="margin-top: 40px; padding: 20px; border-top: 2px solid #333; page-break-inside: avoid; font-size: 11px; color: #666;">
+  <p><strong>Electronic Signature Record:</strong></p>
+  <p>Signed by: ${signerName}</p>
+  <p>Signed on: ${new Date(signedAtISO).toLocaleString('en-US', { timeZone: 'UTC' })} UTC</p>
+  ${signer_ip ? `<p>IP Address: ${signer_ip}</p>` : ''}
+</div>`;
+          
+          if (htmlContent.includes('</body>')) {
+            htmlContent = htmlContent.replace('</body>', signatureMetadata + '\n</body>');
+          } else if (htmlContent.includes('</html>')) {
+            htmlContent = htmlContent.replace('</html>', signatureMetadata + '\n</html>');
+          } else {
+            htmlContent += signatureMetadata;
+          }
+          
+          // Upload the signed HTML file
+          const signedHtmlPath = `executive_docs/signed/${document_id}.html`;
+          const { error: htmlUploadError } = await supabaseClient.storage
+            .from('documents')
+            .upload(signedHtmlPath, htmlContent, {
+              contentType: 'text/html',
+              upsert: true,
+            });
+          
+          if (!htmlUploadError) {
+            const { data: signedHtmlUrlData } = supabaseClient.storage
+              .from('documents')
+              .getPublicUrl(signedHtmlPath);
+            signedPublicUrl = signedHtmlUrlData?.publicUrl ?? document.file_url;
+            console.log('Signed HTML uploaded successfully:', signedPublicUrl);
+          } else {
+            console.error('Failed to upload signed HTML:', htmlUploadError);
+          }
+        }
+      } catch (htmlErr) {
+        console.error('Error processing HTML document:', htmlErr);
+        // Continue with original URL if HTML processing fails
+      }
+      signedPdfBytes = null; // No PDF processing needed
+    } else if (pdfBlob) {
+      try {
+        const pdfDoc = await PDFDocument.load(pdfBlob);
+        let pages = pdfDoc.getPages();
       if (pages.length === 0) {
         pdfDoc.addPage([612, 792]);
         pages = pdfDoc.getPages();
@@ -371,27 +701,33 @@ serve(async (req) => {
 
         signedPdfBytes = await pdfDoc.save();
       }
-    } catch (pdfErr) {
-      console.error('Failed to embed signature into PDF, using original file:', pdfErr);
+      } catch (pdfErr) {
+        console.error('Failed to embed signature into PDF, using original file:', pdfErr);
+      }
     }
 
-    const finalPdfBytes = signedPdfBytes ?? new Uint8Array(pdfBlob);
-    const signedPath = `executive_docs/signed/${document_id}.pdf`;
-    const { error: signedUploadError } = await supabaseClient.storage
-      .from('documents')
-      .upload(signedPath, finalPdfBytes, {
-        contentType: 'application/pdf',
-        upsert: true,
-      });
+    // For PDFs, upload signed PDF if we have signed bytes
+    if (!isHtmlFile && signedPdfBytes) {
+      const finalPdfBytes = signedPdfBytes ?? (pdfBlob ? new Uint8Array(pdfBlob) : null);
+      if (finalPdfBytes) {
+        const signedPath = `executive_docs/signed/${document_id}.pdf`;
+        const { error: signedUploadError } = await supabaseClient.storage
+          .from('documents')
+          .upload(signedPath, finalPdfBytes, {
+            contentType: 'application/pdf',
+            upsert: true,
+          });
 
-    if (signedUploadError) {
-      console.error('Failed to upload signed PDF, falling back to original URL:', signedUploadError);
+        if (signedUploadError) {
+          console.error('Failed to upload signed PDF, falling back to original URL:', signedUploadError);
+        } else {
+          const { data: signedUrlData } = supabaseClient.storage
+            .from('documents')
+            .getPublicUrl(signedPath);
+          signedPublicUrl = signedUrlData?.publicUrl ?? document.file_url;
+        }
+      }
     }
-
-    const { data: signedUrlData } = supabaseClient.storage
-      .from('documents')
-      .getPublicUrl(signedPath);
-    const signedPublicUrl = signedUrlData?.publicUrl ?? document.file_url;
 
     const existingSignerRoles = document.signer_roles && typeof document.signer_roles === 'object'
       ? (document.signer_roles as Record<string, boolean>)
@@ -405,30 +741,124 @@ serve(async (req) => {
     }
     updatedSignerRoles.officer = true;
 
-    const { error: updateError } = await supabaseClient
-      .from('executive_documents')
-      .update({
-        signature_status: 'signed',
-        status: 'signed',
-        signed_file_url: signedPublicUrl,
-        signer_roles: updatedSignerRoles,
-        signature_token: null,
-        signature_token_expires_at: null,
-        signature_field_layout: updatedLayout,
-      })
-      .eq('id', document_id);
+    // Get current user ID for signed_by_user field
+    let signedByUserId: string | null = null;
+    if (authHeader) {
+      try {
+        const userClient = createClient(
+          Deno.env.get('SUPABASE_URL') ?? '',
+          Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+          {
+            global: {
+              headers: { Authorization: authHeader },
+            },
+          }
+        );
+        const { data: { user } } = await userClient.auth.getUser();
+        signedByUserId = user?.id ?? null;
+      } catch (authErr) {
+        console.warn('Could not get user ID for signed_by_user:', authErr);
+      }
+    }
+
+    // Build update object - only include fields that exist
+    const updateData: any = {
+      signature_status: 'signed',
+      status: 'signed',
+      signed_file_url: signedPublicUrl,
+      signer_roles: updatedSignerRoles,
+      signature_token: null,
+      signature_token_expires_at: null,
+      signature_field_layout: updatedLayout,
+    };
+
+    // Add signed_at and signed_by_user (these should exist from migration)
+    updateData.signed_at = signedAtISO;
+    if (signedByUserId) {
+      updateData.signed_by_user = signedByUserId;
+    }
+
+    console.log('Updating document with data:', JSON.stringify(updateData, null, 2));
+    console.log('Document ID:', document_id);
+
+    // Try to update the document
+    // If the trigger fails, we'll catch it and provide helpful error message
+    let updateError: any = null;
+    let updateResult: any = null;
+    
+    try {
+      const updateResponse = await supabaseClient
+        .from('executive_documents')
+        .update(updateData)
+        .eq('id', document_id)
+        .select();
+      
+      updateError = updateResponse.error;
+      updateResult = updateResponse.data;
+    } catch (updateException: any) {
+      console.error('Exception during update:', updateException);
+      updateError = {
+        message: updateException.message || 'Unknown error during update',
+        code: updateException.code || 'UNKNOWN',
+        details: updateException
+      };
+    }
 
     if (updateError) {
       console.error('Error updating document status:', updateError);
-      throw updateError;
+      console.error('Update error code:', updateError.code);
+      console.error('Update error message:', updateError.message);
+      console.error('Update error details:', updateError.details);
+      console.error('Update error hint:', updateError.hint);
+      console.error('Update data was:', JSON.stringify(updateData, null, 2));
+      console.error('Document ID:', document_id);
+      
+      // Check for specific error types
+      const errorMsg = String(updateError.message || '').toLowerCase();
+      const errorDetails = String(updateError.details || '').toLowerCase();
+      
+      if (errorMsg.includes('operator does not exist') || 
+          errorMsg.includes('text = boolean') ||
+          errorDetails.includes('operator does not exist') ||
+          errorDetails.includes('text = boolean')) {
+        return new Response(
+          JSON.stringify({ 
+            ok: false, 
+            error: 'Database trigger function error. The check_all_documents_signed function needs to be updated.',
+            details: `Error: ${updateError.message}. Please run the SQL fix in Supabase Dashboard SQL Editor to update the function.`,
+            code: updateError.code,
+            hint: 'The function variable type needs to be BOOLEAN, not TEXT'
+          }),
+          {
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            status: 500,
+          }
+        );
+      }
+      
+      return new Response(
+        JSON.stringify({ 
+          ok: false, 
+          error: `Failed to update document: ${updateError.message || 'Unknown error'}`,
+          details: updateError.details || updateError.hint || JSON.stringify(updateError),
+          code: updateError.code || 'UNKNOWN',
+          fullError: updateError
+        }),
+        {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 500,
+        }
+      );
     }
+
+    console.log('Document updated successfully:', updateResult);
 
     console.log(`Document ${document_id} signed successfully by ${typed_name || 'unknown'}`);
 
     return new Response(
       JSON.stringify({
         ok: true,
-        signature_id: signature.id,
+        signature_id: signature?.id || null,
         document_id: document_id,
         message: 'Document signed successfully',
         signed_pdf_url: signedPublicUrl,

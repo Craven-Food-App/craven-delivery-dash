@@ -1,18 +1,6 @@
--- ============================================================================
--- LINK APPOINTMENT DOCUMENTS TO EXECUTIVE_DOCUMENTS TABLE
--- This allows executives to see and sign their appointment documents
--- ============================================================================
+-- Fix the trigger to use case-insensitive email matching
+-- This ensures documents are linked even if emails have different cases
 
--- Add appointment_id column to executive_documents if it doesn't exist
-ALTER TABLE public.executive_documents
-ADD COLUMN IF NOT EXISTS appointment_id UUID REFERENCES public.executive_appointments(id) ON DELETE SET NULL;
-
--- Create index for faster lookups
-CREATE INDEX IF NOT EXISTS idx_exec_docs_appointment_id 
-ON public.executive_documents(appointment_id) 
-WHERE appointment_id IS NOT NULL;
-
--- Function to automatically create executive_documents records when appointment documents are generated
 CREATE OR REPLACE FUNCTION public.link_appointment_document_to_executive()
 RETURNS TRIGGER AS $$
 DECLARE
@@ -107,29 +95,14 @@ BEGIN
         updated_at = now()
       WHERE id = exec_doc_id;
     END IF;
+  ELSE
+    -- Log warning if executive user not found
+    RAISE WARNING 'Executive user not found for email: %', NEW.proposed_officer_email;
   END IF;
 
   RETURN NEW;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
--- Create trigger to automatically link documents when generated
-DROP TRIGGER IF EXISTS trigger_link_appointment_documents ON public.executive_appointments;
-CREATE TRIGGER trigger_link_appointment_documents
-  AFTER UPDATE ON public.executive_appointments
-  FOR EACH ROW
-  WHEN (
-    NEW.pre_incorporation_consent_url IS DISTINCT FROM OLD.pre_incorporation_consent_url OR
-    NEW.appointment_letter_url IS DISTINCT FROM OLD.appointment_letter_url OR
-    NEW.board_resolution_url IS DISTINCT FROM OLD.board_resolution_url OR
-    NEW.certificate_url IS DISTINCT FROM OLD.certificate_url OR
-    NEW.employment_agreement_url IS DISTINCT FROM OLD.employment_agreement_url OR
-    NEW.confidentiality_ip_url IS DISTINCT FROM OLD.confidentiality_ip_url OR
-    NEW.stock_subscription_url IS DISTINCT FROM OLD.stock_subscription_url OR
-    NEW.deferred_compensation_url IS DISTINCT FROM OLD.deferred_compensation_url
-  )
-  EXECUTE FUNCTION public.link_appointment_document_to_executive();
-
-COMMENT ON COLUMN public.executive_documents.appointment_id IS 'Link to executive_appointments.id for tracking which appointment this document belongs to';
-COMMENT ON FUNCTION public.link_appointment_document_to_executive() IS 'Automatically creates executive_documents records when appointment documents are generated, linking them to the executive user';
+COMMENT ON FUNCTION public.link_appointment_document_to_executive() IS 'Automatically creates executive_documents records when appointment documents are generated, linking them to the executive user. Updated to use case-insensitive email matching.';
 

@@ -101,6 +101,12 @@ const AppointmentList: React.FC = () => {
     const statusConfig: Record<string, { color: string; label: string; icon: React.ReactNode }> = {
       DRAFT: { color: 'gray', label: 'Draft', icon: <IconFileText size={14} /> },
       SENT_TO_BOARD: { color: 'blue', label: 'Sent to Board', icon: <IconClock size={14} /> },
+      BOARD_ADOPTED: { color: 'cyan', label: 'Board Adopted', icon: <IconCheck size={14} /> },
+      AWAITING_SIGNATURES: { color: 'orange', label: 'Awaiting Signatures', icon: <IconClock size={14} /> },
+      READY_FOR_SECRETARY_REVIEW: { color: 'yellow', label: 'Ready for Review', icon: <IconAlertCircle size={14} /> },
+      SECRETARY_APPROVED: { color: 'lime', label: 'Secretary Approved', icon: <IconCheck size={14} /> },
+      ACTIVATING: { color: 'indigo', label: 'Activating', icon: <IconClock size={14} /> },
+      ACTIVE: { color: 'green', label: 'Active', icon: <IconCheck size={14} /> },
       APPROVED: { color: 'green', label: 'Approved', icon: <IconCheck size={14} /> },
       REJECTED: { color: 'red', label: 'Rejected', icon: <IconX size={14} /> },
     };

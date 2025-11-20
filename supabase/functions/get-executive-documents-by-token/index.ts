@@ -65,7 +65,7 @@ serve(async (req) => {
     // Fetch all documents for this executive
     const { data: documents, error: docsError } = await supabase
       .from("executive_documents")
-      .select("id, officer_name, role, type, status, signature_status, file_url, signed_file_url, packet_id, signing_stage, signing_order, required_signers, signer_roles, signature_token, signature_token_expires_at, created_at, depends_on_document_id")
+      .select("id, officer_name, role, type, status, signature_status, file_url, signed_file_url, packet_id, signing_stage, signing_order, required_signers, signer_roles, signature_token, signature_token_expires_at, created_at, depends_on_document_id, template_id")
       .eq("executive_id", sampleDoc.executive_id)
       .order("signing_stage", { ascending: true, nullsLast: true })
       .order("signing_order", { ascending: true, nullsLast: true })
@@ -159,6 +159,7 @@ serve(async (req) => {
             name: doc.type?.replace(/_/g, ' ') || 'Document',
             required: true,
             fileUrl: doc.file_url,
+            templateId: doc.template_id,
             signature_status: doc.signature_status,
             signed_file_url: doc.signed_file_url,
             signing_stage: doc.signing_stage,
