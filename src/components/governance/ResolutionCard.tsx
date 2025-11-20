@@ -1,6 +1,6 @@
 import React from 'react';
 import { Card, Group, Text, Badge, Button, Stack } from '@mantine/core';
-import { IconFileText, IconVote, IconCheck, IconX } from '@tabler/icons-react';
+import { IconFileText, IconCheckbox, IconCheck, IconX } from '@tabler/icons-react';
 import { useNavigate } from 'react-router-dom';
 
 interface ResolutionCardProps {
@@ -100,7 +100,7 @@ export const ResolutionCard: React.FC<ResolutionCardProps> = ({
           <Button
             size="sm"
             variant="light"
-            leftSection={<IconVote size={16} />}
+            leftSection={<IconCheckbox size={16} />}
             onClick={() => onVote(resolution.id)}
             fullWidth
           >

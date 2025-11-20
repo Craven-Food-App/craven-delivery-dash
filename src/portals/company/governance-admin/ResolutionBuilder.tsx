@@ -10,10 +10,10 @@ import {
   Select,
   Button,
   Group,
-  DateInput,
   Alert,
   Loader,
 } from '@mantine/core';
+import { DateInput } from '@mantine/dates';
 import { IconFileText, IconCheck, IconAlertCircle } from '@tabler/icons-react';
 import { supabase } from '@/integrations/supabase/client';
 import { notifications } from '@mantine/notifications';

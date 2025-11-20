@@ -93,12 +93,12 @@ export function BoardSetupModule() {
       // Determine full name from multiple sources (priority order)
       const fullName = 
         profile?.full_name ||           // First: user_profiles.full_name
-        execUser?.title ||              // Second: exec_users.title (often contains name for executives)
+        execUser?.full_name ||          // Second: exec_users.full_name
         user.email?.split('@')[0] ||    // Third: email username
         'Torrance Stroman';             // Final fallback
 
-      // Use exec_user email if available, otherwise auth user email
-      const email = execUser?.email || user.email || '';
+      // Use auth user email
+      const email = user.email || '';
 
       // Step 1: Create initial director (Torrance)
       // In pre-incorporation, this is conditional
