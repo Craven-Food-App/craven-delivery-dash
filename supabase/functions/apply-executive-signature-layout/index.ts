@@ -108,7 +108,7 @@ serve(async (req) => {
 
     const { data: ceoSigRow, error: ceoSigError } = await supabaseClient
       .from("ceo_system_settings")
-      .select<CeoSignatureRow>("setting_value")
+      .select("setting_value")
       .eq("setting_key", "ceo_signature")
       .maybeSingle();
 
@@ -116,7 +116,7 @@ serve(async (req) => {
       throw ceoSigError;
     }
 
-    const ceoSignature = ceoSigRow?.setting_value;
+    const ceoSignature = ceoSigRow?.setting_value as CeoSignatureSetting | undefined;
     if (!ceoSignature?.signature_png_base64) {
       return new Response(
         JSON.stringify({ ok: false, error: "CEO signature is not configured" }),
@@ -305,8 +305,9 @@ serve(async (req) => {
     );
   } catch (error) {
     console.error("Failed to apply CEO signature layout:", error);
+    const errorMessage = error instanceof Error ? error.message : "Unknown error";
     return new Response(
-      JSON.stringify({ ok: false, error: error?.message ?? "Unknown error" }),
+      JSON.stringify({ ok: false, error: errorMessage }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 500 },
     );
   }

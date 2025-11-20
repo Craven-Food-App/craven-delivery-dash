@@ -214,6 +214,90 @@ export type Database = {
           },
         ]
       }
+      appointment_documents: {
+        Row: {
+          appointment_id: string
+          created_at: string
+          governance_document_id: string
+          id: string
+        }
+        Insert: {
+          appointment_id: string
+          created_at?: string
+          governance_document_id: string
+          id?: string
+        }
+        Update: {
+          appointment_id?: string
+          created_at?: string
+          governance_document_id?: string
+          id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "appointment_documents_appointment_id_fkey"
+            columns: ["appointment_id"]
+            isOneToOne: false
+            referencedRelation: "appointments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "appointment_documents_governance_document_id_fkey"
+            columns: ["governance_document_id"]
+            isOneToOne: false
+            referencedRelation: "board_documents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      appointments: {
+        Row: {
+          appointee_user_id: string
+          company_id: string | null
+          created_at: string
+          created_by: string | null
+          effective_date: string
+          id: string
+          role_titles: string[]
+          updated_at: string
+        }
+        Insert: {
+          appointee_user_id: string
+          company_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          effective_date?: string
+          id?: string
+          role_titles: string[]
+          updated_at?: string
+        }
+        Update: {
+          appointee_user_id?: string
+          company_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          effective_date?: string
+          id?: string
+          role_titles?: string[]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "appointments_appointee_user_id_fkey"
+            columns: ["appointee_user_id"]
+            isOneToOne: false
+            referencedRelation: "effective_permissions"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "appointments_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "effective_permissions"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
       arena_competitions: {
         Row: {
           claim_window_seconds: number | null
@@ -476,6 +560,69 @@ export type Database = {
           },
         ]
       }
+      board_documents: {
+        Row: {
+          company_id: string | null
+          created_at: string | null
+          html_template: string | null
+          id: string
+          pdf_url: string | null
+          related_appointment_id: string | null
+          resolution_number: string | null
+          signers: Json | null
+          signing_status: string | null
+          template_id: string | null
+          title: string
+          type: string
+          updated_at: string | null
+        }
+        Insert: {
+          company_id?: string | null
+          created_at?: string | null
+          html_template?: string | null
+          id?: string
+          pdf_url?: string | null
+          related_appointment_id?: string | null
+          resolution_number?: string | null
+          signers?: Json | null
+          signing_status?: string | null
+          template_id?: string | null
+          title: string
+          type: string
+          updated_at?: string | null
+        }
+        Update: {
+          company_id?: string | null
+          created_at?: string | null
+          html_template?: string | null
+          id?: string
+          pdf_url?: string | null
+          related_appointment_id?: string | null
+          resolution_number?: string | null
+          signers?: Json | null
+          signing_status?: string | null
+          template_id?: string | null
+          title?: string
+          type?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "board_documents_related_appointment_id_fkey"
+            columns: ["related_appointment_id"]
+            isOneToOne: false
+            referencedRelation: "executive_appointments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "board_documents_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "document_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       board_meetings: {
         Row: {
           created_at: string | null
@@ -511,30 +658,45 @@ export type Database = {
       }
       board_members: {
         Row: {
-          created_at: string
+          appointment_date: string
+          created_at: string | null
           email: string
           full_name: string
           id: string
-          is_active: boolean
-          role: string
+          role_title: string
+          signature_tags: Json | null
+          signing_completed: boolean | null
+          signing_required: boolean | null
+          status: string
+          updated_at: string | null
           user_id: string | null
         }
         Insert: {
-          created_at?: string
+          appointment_date?: string
+          created_at?: string | null
           email: string
           full_name: string
           id?: string
-          is_active?: boolean
-          role: string
+          role_title: string
+          signature_tags?: Json | null
+          signing_completed?: boolean | null
+          signing_required?: boolean | null
+          status?: string
+          updated_at?: string | null
           user_id?: string | null
         }
         Update: {
-          created_at?: string
+          appointment_date?: string
+          created_at?: string | null
           email?: string
           full_name?: string
           id?: string
-          is_active?: boolean
-          role?: string
+          role_title?: string
+          signature_tags?: Json | null
+          signing_completed?: boolean | null
+          signing_required?: boolean | null
+          status?: string
+          updated_at?: string | null
           user_id?: string | null
         }
         Relationships: [
@@ -573,13 +735,6 @@ export type Database = {
           vote?: string
         }
         Relationships: [
-          {
-            foreignKeyName: "board_resolution_votes_board_member_id_fkey"
-            columns: ["board_member_id"]
-            isOneToOne: false
-            referencedRelation: "board_members"
-            referencedColumns: ["id"]
-          },
           {
             foreignKeyName: "board_resolution_votes_resolution_id_fkey"
             columns: ["resolution_id"]
@@ -866,6 +1021,111 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      cap_table_entries: {
+        Row: {
+          appointment_id: string | null
+          certificate_id: string | null
+          created_at: string | null
+          holder_id: string
+          id: string
+          is_deferred: boolean | null
+          shares_granted: number
+          vesting_months: number | null
+          vesting_start_date: string | null
+        }
+        Insert: {
+          appointment_id?: string | null
+          certificate_id?: string | null
+          created_at?: string | null
+          holder_id: string
+          id?: string
+          is_deferred?: boolean | null
+          shares_granted: number
+          vesting_months?: number | null
+          vesting_start_date?: string | null
+        }
+        Update: {
+          appointment_id?: string | null
+          certificate_id?: string | null
+          created_at?: string | null
+          holder_id?: string
+          id?: string
+          is_deferred?: boolean | null
+          shares_granted?: number
+          vesting_months?: number | null
+          vesting_start_date?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cap_table_entries_appointment_id_fkey"
+            columns: ["appointment_id"]
+            isOneToOne: false
+            referencedRelation: "executive_appointments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cap_table_entries_holder_id_fkey"
+            columns: ["holder_id"]
+            isOneToOne: false
+            referencedRelation: "effective_permissions"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
+      cap_tables: {
+        Row: {
+          as_of_date: string
+          company_id: string | null
+          created_at: string
+          equity_pool: number
+          founder_percentage: number
+          founder_shares: number
+          id: string
+          par_value: number
+          pool_percentage: number
+          total_authorized: number
+          total_issued: number
+          total_unissued: number
+          trust_percentage: number
+          trust_shares: number
+          updated_at: string
+        }
+        Insert: {
+          as_of_date?: string
+          company_id?: string | null
+          created_at?: string
+          equity_pool?: number
+          founder_percentage?: number
+          founder_shares?: number
+          id?: string
+          par_value?: number
+          pool_percentage?: number
+          total_authorized?: number
+          total_issued?: number
+          total_unissued?: number
+          trust_percentage?: number
+          trust_shares?: number
+          updated_at?: string
+        }
+        Update: {
+          as_of_date?: string
+          company_id?: string | null
+          created_at?: string
+          equity_pool?: number
+          founder_percentage?: number
+          founder_shares?: number
+          id?: string
+          par_value?: number
+          pool_percentage?: number
+          total_authorized?: number
+          total_issued?: number
+          total_unissued?: number
+          trust_percentage?: number
+          trust_shares?: number
+          updated_at?: string
+        }
+        Relationships: []
       }
       ceo_access_credentials: {
         Row: {
@@ -5240,6 +5500,85 @@ export type Database = {
           },
         ]
       }
+      equity_ledger: {
+        Row: {
+          certificate_id: string | null
+          company_id: string | null
+          created_at: string
+          created_by: string | null
+          effective_date: string
+          grant_id: string | null
+          id: string
+          notes: string | null
+          price_per_share: number | null
+          recipient_user_id: string
+          resolution_id: string | null
+          share_class: string | null
+          shares_amount: number
+          transaction_date: string
+          transaction_type: string
+          updated_at: string
+        }
+        Insert: {
+          certificate_id?: string | null
+          company_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          effective_date?: string
+          grant_id?: string | null
+          id?: string
+          notes?: string | null
+          price_per_share?: number | null
+          recipient_user_id: string
+          resolution_id?: string | null
+          share_class?: string | null
+          shares_amount: number
+          transaction_date?: string
+          transaction_type: string
+          updated_at?: string
+        }
+        Update: {
+          certificate_id?: string | null
+          company_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          effective_date?: string
+          grant_id?: string | null
+          id?: string
+          notes?: string | null
+          price_per_share?: number | null
+          recipient_user_id?: string
+          resolution_id?: string | null
+          share_class?: string | null
+          shares_amount?: number
+          transaction_date?: string
+          transaction_type?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "equity_ledger_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "effective_permissions"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "equity_ledger_recipient_user_id_fkey"
+            columns: ["recipient_user_id"]
+            isOneToOne: false
+            referencedRelation: "effective_permissions"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "equity_ledger_resolution_id_fkey"
+            columns: ["resolution_id"]
+            isOneToOne: false
+            referencedRelation: "governance_board_resolutions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       exec_audit_logs: {
         Row: {
           action_category: string
@@ -5732,6 +6071,7 @@ export type Database = {
       }
       executive_appointments: {
         Row: {
+          activation_date: string | null
           appointment_letter_url: string | null
           appointment_type: string
           authority_granted: string | null
@@ -5758,12 +6098,15 @@ export type Database = {
           proposed_officer_phone: string | null
           proposed_title: string
           reporting_to: string | null
+          secretary_approved_at: string | null
+          secretary_approved_by: string | null
           status: string
           stock_subscription_url: string | null
           term_length_months: number | null
           updated_at: string
         }
         Insert: {
+          activation_date?: string | null
           appointment_letter_url?: string | null
           appointment_type: string
           authority_granted?: string | null
@@ -5790,12 +6133,15 @@ export type Database = {
           proposed_officer_phone?: string | null
           proposed_title: string
           reporting_to?: string | null
+          secretary_approved_at?: string | null
+          secretary_approved_by?: string | null
           status?: string
           stock_subscription_url?: string | null
           term_length_months?: number | null
           updated_at?: string
         }
         Update: {
+          activation_date?: string | null
           appointment_letter_url?: string | null
           appointment_type?: string
           authority_granted?: string | null
@@ -5822,6 +6168,8 @@ export type Database = {
           proposed_officer_phone?: string | null
           proposed_title?: string
           reporting_to?: string | null
+          secretary_approved_at?: string | null
+          secretary_approved_by?: string | null
           status?: string
           stock_subscription_url?: string | null
           term_length_months?: number | null
@@ -5842,10 +6190,183 @@ export type Database = {
             referencedRelation: "effective_permissions"
             referencedColumns: ["user_id"]
           },
+          {
+            foreignKeyName: "executive_appointments_secretary_approved_by_fkey"
+            columns: ["secretary_approved_by"]
+            isOneToOne: false
+            referencedRelation: "effective_permissions"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
+      executive_banking_authority: {
+        Row: {
+          appointment_id: string | null
+          bank_authorization_packet_url: string | null
+          can_access_treasury_portal: boolean | null
+          can_sign_checks: boolean | null
+          can_sign_wires: boolean | null
+          created_at: string | null
+          id: string
+          officer_id: string | null
+          role: string
+          status: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          appointment_id?: string | null
+          bank_authorization_packet_url?: string | null
+          can_access_treasury_portal?: boolean | null
+          can_sign_checks?: boolean | null
+          can_sign_wires?: boolean | null
+          created_at?: string | null
+          id?: string
+          officer_id?: string | null
+          role: string
+          status?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          appointment_id?: string | null
+          bank_authorization_packet_url?: string | null
+          can_access_treasury_portal?: boolean | null
+          can_sign_checks?: boolean | null
+          can_sign_wires?: boolean | null
+          created_at?: string | null
+          id?: string
+          officer_id?: string | null
+          role?: string
+          status?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "executive_banking_authority_appointment_id_fkey"
+            columns: ["appointment_id"]
+            isOneToOne: false
+            referencedRelation: "executive_appointments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "executive_banking_authority_officer_id_fkey"
+            columns: ["officer_id"]
+            isOneToOne: false
+            referencedRelation: "corporate_officers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      executive_compensation: {
+        Row: {
+          activated_at: string | null
+          activation_trigger: string | null
+          appointment_id: string | null
+          base_salary: number | null
+          created_at: string | null
+          id: string
+          is_deferred: boolean | null
+          trigger_status: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          activated_at?: string | null
+          activation_trigger?: string | null
+          appointment_id?: string | null
+          base_salary?: number | null
+          created_at?: string | null
+          id?: string
+          is_deferred?: boolean | null
+          trigger_status?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          activated_at?: string | null
+          activation_trigger?: string | null
+          appointment_id?: string | null
+          base_salary?: number | null
+          created_at?: string | null
+          id?: string
+          is_deferred?: boolean | null
+          trigger_status?: string | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "executive_compensation_appointment_id_fkey"
+            columns: ["appointment_id"]
+            isOneToOne: false
+            referencedRelation: "executive_appointments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "executive_compensation_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "effective_permissions"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
+      executive_compliance_records: {
+        Row: {
+          added_to_do_insurance: boolean | null
+          appointment_id: string | null
+          background_verified: boolean | null
+          conflict_form_signed: boolean | null
+          created_at: string | null
+          id: string
+          identity_verified: boolean | null
+          nda_signed: boolean | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          added_to_do_insurance?: boolean | null
+          appointment_id?: string | null
+          background_verified?: boolean | null
+          conflict_form_signed?: boolean | null
+          created_at?: string | null
+          id?: string
+          identity_verified?: boolean | null
+          nda_signed?: boolean | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          added_to_do_insurance?: boolean | null
+          appointment_id?: string | null
+          background_verified?: boolean | null
+          conflict_form_signed?: boolean | null
+          created_at?: string | null
+          id?: string
+          identity_verified?: boolean | null
+          nda_signed?: boolean | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "executive_compliance_records_appointment_id_fkey"
+            columns: ["appointment_id"]
+            isOneToOne: false
+            referencedRelation: "executive_appointments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "executive_compliance_records_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "effective_permissions"
+            referencedColumns: ["user_id"]
+          },
         ]
       }
       executive_documents: {
         Row: {
+          appointment_id: string | null
           created_at: string | null
           created_by: string | null
           depends_on_document_id: string | null
@@ -5861,16 +6382,21 @@ export type Database = {
           signature_status: string | null
           signature_token: string | null
           signature_token_expires_at: string | null
+          signed_at: string | null
+          signed_by_user: string | null
           signed_file_url: string | null
           signer_roles: Json | null
           signing_order: number | null
           signing_stage: number | null
           stage_completed: boolean | null
           status: string
+          template_id: string | null
           template_key: string | null
           type: string
+          verification_status: string | null
         }
         Insert: {
+          appointment_id?: string | null
           created_at?: string | null
           created_by?: string | null
           depends_on_document_id?: string | null
@@ -5886,16 +6412,21 @@ export type Database = {
           signature_status?: string | null
           signature_token?: string | null
           signature_token_expires_at?: string | null
+          signed_at?: string | null
+          signed_by_user?: string | null
           signed_file_url?: string | null
           signer_roles?: Json | null
           signing_order?: number | null
           signing_stage?: number | null
           stage_completed?: boolean | null
           status?: string
+          template_id?: string | null
           template_key?: string | null
           type: string
+          verification_status?: string | null
         }
         Update: {
+          appointment_id?: string | null
           created_at?: string | null
           created_by?: string | null
           depends_on_document_id?: string | null
@@ -5911,16 +6442,27 @@ export type Database = {
           signature_status?: string | null
           signature_token?: string | null
           signature_token_expires_at?: string | null
+          signed_at?: string | null
+          signed_by_user?: string | null
           signed_file_url?: string | null
           signer_roles?: Json | null
           signing_order?: number | null
           signing_stage?: number | null
           stage_completed?: boolean | null
           status?: string
+          template_id?: string | null
           template_key?: string | null
           type?: string
+          verification_status?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "executive_documents_appointment_id_fkey"
+            columns: ["appointment_id"]
+            isOneToOne: false
+            referencedRelation: "executive_appointments"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "executive_documents_depends_on_document_id_fkey"
             columns: ["depends_on_document_id"]
@@ -5933,6 +6475,20 @@ export type Database = {
             columns: ["executive_id"]
             isOneToOne: false
             referencedRelation: "exec_users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "executive_documents_signed_by_user_fkey"
+            columns: ["signed_by_user"]
+            isOneToOne: false
+            referencedRelation: "effective_permissions"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "executive_documents_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "document_templates"
             referencedColumns: ["id"]
           },
         ]
@@ -5999,6 +6555,111 @@ export type Database = {
             isOneToOne: true
             referencedRelation: "exec_users"
             referencedColumns: ["id"]
+          },
+        ]
+      }
+      executive_onboarding: {
+        Row: {
+          appointment_id: string
+          completed_at: string | null
+          created_at: string
+          documents_completed: Json
+          documents_required: Json
+          id: string
+          onboarding_notes: string | null
+          signing_deadline: string | null
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          appointment_id: string
+          completed_at?: string | null
+          created_at?: string
+          documents_completed?: Json
+          documents_required?: Json
+          id?: string
+          onboarding_notes?: string | null
+          signing_deadline?: string | null
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          appointment_id?: string
+          completed_at?: string | null
+          created_at?: string
+          documents_completed?: Json
+          documents_required?: Json
+          id?: string
+          onboarding_notes?: string | null
+          signing_deadline?: string | null
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "executive_onboarding_appointment_id_fkey"
+            columns: ["appointment_id"]
+            isOneToOne: false
+            referencedRelation: "appointments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "executive_onboarding_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "effective_permissions"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
+      executive_saved_signatures: {
+        Row: {
+          created_at: string | null
+          executive_id: string | null
+          id: string
+          is_default: boolean | null
+          signature_data_url: string
+          signature_name: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          executive_id?: string | null
+          id?: string
+          is_default?: boolean | null
+          signature_data_url: string
+          signature_name?: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          executive_id?: string | null
+          id?: string
+          is_default?: boolean | null
+          signature_data_url?: string
+          signature_name?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "executive_saved_signatures_executive_id_fkey"
+            columns: ["executive_id"]
+            isOneToOne: false
+            referencedRelation: "exec_users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "executive_saved_signatures_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "effective_permissions"
+            referencedColumns: ["user_id"]
           },
         ]
       }
@@ -6752,6 +7413,56 @@ export type Database = {
           {
             foreignKeyName: "governance_board_resolutions_created_by_fkey"
             columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "effective_permissions"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
+      governance_log: {
+        Row: {
+          action_category: string
+          action_type: string
+          company_id: string | null
+          description: string
+          id: string
+          metadata: Json | null
+          performed_at: string
+          performed_by: string | null
+          target_id: string | null
+          target_name: string | null
+          target_type: string | null
+        }
+        Insert: {
+          action_category: string
+          action_type: string
+          company_id?: string | null
+          description: string
+          id?: string
+          metadata?: Json | null
+          performed_at?: string
+          performed_by?: string | null
+          target_id?: string | null
+          target_name?: string | null
+          target_type?: string | null
+        }
+        Update: {
+          action_category?: string
+          action_type?: string
+          company_id?: string | null
+          description?: string
+          id?: string
+          metadata?: Json | null
+          performed_at?: string
+          performed_by?: string | null
+          target_id?: string | null
+          target_name?: string | null
+          target_type?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "governance_log_performed_by_fkey"
+            columns: ["performed_by"]
             isOneToOne: false
             referencedRelation: "effective_permissions"
             referencedColumns: ["user_id"]
@@ -8029,6 +8740,118 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      officer_activation_timeline: {
+        Row: {
+          appointment_id: string
+          created_at: string | null
+          event_description: string
+          event_type: string
+          id: string
+          metadata: Json | null
+          performed_by: string | null
+        }
+        Insert: {
+          appointment_id: string
+          created_at?: string | null
+          event_description: string
+          event_type: string
+          id?: string
+          metadata?: Json | null
+          performed_by?: string | null
+        }
+        Update: {
+          appointment_id?: string
+          created_at?: string | null
+          event_description?: string
+          event_type?: string
+          id?: string
+          metadata?: Json | null
+          performed_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "officer_activation_timeline_appointment_id_fkey"
+            columns: ["appointment_id"]
+            isOneToOne: false
+            referencedRelation: "executive_appointments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "officer_activation_timeline_performed_by_fkey"
+            columns: ["performed_by"]
+            isOneToOne: false
+            referencedRelation: "effective_permissions"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
+      officer_ledger: {
+        Row: {
+          appointment_id: string | null
+          certificate_url: string | null
+          created_at: string | null
+          effective_date: string
+          id: string
+          name: string
+          officer_id: string | null
+          resolution_id: string | null
+          resolution_number: string | null
+          status: string
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          appointment_id?: string | null
+          certificate_url?: string | null
+          created_at?: string | null
+          effective_date: string
+          id?: string
+          name: string
+          officer_id?: string | null
+          resolution_id?: string | null
+          resolution_number?: string | null
+          status?: string
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          appointment_id?: string | null
+          certificate_url?: string | null
+          created_at?: string | null
+          effective_date?: string
+          id?: string
+          name?: string
+          officer_id?: string | null
+          resolution_id?: string | null
+          resolution_number?: string | null
+          status?: string
+          title?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "officer_ledger_appointment_id_fkey"
+            columns: ["appointment_id"]
+            isOneToOne: false
+            referencedRelation: "executive_appointments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "officer_ledger_officer_id_fkey"
+            columns: ["officer_id"]
+            isOneToOne: false
+            referencedRelation: "corporate_officers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "officer_ledger_resolution_id_fkey"
+            columns: ["resolution_id"]
+            isOneToOne: false
+            referencedRelation: "governance_board_resolutions"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       onboarding_tasks: {
         Row: {
@@ -11021,6 +11844,86 @@ export type Database = {
           },
         ]
       }
+      share_certificates: {
+        Row: {
+          appointment_id: string | null
+          certificate_number: string
+          created_at: string
+          document_url: string | null
+          html_template: string | null
+          id: string
+          issue_date: string
+          recipient_user_id: string
+          replaced_by_certificate_id: string | null
+          resolution_id: string | null
+          share_class: string | null
+          shares_amount: number
+          status: string | null
+          updated_at: string
+        }
+        Insert: {
+          appointment_id?: string | null
+          certificate_number: string
+          created_at?: string
+          document_url?: string | null
+          html_template?: string | null
+          id?: string
+          issue_date?: string
+          recipient_user_id: string
+          replaced_by_certificate_id?: string | null
+          resolution_id?: string | null
+          share_class?: string | null
+          shares_amount: number
+          status?: string | null
+          updated_at?: string
+        }
+        Update: {
+          appointment_id?: string | null
+          certificate_number?: string
+          created_at?: string
+          document_url?: string | null
+          html_template?: string | null
+          id?: string
+          issue_date?: string
+          recipient_user_id?: string
+          replaced_by_certificate_id?: string | null
+          resolution_id?: string | null
+          share_class?: string | null
+          shares_amount?: number
+          status?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "share_certificates_appointment_id_fkey"
+            columns: ["appointment_id"]
+            isOneToOne: false
+            referencedRelation: "appointments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "share_certificates_recipient_user_id_fkey"
+            columns: ["recipient_user_id"]
+            isOneToOne: false
+            referencedRelation: "effective_permissions"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "share_certificates_replaced_by_certificate_id_fkey"
+            columns: ["replaced_by_certificate_id"]
+            isOneToOne: false
+            referencedRelation: "share_certificates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "share_certificates_resolution_id_fkey"
+            columns: ["resolution_id"]
+            isOneToOne: false
+            referencedRelation: "governance_board_resolutions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       signatures: {
         Row: {
           document_id: string | null
@@ -11765,6 +12668,33 @@ export type Database = {
           },
         ]
       }
+      trusts: {
+        Row: {
+          company_id: string | null
+          created_at: string
+          id: string
+          name: string
+          type: string
+          updated_at: string
+        }
+        Insert: {
+          company_id?: string | null
+          created_at?: string
+          id?: string
+          name?: string
+          type?: string
+          updated_at?: string
+        }
+        Update: {
+          company_id?: string | null
+          created_at?: string
+          id?: string
+          name?: string
+          type?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       unified_audit_trail: {
         Row: {
           action_category: string
@@ -12164,6 +13094,68 @@ export type Database = {
           },
         ]
       }
+      vesting_schedules: {
+        Row: {
+          acceleration_events: Json | null
+          cliff_months: number | null
+          created_at: string
+          end_date: string | null
+          grant_id: string | null
+          id: string
+          recipient_user_id: string
+          start_date: string
+          total_shares: number
+          unvested_shares: number | null
+          updated_at: string
+          vested_shares: number | null
+          vesting_period_months: number
+          vesting_schedule: Json
+          vesting_type: string
+        }
+        Insert: {
+          acceleration_events?: Json | null
+          cliff_months?: number | null
+          created_at?: string
+          end_date?: string | null
+          grant_id?: string | null
+          id?: string
+          recipient_user_id: string
+          start_date: string
+          total_shares: number
+          unvested_shares?: number | null
+          updated_at?: string
+          vested_shares?: number | null
+          vesting_period_months: number
+          vesting_schedule?: Json
+          vesting_type: string
+        }
+        Update: {
+          acceleration_events?: Json | null
+          cliff_months?: number | null
+          created_at?: string
+          end_date?: string | null
+          grant_id?: string | null
+          id?: string
+          recipient_user_id?: string
+          start_date?: string
+          total_shares?: number
+          unvested_shares?: number | null
+          updated_at?: string
+          vested_shares?: number | null
+          vesting_period_months?: number
+          vesting_schedule?: Json
+          vesting_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vesting_schedules_recipient_user_id_fkey"
+            columns: ["recipient_user_id"]
+            isOneToOne: false
+            referencedRelation: "effective_permissions"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
       zones: {
         Row: {
           active_drivers: number
@@ -12539,6 +13531,19 @@ export type Database = {
         Args: { p_order_id: string }
         Returns: Json
       }
+      backfill_executive_documents_from_appointments: {
+        Args: never
+        Returns: {
+          appointment_id: string
+          created: boolean
+          document_type: string
+          executive_id: string
+        }[]
+      }
+      backfill_my_executive_documents: {
+        Args: { p_user_email: string }
+        Returns: number
+      }
       calculate_distance: {
         Args: { lat1: number; lat2: number; lng1: number; lng2: number }
         Returns: number
@@ -12561,6 +13566,10 @@ export type Database = {
       calculate_waitlist_position: {
         Args: { driver_uuid: string }
         Returns: number
+      }
+      check_all_documents_signed: {
+        Args: { p_appointment_id: string }
+        Returns: boolean
       }
       check_point_in_zones: {
         Args: { lat: number; lng: number }
@@ -12687,6 +13696,7 @@ export type Database = {
         Returns: boolean
       }
       equals: { Args: { geom1: unknown; geom2: unknown }; Returns: boolean }
+      generate_certificate_number: { Args: never; Returns: string }
       generate_code_request_number: { Args: never; Returns: string }
       generate_employee_number: { Args: never; Returns: string }
       generate_expense_number: { Args: never; Returns: string }
@@ -12877,6 +13887,10 @@ export type Database = {
           waitlist_count: number
         }[]
       }
+      get_template_id_from_document_type: {
+        Args: { p_document_type: string }
+        Returns: string
+      }
       get_user_audit_info: {
         Args: { p_user_id: string }
         Returns: {
@@ -12945,7 +13959,29 @@ export type Database = {
         }
         Returns: string
       }
+      log_governance_action: {
+        Args: {
+          p_action_category: string
+          p_action_type: string
+          p_description: string
+          p_metadata?: Json
+          p_performed_by?: string
+          p_target_id: string
+          p_target_name: string
+          p_target_type: string
+        }
+        Returns: string
+      }
       longtransactionsenabled: { Args: never; Returns: boolean }
+      lookup_user_by_email: {
+        Args: { p_email: string }
+        Returns: {
+          created_at: string
+          email: string
+          full_name: string
+          user_id: string
+        }[]
+      }
       make_user_active_driver: {
         Args: { target_user_id: string; vehicle_info?: Json }
         Returns: undefined
@@ -13602,6 +14638,10 @@ export type Database = {
           table_name: string
         }
         Returns: string
+      }
+      validate_appointment_status_transition: {
+        Args: { new_status: string; old_status: string }
+        Returns: boolean
       }
       verify_ceo_master_pin: { Args: { p_pin: string }; Returns: boolean }
       verify_ceo_pin: {

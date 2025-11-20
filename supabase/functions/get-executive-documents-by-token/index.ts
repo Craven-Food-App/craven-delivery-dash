@@ -67,8 +67,8 @@ serve(async (req) => {
       .from("executive_documents")
       .select("id, officer_name, role, type, status, signature_status, file_url, signed_file_url, packet_id, signing_stage, signing_order, required_signers, signer_roles, signature_token, signature_token_expires_at, created_at, depends_on_document_id, template_id")
       .eq("executive_id", sampleDoc.executive_id)
-      .order("signing_stage", { ascending: true, nullsLast: true })
-      .order("signing_order", { ascending: true, nullsLast: true })
+      .order("signing_stage", { ascending: true, nullsFirst: false })
+      .order("signing_order", { ascending: true, nullsFirst: false })
       .order("created_at", { ascending: true });
 
     if (docsError) throw docsError;
@@ -177,10 +177,11 @@ serve(async (req) => {
       }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
-  } catch (error: any) {
+  } catch (error) {
     console.error("get-executive-documents-by-token error:", error);
+    const errorMessage = error instanceof Error ? error.message : "Unexpected error";
     return new Response(
-      JSON.stringify({ ok: false, error: error?.message || "Unexpected error" }),
+      JSON.stringify({ ok: false, error: errorMessage }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
   }

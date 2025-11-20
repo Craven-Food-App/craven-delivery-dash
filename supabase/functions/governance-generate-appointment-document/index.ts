@@ -126,7 +126,25 @@ serve(async (req) => {
     }
 
     // Parse JSON fields if they're strings, with safe fallback
-    let compensationStructure = {};
+    interface CompensationStructure {
+      base_salary?: number;
+      annual_bonus_percentage?: number;
+      performance_bonus?: string;
+      benefits?: string;
+      description?: string;
+      [key: string]: any;
+    }
+
+    interface EquityDetails {
+      percentage?: number;
+      share_count?: number;
+      vesting_schedule?: string;
+      exercise_price?: string;
+      description?: string;
+      [key: string]: any;
+    }
+
+    let compensationStructure: CompensationStructure = {};
     if (appointment.compensation_structure) {
       if (typeof appointment.compensation_structure === 'string') {
         try {
@@ -138,11 +156,11 @@ serve(async (req) => {
           compensationStructure = { description: appointment.compensation_structure };
         }
       } else {
-        compensationStructure = appointment.compensation_structure;
+        compensationStructure = appointment.compensation_structure as CompensationStructure;
       }
     }
     
-    let equityDetails = {};
+    let equityDetails: EquityDetails = {};
     if (appointment.equity_details) {
       if (typeof appointment.equity_details === 'string') {
         try {
@@ -154,7 +172,7 @@ serve(async (req) => {
           equityDetails = { description: appointment.equity_details };
         }
       } else {
-        equityDetails = appointment.equity_details;
+        equityDetails = appointment.equity_details as EquityDetails;
       }
     }
 
