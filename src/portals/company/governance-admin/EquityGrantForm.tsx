@@ -68,8 +68,9 @@ const EquityGrantForm: React.FC = () => {
     
     setSearching(true);
     try {
-      const { data: { user } } = await supabase.auth.admin.listUsers();
-      const foundUser = user?.find(u => u.email?.toLowerCase().includes(email.toLowerCase()));
+      const { data: authUsers } = await supabase.auth.admin.listUsers();
+      // @ts-ignore - listUsers type mismatch
+      const foundUser = authUsers?.users?.find(u => u.email?.toLowerCase().includes(email.toLowerCase()));
       
       if (foundUser) {
         const { data: profile } = await supabase
