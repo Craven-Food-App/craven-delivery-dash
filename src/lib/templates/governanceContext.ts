@@ -82,13 +82,14 @@ export async function buildAppointmentContext(ctx: AppointmentContext) {
     execUser?.title || 
     user?.email?.split('@')[0] || 
     '';
-  const email = execUser?.email || user?.email || '';
+  // @ts-ignore - exec_users may not have email column
+  const email = user?.email || '';
 
   return {
     ...common,
     officer_name: fullName,
     officer_email: email,
-    officer_address: profile?.address || '',
+    officer_address: '',
     appointee_name: fullName,
     appointee_1_name: fullName,
     appointee_1_email: email,
