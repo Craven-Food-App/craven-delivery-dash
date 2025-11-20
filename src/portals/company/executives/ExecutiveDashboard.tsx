@@ -1,12 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { Container, Title, Text, Stack, Card, Grid, Badge, Group, Button, Paper, Loader, Center } from '@mantine/core';
-import { IconUserCheck, IconFileText, IconUsers, IconPencil } from '@tabler/icons-react';
+import { IconUserCheck, IconFileText, IconUsers, IconPencil, IconChecklist, IconFolder, IconCoins, IconClock } from '@tabler/icons-react';
 import { supabase } from '@/integrations/supabase/client';
 import { notifications } from '@mantine/notifications';
 import { useNavigate } from 'react-router-dom';
 import MyAppointment from './MyAppointment';
 import OfficerDirectoryInternal from './OfficerDirectoryInternal';
 import MyDocuments from './MyDocuments';
+import OnboardingPacket from './OnboardingPacket';
+import DocumentVault from './DocumentVault';
+import EquityDashboard from './EquityDashboard';
+import VestingProgress from './VestingProgress';
 import { Tabs } from '@mantine/core';
 
 const ExecutiveDashboard: React.FC = () => {
@@ -96,8 +100,20 @@ const ExecutiveDashboard: React.FC = () => {
               <Tabs.Tab value="my-appointment" leftSection={<IconFileText size={16} />}>
                 My Appointment
               </Tabs.Tab>
+              <Tabs.Tab value="onboarding" leftSection={<IconChecklist size={16} />}>
+                Onboarding Packet
+              </Tabs.Tab>
               <Tabs.Tab value="documents" leftSection={<IconPencil size={16} />}>
                 My Documents
+              </Tabs.Tab>
+              <Tabs.Tab value="vault" leftSection={<IconFolder size={16} />}>
+                Document Vault
+              </Tabs.Tab>
+              <Tabs.Tab value="equity" leftSection={<IconCoins size={16} />}>
+                Equity Dashboard
+              </Tabs.Tab>
+              <Tabs.Tab value="vesting" leftSection={<IconClock size={16} />}>
+                Vesting Progress
               </Tabs.Tab>
               <Tabs.Tab value="directory" leftSection={<IconUsers size={16} />}>
                 Officer Directory
@@ -108,8 +124,24 @@ const ExecutiveDashboard: React.FC = () => {
               <MyAppointment />
             </Tabs.Panel>
 
+            <Tabs.Panel value="onboarding" pt="md">
+              <OnboardingPacket />
+            </Tabs.Panel>
+
             <Tabs.Panel value="documents" pt="md">
               <MyDocuments />
+            </Tabs.Panel>
+
+            <Tabs.Panel value="vault" pt="md">
+              <DocumentVault />
+            </Tabs.Panel>
+
+            <Tabs.Panel value="equity" pt="md">
+              <EquityDashboard />
+            </Tabs.Panel>
+
+            <Tabs.Panel value="vesting" pt="md">
+              <VestingProgress />
             </Tabs.Panel>
 
             <Tabs.Panel value="directory" pt="md">

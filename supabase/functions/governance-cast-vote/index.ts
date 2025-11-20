@@ -173,15 +173,17 @@ serve(async (req) => {
     }
 
     // Log the action
-    await supabaseAdmin.from('governance_logs').insert({
-      action: 'CAST_VOTE',
-      entity_type: 'board_resolution',
-      entity_id: resolution_id,
-      description: `Cast ${vote} vote on resolution`,
-      actor_id: user.id,
-      data: {
+    await supabaseAdmin.rpc('log_governance_action', {
+      p_action_type: 'vote_cast',
+      p_action_category: 'board',
+      p_target_type: 'resolution',
+      p_target_id: resolution_id,
+      p_target_name: `Resolution ${resolution_id}`,
+      p_description: `Cast ${vote} vote on resolution`,
+      p_metadata: {
         vote,
         comment: comment || null,
+        board_member_id: boardMember.id,
       },
     });
 

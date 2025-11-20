@@ -98,15 +98,17 @@ serve(async (req) => {
     }
 
     // Log the action
-    await supabaseAdmin.from('governance_logs').insert({
-      action: 'CREATE_APPOINTMENT',
-      entity_type: 'executive_appointment',
-      entity_id: appointment.id,
-      description: `Created appointment draft for ${body.proposed_officer_name} as ${body.proposed_title}`,
-      actor_id: user.id,
-      data: {
+    await supabaseAdmin.rpc('log_governance_action', {
+      p_action_type: 'appointment_created',
+      p_action_category: 'executive',
+      p_target_type: 'appointment',
+      p_target_id: appointment.id,
+      p_target_name: body.proposed_officer_name,
+      p_description: `Created appointment draft for ${body.proposed_officer_name} as ${body.proposed_title}`,
+      p_metadata: {
         appointment_type: body.appointment_type,
         effective_date: body.effective_date,
+        title: body.proposed_title,
       },
     });
 

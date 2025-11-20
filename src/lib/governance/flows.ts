@@ -124,6 +124,7 @@ export async function handleOfficerAppointment(appointmentId: string): Promise<s
   if (!appt) throw new Error('Appointment not found');
 
   const ctx = await buildAppointmentContext({
+    companyId: undefined, // Single company setup - uses company_settings
     appointeeUserId: appt.appointee_user_id,
     roleTitles: appt.role_titles,
     appointmentDate: appt.effective_date,
@@ -180,6 +181,51 @@ export async function handleOfficerAppointment(appointmentId: string): Promise<s
     } catch (error) {
       console.error(`Error processing template ${id}:`, error);
     }
+  }
+
+  // Create resolution for this appointment
+  try {
+    const { data: resolution } = await supabase.functions.invoke('governance-create-resolution', {
+      body: {
+        title: `Appointment of ${ctx.officer_name} as ${appt.role_titles.join(', ')}`,
+        description: `Board resolution to appoint ${ctx.officer_name} to the position of ${appt.role_titles.join(', ')}`,
+        type: 'EXECUTIVE_APPOINTMENT',
+        effective_date: appt.effective_date,
+        appointment_id: appointmentId,
+        metadata: {
+          appointment_id: appointmentId,
+          role_titles: appt.role_titles,
+        },
+      },
+    });
+
+    if (resolution?.resolution) {
+      // Update resolution status to PENDING_VOTE
+      await supabase
+        .from('governance_board_resolutions')
+        .update({ status: 'PENDING_VOTE' })
+        .eq('id', resolution.resolution.id);
+    }
+  } catch (resolutionError) {
+    console.error('Failed to create resolution:', resolutionError);
+    // Don't throw - documents were created successfully
+  }
+
+  // Create executive onboarding record
+  try {
+    await supabase
+      .from('executive_onboarding')
+      .upsert({
+        appointment_id: appointmentId,
+        user_id: appt.appointee_user_id,
+        status: 'pending',
+        documents_required: finalTemplates.map(id => ({ template_id: id, required: true })),
+        documents_completed: [],
+      }, {
+        onConflict: 'appointment_id,user_id',
+      });
+  } catch (onboardingError) {
+    console.error('Failed to create onboarding record:', onboardingError);
   }
 
   // Send email notification when documents are ready

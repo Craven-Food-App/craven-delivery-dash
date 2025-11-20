@@ -1,14 +1,19 @@
 import React, { useEffect, useState } from 'react';
 import { Container, Title, Text, Stack, Tabs, Card } from '@mantine/core';
-import { IconShield, IconUsers, IconFileText, IconUserCheck, IconHistory, IconChecklist, IconTags, IconKey } from '@tabler/icons-react';
+import { IconShield, IconUsers, IconFileText, IconUserCheck, IconHistory, IconChecklist, IconTags, IconKey, IconVote, IconPlus, IconChartPie, IconCoins, IconCertificate } from '@tabler/icons-react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import AppointmentList from './AppointmentList';
 import ResolutionList from './ResolutionList';
+import ResolutionBuilder from './ResolutionBuilder';
+import ResolutionVotingDashboard from './ResolutionVotingDashboard';
 import OfficerLedger from './OfficerLedger';
 import GovernanceLogList from './GovernanceLogList';
 import OfficerValidation from './OfficerValidation';
 import DocumentTemplates from './DocumentTemplates';
 import RoleManagement from './RoleManagement';
+import CapTableOverview from './CapTableOverview';
+import EquityGrantForm from './EquityGrantForm';
+import ShareCertificateViewer from './ShareCertificateViewer';
 import { BoardSetupModule } from '@/components/board/BoardSetupModule';
 
 const GovernanceAdminDashboard: React.FC = () => {
@@ -65,8 +70,23 @@ const GovernanceAdminDashboard: React.FC = () => {
               <Tabs.Tab value="resolutions" leftSection={<IconFileText size={16} />}>
                 Resolutions
               </Tabs.Tab>
+              <Tabs.Tab value="resolution-builder" leftSection={<IconPlus size={16} />}>
+                Create Resolution
+              </Tabs.Tab>
+              <Tabs.Tab value="voting" leftSection={<IconVote size={16} />}>
+                Voting Dashboard
+              </Tabs.Tab>
               <Tabs.Tab value="officers" leftSection={<IconUserCheck size={16} />}>
                 Officers
+              </Tabs.Tab>
+              <Tabs.Tab value="cap-table" leftSection={<IconChartPie size={16} />}>
+                Cap Table
+              </Tabs.Tab>
+              <Tabs.Tab value="equity-grant" leftSection={<IconCoins size={16} />}>
+                Equity Grants
+              </Tabs.Tab>
+              <Tabs.Tab value="certificates" leftSection={<IconCertificate size={16} />}>
+                Certificates
               </Tabs.Tab>
               <Tabs.Tab value="logs" leftSection={<IconHistory size={16} />}>
                 Governance Logs
@@ -94,8 +114,28 @@ const GovernanceAdminDashboard: React.FC = () => {
               <ResolutionList />
             </Tabs.Panel>
 
+            <Tabs.Panel value="resolution-builder" pt="md">
+              <ResolutionBuilder />
+            </Tabs.Panel>
+
+            <Tabs.Panel value="voting" pt="md">
+              <ResolutionVotingDashboard />
+            </Tabs.Panel>
+
             <Tabs.Panel value="officers" pt="md">
               <OfficerLedger />
+            </Tabs.Panel>
+
+            <Tabs.Panel value="cap-table" pt="md">
+              <CapTableOverview />
+            </Tabs.Panel>
+
+            <Tabs.Panel value="equity-grant" pt="md">
+              <EquityGrantForm />
+            </Tabs.Panel>
+
+            <Tabs.Panel value="certificates" pt="md">
+              <ShareCertificateViewer />
             </Tabs.Panel>
 
             <Tabs.Panel value="logs" pt="md">

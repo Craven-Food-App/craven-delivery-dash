@@ -143,12 +143,14 @@ serve(async (req) => {
       }
 
       // Log the action
-      await supabaseAdmin.from('governance_logs').insert({
-        action: `RESOLUTION_${action}`,
-        entity_type: 'board_resolution',
-        entity_id: resolution_id,
-        description: `Resolution ${action.toLowerCase()} with ${voteCounts.YES} YES, ${voteCounts.NO} NO, ${voteCounts.ABSTAIN} ABSTAIN votes (${totalVotes}/${totalBoardMembers} board members voted)`,
-        data: {
+      await supabaseAdmin.rpc('log_governance_action', {
+        p_action_type: `resolution_${action.toLowerCase()}`,
+        p_action_category: 'board',
+        p_target_type: 'resolution',
+        p_target_id: resolution_id,
+        p_target_name: resolution.title,
+        p_description: `Resolution ${action.toLowerCase()} with ${voteCounts.YES} YES, ${voteCounts.NO} NO, ${voteCounts.ABSTAIN} ABSTAIN votes (${totalVotes}/${totalBoardMembers} board members voted)`,
+        p_metadata: {
           vote_counts: voteCounts,
           total_board_members: totalBoardMembers,
           total_votes: totalVotes,
@@ -208,14 +210,17 @@ serve(async (req) => {
             });
 
             // Log officer creation
-            await supabaseAdmin.from('governance_logs').insert({
-              action: 'OFFICER_APPOINTED',
-              entity_type: 'corporate_officer',
-              entity_id: appointmentId,
-              description: `Corporate officer ${appointment.proposed_officer_name} appointed as ${appointment.proposed_title}`,
-              data: {
+            await supabaseAdmin.rpc('log_governance_action', {
+              p_action_type: 'officer_appointed',
+              p_action_category: 'executive',
+              p_target_type: 'officer',
+              p_target_id: appointmentId,
+              p_target_name: appointment.proposed_officer_name,
+              p_description: `Corporate officer ${appointment.proposed_officer_name} appointed as ${appointment.proposed_title}`,
+              p_metadata: {
                 resolution_id: resolution_id,
                 appointment_id: appointmentId,
+                title: appointment.proposed_title,
               },
             });
 
