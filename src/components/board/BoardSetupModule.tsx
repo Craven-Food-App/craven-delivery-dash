@@ -94,6 +94,7 @@ export function BoardSetupModule() {
       // Determine full name from multiple sources (priority order)
       const fullName = 
         profile?.full_name ||           // First: user_profiles.full_name
+        // @ts-ignore - may not have full_name column in types
         execUser?.full_name ||          // Second: exec_users.full_name
         user.email?.split('@')[0] ||    // Third: email username
         'Torrance Stroman';             // Final fallback
