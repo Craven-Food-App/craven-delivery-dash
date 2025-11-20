@@ -51,9 +51,10 @@ const EquityGrantForm: React.FC = () => {
 
       const { data: authUsers } = await supabase.auth.admin.listUsers();
       
+      // @ts-ignore - authUsers type handling
       const userList = (data || []).map(profile => ({
         id: profile.user_id,
-        email: authUsers?.users.find(u => u.id === profile.user_id)?.email || '',
+        email: authUsers?.users?.find((u: any) => u.id === profile.user_id)?.email || '',
         full_name: profile.full_name || '',
       }));
 

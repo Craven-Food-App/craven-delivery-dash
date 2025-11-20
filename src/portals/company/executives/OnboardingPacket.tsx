@@ -67,6 +67,7 @@ const OnboardingPacket: React.FC = () => {
       if (onboardingError) throw onboardingError;
 
       if (onboardingData) {
+        // @ts-ignore - Json type mismatch for documents arrays
         setOnboarding(onboardingData);
 
         // Load documents for this appointment

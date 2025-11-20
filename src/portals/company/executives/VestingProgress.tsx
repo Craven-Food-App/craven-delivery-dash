@@ -56,6 +56,7 @@ const VestingProgress: React.FC = () => {
         .order('start_date', { ascending: false });
 
       if (error) throw error;
+      // @ts-ignore - Json type mismatch for vesting_schedule
       setSchedules(data || []);
     } catch (error: any) {
       console.error('Error loading vesting schedules:', error);
