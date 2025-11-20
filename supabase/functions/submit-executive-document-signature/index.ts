@@ -1004,6 +1004,41 @@ serve(async (req) => {
 
     console.log('Document updated successfully:', updateResult);
 
+    // Step 12: After signing, check if all documents are signed and trigger completion
+    // This happens automatically when all documents reach 'completed' status
+    if (updateResult && updateResult[0]) {
+      const updatedDoc = updateResult[0];
+      
+      // Check if this is a board_documents document (new governance system)
+      if (updatedDoc.related_appointment_id) {
+        try {
+          const { data: allDocuments } = await supabaseAdmin
+            .from('board_documents')
+            .select('id, signing_status')
+            .eq('related_appointment_id', updatedDoc.related_appointment_id);
+          
+          const allSigned = allDocuments?.every(doc => doc.signing_status === 'completed') || false;
+          
+          if (allSigned && updatedDoc.related_appointment_id) {
+            // Trigger appointment completion (Step 12)
+            try {
+              await supabaseAdmin.functions.invoke('governance-complete-appointment', {
+                body: {
+                  appointment_id: updatedDoc.related_appointment_id,
+                },
+              });
+            } catch (completionError) {
+              console.error('Error triggering appointment completion:', completionError);
+              // Don't fail the signature submission if completion trigger fails
+            }
+          }
+        } catch (checkError) {
+          console.error('Error checking if all documents are signed:', checkError);
+          // Don't fail the signature submission if check fails
+        }
+      }
+    }
+
     console.log(`Document ${document_id} signed successfully by ${typed_name || 'unknown'}`);
 
     return new Response(
