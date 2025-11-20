@@ -76,6 +76,7 @@ const ResolutionVotingDashboard: React.FC = () => {
             ABSTAIN: votes?.filter((v) => v.vote === 'ABSTAIN').length || 0,
           };
 
+          // @ts-ignore - Complex type instantiation
           const { count: totalBoardMembers } = await supabase
             .from('board_members')
             .select('*', { count: 'exact', head: true })
