@@ -234,7 +234,7 @@ const EquityGrantForm: React.FC = () => {
                 label="Grant Start Date"
                 placeholder="Select start date"
                 value={formData.start_date}
-                onChange={(value) => setFormData({ ...formData, start_date: value as Date | null })}
+                onChange={(value) => setFormData({ ...formData, start_date: value as any })}
               />
 
               <TextInput
