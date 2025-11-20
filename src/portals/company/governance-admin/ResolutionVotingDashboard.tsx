@@ -16,7 +16,7 @@ import {
   Alert,
   Loader,
 } from '@mantine/core';
-import { IconVote, IconCheck, IconX, IconMinus, IconAlertCircle } from '@tabler/icons-react';
+import { IconCheckbox, IconCheck, IconX, IconMinus, IconAlertCircle } from '@tabler/icons-react';
 import { supabase } from '@/integrations/supabase/client';
 import { notifications } from '@mantine/notifications';
 
@@ -76,6 +76,7 @@ const ResolutionVotingDashboard: React.FC = () => {
             ABSTAIN: votes?.filter((v) => v.vote === 'ABSTAIN').length || 0,
           };
 
+          // @ts-ignore - Deep type instantiation
           const { count: totalBoardMembers } = await supabase
             .from('board_members')
             .select('*', { count: 'exact', head: true })
@@ -168,7 +169,7 @@ const ResolutionVotingDashboard: React.FC = () => {
       <Stack gap="xl">
         <div>
           <Title order={2} c="dark" mb="xs">
-            <IconVote size={28} style={{ display: 'inline', verticalAlign: 'middle', marginRight: 12 }} />
+            <IconCheckbox size={28} style={{ display: 'inline', verticalAlign: 'middle', marginRight: 12}} />
             Resolution Voting Dashboard
           </Title>
           <Text c="dimmed">

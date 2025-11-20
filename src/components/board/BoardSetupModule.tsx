@@ -74,31 +74,24 @@ export function BoardSetupModule() {
       if (!user) throw new Error('Not authenticated');
 
       // Get user profile and exec_user record (check multiple sources for name)
-      const [profileResult, execUserResult] = await Promise.all([
+      const [profileResult] = await Promise.all([
         supabase
           .from('user_profiles')
           .select('full_name')
           .eq('user_id', user.id)
           .maybeSingle(),
-        supabase
-          .from('exec_users')
-          .select('title, email')
-          .eq('user_id', user.id)
-          .maybeSingle()
       ]);
 
       const profile = profileResult.data;
-      const execUser = execUserResult.data;
 
       // Determine full name from multiple sources (priority order)
       const fullName = 
         profile?.full_name ||           // First: user_profiles.full_name
-        execUser?.title ||              // Second: exec_users.title (often contains name for executives)
-        user.email?.split('@')[0] ||    // Third: email username
+        user.email?.split('@')[0] ||    // Second: email username
         'Torrance Stroman';             // Final fallback
 
-      // Use exec_user email if available, otherwise auth user email
-      const email = execUser?.email || user.email || '';
+      // Use auth user email
+      const email = user.email || '';
 
       // Step 1: Create initial director (Torrance)
       // In pre-incorporation, this is conditional

@@ -10,11 +10,11 @@ import {
   Select,
   Button,
   Group,
-  DateInput,
   Alert,
   Loader,
   Switch,
 } from '@mantine/core';
+import { DateInput } from '@mantine/dates';
 import { IconCoins, IconCheck, IconAlertCircle } from '@tabler/icons-react';
 import { supabase } from '@/integrations/supabase/client';
 import { notifications } from '@mantine/notifications';
@@ -53,7 +53,7 @@ const EquityGrantForm: React.FC = () => {
       
       const userList = (data || []).map(profile => ({
         id: profile.user_id,
-        email: authUsers?.users.find(u => u.id === profile.user_id)?.email || '',
+        email: authUsers?.users?.find((u: any) => u.id === profile.user_id)?.email || '',
         full_name: profile.full_name || '',
       }));
 
@@ -68,8 +68,8 @@ const EquityGrantForm: React.FC = () => {
     
     setSearching(true);
     try {
-      const { data: { user } } = await supabase.auth.admin.listUsers();
-      const foundUser = user?.find(u => u.email?.toLowerCase().includes(email.toLowerCase()));
+      const { data } = await supabase.auth.admin.listUsers();
+      const foundUser = data?.users?.find((u: any) => u.email?.toLowerCase().includes(email.toLowerCase()));
       
       if (foundUser) {
         const { data: profile } = await supabase
@@ -233,7 +233,7 @@ const EquityGrantForm: React.FC = () => {
                 label="Grant Start Date"
                 placeholder="Select start date"
                 value={formData.start_date}
-                onChange={(value) => setFormData({ ...formData, start_date: value })}
+                onChange={(value) => setFormData({ ...formData, start_date: value as any })}
               />
 
               <TextInput

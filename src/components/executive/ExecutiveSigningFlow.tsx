@@ -198,7 +198,6 @@ const DocumentViewer: React.FC<{ url: string; onContentSizeChange?: (width: numb
           display: 'block'
         }}
         title="Document Preview"
-        type="application/pdf"
       />
     );
   }
@@ -339,12 +338,12 @@ function ExecutiveSigningFlow({ documents, onComplete }: ExecutiveSigningFlowPro
           .order('page_number', { ascending: true });
 
         if (fieldsData) {
-          fieldsMap[doc.id] = fieldsData;
+          fieldsMap[doc.id] = fieldsData as any;
           
           fieldsData.forEach((f) => {
             allFieldStates.push({
               id: `${doc.id}_${f.id}`,
-              type: f.field_type,
+              type: f.field_type as any,
               label: f.label || `${f.field_type} (Page ${f.page_number})`,
               required: f.required,
               page: f.page_number,

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Container, Title, Text, Stack, Tabs, Card } from '@mantine/core';
-import { IconShield, IconUsers, IconFileText, IconUserCheck, IconHistory, IconChecklist, IconTags, IconKey, IconVote, IconPlus, IconChartPie, IconCoins, IconCertificate } from '@tabler/icons-react';
+import { IconShield, IconUsers, IconFileText, IconUserCheck, IconHistory, IconChecklist, IconTags, IconKey, IconCheckbox, IconPlus, IconChartPie, IconCoins, IconCertificate } from '@tabler/icons-react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import AppointmentList from './AppointmentList';
 import ResolutionList from './ResolutionList';
@@ -73,7 +73,7 @@ const GovernanceAdminDashboard: React.FC = () => {
               <Tabs.Tab value="resolution-builder" leftSection={<IconPlus size={16} />}>
                 Create Resolution
               </Tabs.Tab>
-              <Tabs.Tab value="voting" leftSection={<IconVote size={16} />}>
+              <Tabs.Tab value="voting" leftSection={<IconCheckbox size={16} />}>
                 Voting Dashboard
               </Tabs.Tab>
               <Tabs.Tab value="officers" leftSection={<IconUserCheck size={16} />}>

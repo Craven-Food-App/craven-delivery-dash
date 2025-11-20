@@ -13,6 +13,7 @@ import {
   Loader,
   Alert,
   NumberFormatter,
+  Button,
 } from '@mantine/core';
 import { IconCoins, IconChartPie, IconAlertCircle, IconCertificate } from '@tabler/icons-react';
 import { supabase } from '@/integrations/supabase/client';
@@ -95,6 +96,7 @@ const EquityDashboard: React.FC = () => {
       });
 
       setCertificates(certs || []);
+      // @ts-ignore - Database query type compatibility
       setVestingSchedules(schedules || []);
     } catch (error: any) {
       notifications.show({
