@@ -155,13 +155,13 @@ const ExecutiveSigningPortal = () => {
               .order('page_number', { ascending: true });
 
             if (fieldsData) {
-              fieldsMap[doc.id] = fieldsData;
+              fieldsMap[doc.id] = fieldsData as any;
               
               // Convert to field states
-              fieldsData.forEach((f) => {
+              fieldsData.forEach((f: any) => {
                 allFieldStates.push({
                   id: `${doc.id}_${f.id}`,
-                  type: f.field_type,
+                  type: f.field_type as any,
                   label: f.label || `${f.field_type} (Page ${f.page_number})`,
                   required: f.required,
                   page: f.page_number,

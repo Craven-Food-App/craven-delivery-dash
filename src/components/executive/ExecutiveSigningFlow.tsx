@@ -198,7 +198,6 @@ const DocumentViewer: React.FC<{ url: string; onContentSizeChange?: (width: numb
           display: 'block'
         }}
         title="Document Preview"
-        type="application/pdf"
       />
     );
   }

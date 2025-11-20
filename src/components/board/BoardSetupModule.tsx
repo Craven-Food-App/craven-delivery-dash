@@ -82,7 +82,8 @@ export function BoardSetupModule() {
           .maybeSingle(),
         supabase
           .from('exec_users')
-          .select('title, email')
+          // @ts-ignore - exec_users may not have all columns in types
+          .select('title, full_name')
           .eq('user_id', user.id)
           .maybeSingle()
       ]);
