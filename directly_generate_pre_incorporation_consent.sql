@@ -35,3 +35,4 @@ WHERE proposed_officer_email = 'tstroman.ceo@cravenusa.com'
 ORDER BY created_at DESC
 LIMIT 1;
 
+

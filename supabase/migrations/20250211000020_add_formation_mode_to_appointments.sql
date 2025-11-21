@@ -14,3 +14,4 @@ ADD COLUMN IF NOT EXISTS pre_incorporation_consent_url TEXT;
 COMMENT ON COLUMN public.executive_appointments.formation_mode IS 'If true, this appointment is part of company formation and requires Pre-Incorporation Consent document';
 COMMENT ON COLUMN public.executive_appointments.pre_incorporation_consent_url IS 'URL to Pre-Incorporation Consent document (only for formation_mode appointments)';
 
+

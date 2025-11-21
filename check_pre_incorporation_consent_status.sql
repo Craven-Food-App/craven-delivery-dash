@@ -17,3 +17,4 @@ ORDER BY created_at DESC;
 -- If pre_incorporation_consent_url is still NULL, the document generation might have failed
 -- Check the Edge Function logs in Supabase Dashboard for errors
 
+

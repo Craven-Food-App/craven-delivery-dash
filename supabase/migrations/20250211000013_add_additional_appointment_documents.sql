@@ -10,3 +10,4 @@ COMMENT ON COLUMN public.executive_appointments.deferred_compensation_url IS 'UR
 COMMENT ON COLUMN public.executive_appointments.confidentiality_ip_url IS 'URL to Confidentiality & IP Assignment Agreement document';
 COMMENT ON COLUMN public.executive_appointments.stock_subscription_url IS 'URL to Stock Subscription / Issuance Agreement document';
 
+

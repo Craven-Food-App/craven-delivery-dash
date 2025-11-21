@@ -22,3 +22,4 @@ VALUES
 ON CONFLICT (id) DO UPDATE SET
   allowed_mime_types = EXCLUDED.allowed_mime_types;
 
+

@@ -176,3 +176,4 @@ COMMENT ON COLUMN public.executive_appointments.proposed_officer_phone IS 'Phone
 COMMENT ON COLUMN public.executive_appointments.reporting_to IS 'Who the officer reports to (e.g., Board of Directors, CEO)';
 COMMENT ON COLUMN public.executive_appointments.department IS 'Department the officer belongs to';
 
+

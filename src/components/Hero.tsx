@@ -65,11 +65,21 @@ const Hero = () => {
       <section className="py-16 px-4 bg-background">
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-12">
-            <h2 className="text-3xl md:text-4xl font-bold mb-4 text-foreground">Who We Are</h2>
-            <p className="text-lg text-muted-foreground max-w-3xl mx-auto">
-              Crave'N is revolutionizing food delivery by putting local restaurants and customers first. 
-              We believe in fair pricing, supporting local businesses, and delivering exceptional experiences with every order.
-            </p>
+            <h2 className="text-3xl md:text-4xl font-bold mb-8 text-foreground">Who We Are</h2>
+            <div className="text-lg text-muted-foreground max-w-4xl mx-auto space-y-6 text-left">
+              <p>
+                Crave'n is a next-generation food delivery company built on a simple principle: when local businesses succeed, entire communities benefit. We are redefining the delivery landscape by prioritizing fairness, transparency, and sustainable growth for restaurants, drivers, and customers.
+              </p>
+              <p>
+                Crave'n was created with a mission to restore balance in an industry that often disadvantages small businesses. Our platform uses advanced logistics and modern technology to empower independent restaurants with the tools, insights, and operational support they need to compete at scale. We believe every neighborhood kitchen deserves the opportunity to thrive without sacrificing profits to excessive fees or restrictive practices.
+              </p>
+              <p>
+                Our commitment reaches far beyond convenience. We focus on strengthening merchant relationships, improving delivery infrastructure, and creating meaningful earning opportunities for drivers. For customers, we deliver an elevated experience centered on reliability, speed, accuracy, and trust.
+              </p>
+              <p>
+                Crave'n is not just delivering meals. We are reshaping the future of local commerce by championing equitable economics, community driven innovation, and uncompromising service quality. Our goal is to build a platform where every participant benefits, from the restaurant to the driver to the customer.
+              </p>
+            </div>
           </div>
         </div>
       </section>

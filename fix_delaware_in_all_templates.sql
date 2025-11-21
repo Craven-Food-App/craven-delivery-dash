@@ -50,3 +50,4 @@ FROM public.document_templates
 WHERE template_key IN ('offer_letter', 'board_resolution', 'employment_agreement', 'stock_certificate', 'deferred_comp_addendum', 'confidentiality_ip', 'stock_issuance')
 ORDER BY template_key;
 
+

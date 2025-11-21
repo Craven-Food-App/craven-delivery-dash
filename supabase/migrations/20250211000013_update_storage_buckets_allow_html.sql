@@ -14,3 +14,4 @@ SET allowed_mime_types = ARRAY['application/pdf', 'text/html']
 WHERE id = 'contracts-executives';
 
 
+

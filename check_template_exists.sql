@@ -20,3 +20,4 @@ WHERE template_key = 'pre_incorporation_consent';
 -- If no results, the template doesn't exist and needs to be created
 -- Run migration: 20250211000017_enhance_templates_with_legal_formatting.sql
 
+

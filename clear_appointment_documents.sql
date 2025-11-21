@@ -38,3 +38,4 @@ FROM public.executive_appointments
 WHERE LOWER(proposed_officer_email) = 'tstroman.ceo@cravenusa.com'
   AND LOWER(proposed_officer_name) LIKE '%torrance%';
 
+
