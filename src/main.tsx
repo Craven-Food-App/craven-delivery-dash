@@ -1,6 +1,8 @@
 import React from 'react';
 import { createRoot } from 'react-dom/client';
 import { MantineProvider, createTheme, MantineThemeOverride } from '@mantine/core';
+import { DatesProvider } from '@mantine/dates';
+import 'dayjs/locale/en';
 import { ModalsProvider } from '@mantine/modals';
 import { Notifications } from '@mantine/notifications';
 import '@mantine/core/styles.css';
