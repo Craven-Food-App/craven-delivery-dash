@@ -173,7 +173,9 @@ serve(async (req) => {
       try {
         // Call handleOfficerAppointment workflow via edge function
         const workflowUrl = `${supabaseUrl}/functions/v1/governance-handle-appointment-workflow`;
-        fetch(workflowUrl, {
+        console.log('Triggering appointment workflow for appointment_id:', newAppointmentId);
+        
+        const workflowResponse = await fetch(workflowUrl, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -187,12 +189,24 @@ serve(async (req) => {
               ? (typeof body.equity_details === 'string' ? JSON.parse(body.equity_details) : body.equity_details)
               : null,
           }),
-        }).catch(err => console.error('Error triggering appointment workflow:', err));
+        });
+
+        if (!workflowResponse.ok) {
+          const errorText = await workflowResponse.text();
+          console.error('Workflow function returned error:', workflowResponse.status, errorText);
+          // Log but don't fail the appointment creation - workflow can be retried
+        } else {
+          const workflowResult = await workflowResponse.json();
+          console.log('Workflow triggered successfully:', workflowResult);
+        }
       } catch (err) {
         console.error('Error calling appointment workflow:', err);
-        // Don't fail the request if workflow trigger fails
+        // Don't fail the request if workflow trigger fails - can be retried manually
       }
     } else {
+      console.warn('No appointeeUserId - cannot trigger workflow. Email may be missing or user creation failed.');
+      console.warn('Appointment created in executive_appointments but workflow will not run.');
+      
       // Fallback: Generate appointment letter document (async, don't wait)
       try {
         const generateDocUrl = `${supabaseUrl}/functions/v1/governance-generate-appointment-document`;

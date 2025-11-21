@@ -186,6 +186,7 @@ serve(async (req) => {
         });
 
         // Create document
+        // Note: board_documents.related_appointment_id references executive_appointments, not appointments
         const { data: docRecord, error: docError } = await supabaseAdmin
           .from('board_documents')
           .insert({
@@ -194,7 +195,7 @@ serve(async (req) => {
             html_template: html,
             signing_status: 'pending',
             signers: JSON.stringify([]),
-            related_appointment_id: appointment_id,
+            related_appointment_id: executive_appointment_id || null, // Use executive_appointment_id for legacy table reference
           })
           .select()
           .single();
@@ -250,8 +251,9 @@ serve(async (req) => {
     }
 
     // Step 3: Create onboarding record
+    let onboardingId: string | null = null;
     try {
-      await supabaseAdmin
+      const { data: onboarding, error: onboardingError } = await supabaseAdmin
         .from('executive_onboarding')
         .upsert({
           appointment_id: appointment_id,
@@ -261,7 +263,15 @@ serve(async (req) => {
           documents_completed: [],
         }, {
           onConflict: 'appointment_id,user_id',
-        });
+        })
+        .select()
+        .single();
+      
+      if (onboardingError) {
+        console.error('Error creating onboarding record:', onboardingError);
+      } else if (onboarding) {
+        onboardingId = onboarding.id;
+      }
     } catch (error) {
       console.error('Error creating onboarding record:', error);
     }
@@ -270,6 +280,14 @@ serve(async (req) => {
     // Email is sent in governance-execute-resolution after board votes and resolution is adopted
     // This ensures the executive only receives documents after board approval
 
+    // Log the workflow completion
+    console.log('Appointment workflow completed:', {
+      appointment_id: appointment_id,
+      documents_generated: documentIds.length,
+      resolution_id: resolutionId,
+      onboarding_created: !!onboardingId,
+    });
+
     return new Response(
       JSON.stringify({
         success: true,
@@ -277,6 +295,7 @@ serve(async (req) => {
         appointment_id: appointment_id,
         documents_generated: documentIds.length,
         resolution_id: resolutionId,
+        onboarding_id: onboardingId,
       }),
       { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
