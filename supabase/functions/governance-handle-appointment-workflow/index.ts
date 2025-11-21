@@ -97,10 +97,10 @@ serve(async (req) => {
       });
     }
 
-    // Generate Appointment Letter via existing function (async)
+    // Generate Appointment Letter via existing function (await to ensure it completes)
     try {
       const appointmentLetterUrl = `${supabaseUrl}/functions/v1/governance-generate-appointment-document`;
-      fetch(appointmentLetterUrl, {
+      const letterResponse = await fetch(appointmentLetterUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -110,7 +110,15 @@ serve(async (req) => {
           appointment_id: executive_appointment_id || appointment_id,
           document_type: 'appointment_letter',
         }),
-      }).catch(err => console.error('Error generating appointment letter:', err));
+      });
+      
+      if (!letterResponse.ok) {
+        const errorText = await letterResponse.text();
+        console.error('Error generating appointment letter:', letterResponse.status, errorText);
+      } else {
+        const result = await letterResponse.json();
+        console.log('Appointment letter generated:', result);
+      }
     } catch (err) {
       console.error('Error calling appointment letter generation:', err);
     }
@@ -213,6 +221,27 @@ serve(async (req) => {
             appointment_id: appointment_id,
             governance_document_id: docRecord.id,
           });
+
+          // Update executive_appointments URL fields for backward compatibility with AppointmentList
+          // Map document types to URL field names in executive_appointments
+          const documentUrlFieldMap: Record<string, string> = {
+            'initial_director_consent': 'pre_incorporation_consent_url',
+            'officer_appointment_resolution': 'board_resolution_url',
+            'ceo_appointment_resolution': 'board_resolution_url', // CEO resolution also goes to board_resolution_url
+            'multi_role_officer_acceptance': 'confidentiality_ip_url', // Officer acceptance can go here temporarily
+          };
+
+          const urlField = documentUrlFieldMap[doc.type];
+          if (urlField && executive_appointment_id) {
+            // Create a data URL for the HTML template so AppointmentList can detect it
+            // In the future, this should be converted to PDF and stored in storage
+            const htmlDataUrl = `data:text/html;charset=utf-8,${encodeURIComponent(html)}`;
+            
+            await supabaseAdmin
+              .from('executive_appointments')
+              .update({ [urlField]: htmlDataUrl })
+              .eq('id', executive_appointment_id);
+          }
         }
       } catch (error) {
         console.error(`Error processing ${doc.type}:`, error);
