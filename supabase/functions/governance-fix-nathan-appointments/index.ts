@@ -211,7 +211,7 @@ serve(async (req) => {
           workflow_triggered: workflowTriggered,
           workflow_result: workflowResult,
           backfill_result: backfillResult,
-          success: workflowTriggered || (backfillResult && !backfillResult.error),
+          success: workflowTriggered,
         });
 
       } catch (error: any) {
@@ -233,7 +233,7 @@ serve(async (req) => {
           status: appointment.status,
           workflow_triggered: false,
           workflow_result: { error: error.message || String(error) },
-          backfill_result: null,
+          backfill_result: { skipped: true },
           success: false,
         });
       }
