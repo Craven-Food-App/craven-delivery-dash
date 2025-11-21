@@ -80,7 +80,7 @@ const ResolutionVotingDashboard: React.FC = () => {
           const { count: totalBoardMembers } = await supabase
             .from('board_members')
             .select('*', { count: 'exact', head: true })
-            .eq('is_active', true);
+            .eq('status', 'Active');
 
           return {
             ...resolution,
