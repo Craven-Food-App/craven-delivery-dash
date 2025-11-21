@@ -90,33 +90,94 @@ serve(async (req) => {
         }
 
         // Step 2: Trigger the workflow if we have an appointment record
+        let workflowTriggered = false;
+        let workflowResult = null;
         if (appointmentRecord) {
           console.log(`Triggering workflow for appointment ${appointmentRecord.id}`);
           
-          const workflowUrl = `${supabaseUrl}/functions/v1/governance-handle-appointment-workflow`;
-          const workflowResponse = await fetch(workflowUrl, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${supabaseServiceKey}`,
-            },
-            body: JSON.stringify({
-              appointment_id: appointmentRecord.id,
-              executive_appointment_id: appointment.id,
-              formation_mode: appointment.formation_mode || false,
-              equity_details: appointment.equity_included && appointment.equity_details 
-                ? (typeof appointment.equity_details === 'string' ? JSON.parse(appointment.equity_details) : appointment.equity_details)
-                : null,
-            }),
-          });
+          try {
+            const workflowUrl = `${supabaseUrl}/functions/v1/governance-handle-appointment-workflow`;
+            const workflowResponse = await fetch(workflowUrl, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${supabaseServiceKey}`,
+              },
+              body: JSON.stringify({
+                appointment_id: appointmentRecord.id,
+                executive_appointment_id: appointment.id,
+                formation_mode: appointment.formation_mode || false,
+                equity_details: appointment.equity_included && appointment.equity_details 
+                  ? (typeof appointment.equity_details === 'string' ? JSON.parse(appointment.equity_details) : appointment.equity_details)
+                  : null,
+              }),
+            });
 
-          if (!workflowResponse.ok) {
-            const errorText = await workflowResponse.text();
-            throw new Error(`Workflow failed: ${workflowResponse.status} ${errorText}`);
+            if (!workflowResponse.ok) {
+              const errorText = await workflowResponse.text();
+              console.warn(`Workflow returned ${workflowResponse.status} for appointment ${appointment.id}:`, errorText);
+              workflowResult = { error: errorText, status: workflowResponse.status };
+            } else {
+              workflowResult = await workflowResponse.json();
+              workflowTriggered = true;
+              console.log(`Workflow completed for appointment ${appointmentRecord.id}:`, workflowResult);
+            }
+          } catch (workflowErr: any) {
+            console.warn(`Workflow error for appointment ${appointment.id}:`, workflowErr);
+            workflowResult = { error: workflowErr.message || String(workflowErr) };
           }
+        } else {
+          console.log(`No appointment record found for executive_appointment ${appointment.id} - will try to create user and trigger workflow`);
+          
+          // Try to find or create user
+          if (appointment.proposed_officer_email) {
+            try {
+              const { data: { users } } = await supabaseAdmin.auth.admin.listUsers();
+              const user = users?.find(u => u.email?.toLowerCase() === appointment.proposed_officer_email?.toLowerCase());
+              
+              if (user) {
+                // Try to create appointment record
+                const { data: newAppt, error: createError } = await supabaseAdmin
+                  .from('appointments')
+                  .insert({
+                    appointee_user_id: user.id,
+                    role_titles: [appointment.proposed_title],
+                    effective_date: appointment.effective_date,
+                    created_by: user.id, // Use appointee as creator if we don't have original creator
+                  })
+                  .select()
+                  .single();
 
-          const workflowResult = await workflowResponse.json();
-          console.log(`Workflow completed for appointment ${appointmentRecord.id}:`, workflowResult);
+                if (!createError && newAppt) {
+                  appointmentRecord = newAppt;
+                  // Retry workflow trigger
+                  const workflowUrl = `${supabaseUrl}/functions/v1/governance-handle-appointment-workflow`;
+                  const workflowResponse = await fetch(workflowUrl, {
+                    method: 'POST',
+                    headers: {
+                      'Content-Type': 'application/json',
+                      'Authorization': `Bearer ${supabaseServiceKey}`,
+                    },
+                    body: JSON.stringify({
+                      appointment_id: newAppt.id,
+                      executive_appointment_id: appointment.id,
+                      formation_mode: appointment.formation_mode || false,
+                      equity_details: appointment.equity_included && appointment.equity_details 
+                        ? (typeof appointment.equity_details === 'string' ? JSON.parse(appointment.equity_details) : appointment.equity_details)
+                        : null,
+                    }),
+                  });
+
+                  if (workflowResponse.ok) {
+                    workflowResult = await workflowResponse.json();
+                    workflowTriggered = true;
+                  }
+                }
+              }
+            } catch (userErr: any) {
+              console.warn(`Error creating appointment record:`, userErr);
+            }
+          }
         }
 
         // Step 3: Backfill documents using the existing backfill function
@@ -147,25 +208,47 @@ serve(async (req) => {
           appointment_name: appointment.proposed_officer_name,
           appointment_title: appointment.proposed_title,
           status: appointment.status,
-          workflow_triggered: !!appointmentRecord,
+          workflow_triggered: workflowTriggered,
+          workflow_result: workflowResult,
           backfill_result: backfillResult,
+          success: workflowTriggered || (backfillResult && !backfillResult.error),
         });
 
       } catch (error: any) {
         console.error(`Error processing appointment ${appointment.id}:`, error);
-        errors.push({
+        const errorDetails = {
           appointment_id: appointment.id,
           appointment_name: appointment.proposed_officer_name,
+          appointment_title: appointment.proposed_title,
+          status: appointment.status,
           error: error.message || String(error),
+          stack: error.stack,
+        };
+        errors.push(errorDetails);
+        // Also add to results with error flag
+        results.push({
+          appointment_id: appointment.id,
+          appointment_name: appointment.proposed_officer_name,
+          appointment_title: appointment.proposed_title,
+          status: appointment.status,
+          workflow_triggered: false,
+          workflow_result: { error: error.message || String(error) },
+          backfill_result: null,
+          success: false,
         });
       }
     }
 
+    const successCount = results.filter(r => r.success).length;
+    const errorCount = results.length - successCount;
+
     return new Response(
       JSON.stringify({
-        success: true,
+        success: errorCount === 0,
         message: `Processed ${appointments.length} Nathan Curry appointments`,
         appointments_found: appointments.length,
+        successful: successCount,
+        failed: errorCount,
         results,
         errors: errors.length > 0 ? errors : undefined,
       }),

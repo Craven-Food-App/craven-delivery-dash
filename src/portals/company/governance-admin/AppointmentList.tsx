@@ -167,17 +167,31 @@ const AppointmentList: React.FC = () => {
       if (error) throw error;
 
       if (data) {
-        const { appointments_found, results, errors } = data;
+        const { appointments_found, successful, failed, results, errors } = data;
         
         notifications.show({
           title: 'Nathan Curry Appointments Fixed',
-          message: `Processed ${appointments_found} appointment(s). ${results?.length || 0} successful, ${errors?.length || 0} errors.`,
-          color: errors?.length > 0 ? 'yellow' : 'green',
+          message: `Processed ${appointments_found} appointment(s). ${successful || 0} successful, ${failed || 0} failed.`,
+          color: (failed || 0) > 0 ? 'yellow' : 'green',
           autoClose: 10000,
         });
 
         if (errors && errors.length > 0) {
           console.error('Errors fixing Nathan appointments:', errors);
+        }
+        
+        if (results && results.length > 0) {
+          console.log('Fix results:', results);
+          // Log detailed results for debugging
+          results.forEach((r: any) => {
+            if (!r.success) {
+              console.warn(`Appointment ${r.appointment_id} (${r.appointment_name}):`, {
+                workflow_triggered: r.workflow_triggered,
+                workflow_error: r.workflow_result?.error,
+                backfill_error: r.backfill_result?.error,
+              });
+            }
+          });
         }
       }
 
