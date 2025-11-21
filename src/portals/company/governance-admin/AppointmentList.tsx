@@ -70,6 +70,7 @@ const AppointmentList: React.FC = () => {
   const [selectedDocumentName, setSelectedDocumentName] = useState<string>('');
   const [documentContent, setDocumentContent] = useState<string>('');
   const [loadingDocument, setLoadingDocument] = useState(false);
+  const [fixingNathan, setFixingNathan] = useState(false);
 
   useEffect(() => {
     fetchAppointments();
@@ -153,6 +154,47 @@ const AppointmentList: React.FC = () => {
       }
     } else {
       setLoadingDocument(false);
+    }
+  };
+
+  const handleFixNathanAppointments = async () => {
+    setFixingNathan(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('governance-fix-nathan-appointments', {
+        body: {},
+      });
+
+      if (error) throw error;
+
+      if (data) {
+        const { appointments_found, results, errors } = data;
+        
+        notifications.show({
+          title: 'Nathan Curry Appointments Fixed',
+          message: `Processed ${appointments_found} appointment(s). ${results?.length || 0} successful, ${errors?.length || 0} errors.`,
+          color: errors?.length > 0 ? 'yellow' : 'green',
+          autoClose: 10000,
+        });
+
+        if (errors && errors.length > 0) {
+          console.error('Errors fixing Nathan appointments:', errors);
+        }
+      }
+
+      // Refresh appointments list
+      fetchAppointments();
+      setTimeout(() => {
+        fetchAppointments();
+      }, 3000);
+    } catch (error: any) {
+      console.error('Error fixing Nathan appointments:', error);
+      notifications.show({
+        title: 'Error',
+        message: error.message || 'Failed to fix Nathan Curry appointments',
+        color: 'red',
+      });
+    } finally {
+      setFixingNathan(false);
     }
   };
 
@@ -268,6 +310,15 @@ const AppointmentList: React.FC = () => {
               loading={loading}
             >
               Refresh
+            </Button>
+            <Button
+              variant="outline"
+              color="orange"
+              leftSection={<IconRefresh size={16} />}
+              onClick={handleFixNathanAppointments}
+              loading={fixingNathan}
+            >
+              Fix Nathan Curry Appointments
             </Button>
             <Button
               leftSection={<IconPlus size={16} />}
