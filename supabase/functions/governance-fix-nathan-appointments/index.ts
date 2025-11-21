@@ -180,28 +180,11 @@ serve(async (req) => {
           }
         }
 
-        // Step 3: Backfill documents using the existing backfill function
-        console.log(`Backfilling documents for appointment ${appointment.id}`);
-        const backfillUrl = `${supabaseUrl}/functions/v1/governance-backfill-appointment-documents`;
-        const backfillResponse = await fetch(backfillUrl, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${supabaseServiceKey}`,
-          },
-          body: JSON.stringify({
-            appointment_id: appointment.id,
-            force_regenerate: true, // Force regeneration
-          }),
-        });
-
-        if (!backfillResponse.ok) {
-          const errorText = await backfillResponse.text();
-          throw new Error(`Backfill failed: ${backfillResponse.status} ${errorText}`);
-        }
-
-        const backfillResult = await backfillResponse.json();
-        console.log(`Backfill completed for appointment ${appointment.id}:`, backfillResult);
+        // Step 3: Skip backfill - the workflow should have generated all documents
+        // The backfill function requires user authentication which we don't have here
+        // The workflow function generates all necessary documents, so backfill is not needed
+        console.log(`Skipping backfill for appointment ${appointment.id} - workflow should have generated documents`);
+        const backfillResult = { skipped: true, reason: 'Workflow generates documents, backfill requires user auth' };
 
         results.push({
           appointment_id: appointment.id,
