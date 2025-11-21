@@ -57,10 +57,26 @@ serve(async (req) => {
       .eq('user_id', appointment.appointee_user_id)
       .maybeSingle();
 
-    const { data: { user } } = await supabaseAdmin.auth.admin.getUserById(appointment.appointee_user_id);
+    const { data: { user }, error: userError } = await supabaseAdmin.auth.admin.getUserById(appointment.appointee_user_id);
+    
+    if (userError || !user) {
+      console.error('Error fetching appointee user:', userError);
+      return new Response(
+        JSON.stringify({ error: 'Appointee user not found. User may not have been created.' }),
+        { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
 
-    const officerName = profile?.full_name || user?.email?.split('@')[0] || 'Officer';
+    const officerName = profile?.full_name || user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'Officer';
     const officerEmail = profile?.email || user?.email || '';
+    
+    if (!officerEmail) {
+      console.error('No email found for appointee user:', appointment.appointee_user_id);
+      return new Response(
+        JSON.stringify({ error: 'Appointee email not found. Cannot proceed with workflow.' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
 
     // Get company settings for context
     const { data: settings } = await supabaseAdmin
