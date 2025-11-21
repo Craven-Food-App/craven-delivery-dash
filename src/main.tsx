@@ -59,10 +59,12 @@ const theme: MantineThemeOverride = createTheme({
 createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
     <MantineProvider theme={theme}>
-      <ModalsProvider>
-        <Notifications />
-        <App />
-      </ModalsProvider>
+      <DatesProvider settings={{ firstDayOfWeek: 0 }}>
+        <ModalsProvider>
+          <Notifications />
+          <App />
+        </ModalsProvider>
+      </DatesProvider>
     </MantineProvider>
   </React.StrictMode>
 );
