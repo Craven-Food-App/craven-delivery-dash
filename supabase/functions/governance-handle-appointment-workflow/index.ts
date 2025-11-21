@@ -328,10 +328,18 @@ serve(async (req) => {
     // Log the workflow completion
     console.log('Appointment workflow completed:', {
       appointment_id: appointment_id,
+      executive_appointment_id: executive_appointment_id,
       documents_generated: documentIds.length,
       resolution_id: resolutionId,
       onboarding_created: !!onboardingId,
+      officer_name: officerName,
+      officer_email: officerEmail,
     });
+    
+    // If no documents were generated, log a warning
+    if (documentIds.length === 0) {
+      console.warn('WARNING: No documents were generated. Check template availability and template keys.');
+    }
 
     return new Response(
       JSON.stringify({
