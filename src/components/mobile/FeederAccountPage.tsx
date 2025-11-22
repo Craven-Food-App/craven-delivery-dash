@@ -69,9 +69,26 @@ const FeederAccountPage: React.FC<FeederAccountPageProps> = ({ onOpenMenu, onOpe
   const [memberSince, setMemberSince] = useState('');
   // Feeder Card placeholder data
   const [cardBalance] = useState(3573.21);
-  const [cardNumber] = useState('5399 2833 0939 0129');
+  const [cardNumber] = useState('5399283309390129'); // Store without spaces
   const [expiryDate] = useState('12/28');
   const [cvv] = useState('847');
+
+  // Format card number to always be exactly 16 digits in 4 groups of 4
+  const formatCardNumber = (number: string, showFull: boolean): string => {
+    // Remove all non-digits
+    const digitsOnly = number.replace(/\D/g, '');
+    
+    // Ensure exactly 16 digits (pad with 0s if needed, truncate if too long)
+    const normalized = digitsOnly.slice(0, 16).padEnd(16, '0');
+    
+    if (showFull) {
+      // Format as XXXX XXXX XXXX XXXX
+      return `${normalized.slice(0, 4)} ${normalized.slice(4, 8)} ${normalized.slice(8, 12)} ${normalized.slice(12, 16)}`;
+    } else {
+      // Format as **** **** **** XXXX (last 4 digits visible)
+      return `**** **** **** ${normalized.slice(12, 16)}`;
+    }
+  };
   const [transactions, setTransactions] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -314,9 +331,31 @@ const FeederAccountPage: React.FC<FeederAccountPageProps> = ({ onOpenMenu, onOpe
               </Box>
 
               {/* Middle Section - Card Number */}
-              <Box style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', marginTop: '-10px' }}>
-                <Text size="lg" c="white" ff="monospace" style={{ letterSpacing: '0.2em', wordBreak: 'break-all', textAlign: 'center' }}>
-                  {showCardDetails ? cardNumber : "**** **** **** " + cardNumber.replace(/\s/g, "").slice(-4)}
+              <Box style={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                justifyContent: 'center', 
+                marginTop: '-10px',
+                width: '100%',
+                overflow: 'hidden'
+              }}>
+                <Text 
+                  size="lg" 
+                  c="white" 
+                  ff="monospace" 
+                  style={{ 
+                    letterSpacing: '0.15em',
+                    textAlign: 'center',
+                    whiteSpace: 'nowrap',
+                    fontVariantNumeric: 'tabular-nums',
+                    fontFeatureSettings: '"tnum"',
+                    width: '100%',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    lineHeight: '1.2'
+                  }}
+                >
+                  {formatCardNumber(cardNumber, showCardDetails)}
                 </Text>
               </Box>
 

@@ -25,7 +25,6 @@ import FeederAccountPage from './FeederAccountPage';
 import FeederRatingsTab from './FeederRatingsTab';
 import CravenAppComm from './CravenAppComm';
 import { getRatingColor, getRatingTier, formatRating, getTrendIcon, getTrendColor } from '@/utils/ratingHelpers';
-import { DriverBottomNav } from './DriverBottomNav';
 import NotificationsPage from '@/components/notifications/NotificationsPage';
 import FeederSidebarMenu from './FeederSidebarMenu';
 import CravenFillCountdownFlow from '@/components/CravenFillCountdownFlow';
@@ -1226,8 +1225,8 @@ export const MobileDriverDashboard: React.FC = () => {
         </div>
       )}
 
-      {/* Main Content Overlay - Allow for bottom nav space - Non-interactive overlay */}
-      <div className={`fixed inset-0 z-10 flex flex-col py-0 safe-area-top ${activeTab === 'home' ? 'pointer-events-none' : 'pointer-events-auto'}`} style={{ paddingBottom: '100px' }}>
+      {/* Main Content Overlay - Non-interactive overlay */}
+      <div className={`fixed inset-0 z-10 flex flex-col py-0 safe-area-top ${activeTab === 'home' ? 'pointer-events-none' : 'pointer-events-auto'}`}>
         
         {/* Tab-based Content Rendering */}
         {activeTab === 'schedule' && (
@@ -1629,14 +1628,6 @@ export const MobileDriverDashboard: React.FC = () => {
         onNavigate={(path) => handleMenuNavigation(path)}
       />
 
-      {/* Driver Bottom Navigation */}
-      {!isCameraOpen && (
-        <DriverBottomNav
-          activeTab={activeTab === 'ratings' || activeTab === 'promos' || activeTab === 'help' || activeTab === 'preferences' ? 'home' : activeTab}
-          onTabChange={(tab) => setActiveTab(tab)}
-          notificationCount={notifications.length}
-        />
-      )}
     </div>
     )}
   </>;
