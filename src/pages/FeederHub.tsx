@@ -120,15 +120,15 @@ const FeederHub = () => {
           <div className="flex justify-center">
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-5xl">
               {benefits.map((benefit, index) => (
-                <Card key={index} className="text-center hover:shadow-hover transition-all duration-300">
-                  <CardHeader>
-                    <div className="mx-auto mb-4 p-3 bg-primary/10 rounded-full w-fit">
-                      <benefit.icon className="h-6 w-6 text-primary" />
+                <Card key={index} className="text-center hover:shadow-hover transition-all duration-300 p-6">
+                  <CardHeader className="pb-4">
+                    <div className="mx-auto mb-6 p-4 bg-primary/10 rounded-full w-fit">
+                      <benefit.icon className="h-10 w-10 text-primary" />
                     </div>
-                    <CardTitle className="text-lg">{benefit.title}</CardTitle>
+                    <CardTitle className="text-xl md:text-2xl">{benefit.title}</CardTitle>
                   </CardHeader>
-                  <CardContent>
-                    <CardDescription>{benefit.description}</CardDescription>
+                  <CardContent className="pt-2">
+                    <CardDescription className="text-base">{benefit.description}</CardDescription>
                   </CardContent>
                 </Card>
               ))}
