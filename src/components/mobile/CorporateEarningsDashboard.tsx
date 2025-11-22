@@ -77,7 +77,7 @@ const CorporateEarningsDashboard: React.FC<CorporateEarningsDashboardProps> = ({
 
         const { data: dayEarnings } = await supabase
           .from('driver_earnings')
-          .select('amount_cents, tip_cents')
+          .select('amount_cents, tip_cents, total_cents')
           .eq('driver_id', user.id)
           .gte('earned_at', dayStart.toISOString())
           .lt('earned_at', dayEnd.toISOString());
@@ -90,7 +90,7 @@ const CorporateEarningsDashboard: React.FC<CorporateEarningsDashboardProps> = ({
         const dayTips = dayEarnings?.reduce((sum, e) => sum + (e.tip_cents || 0), 0) / 100 || 0;
         
         // Debug logging for each day
-        console.log(`Day ${idx} (${dayStart.toLocaleDateString()}):`, {
+        console.log(`Day ${i} (${dayStart.toLocaleDateString()}):`, {
           earningsCount: dayEarnings?.length || 0,
           totalEarnings: dayTotalEarnings,
           tips: dayTips,

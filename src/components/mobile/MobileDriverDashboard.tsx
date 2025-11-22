@@ -760,7 +760,7 @@ export const MobileDriverDashboard: React.FC = () => {
             .eq('driver_id', user.id)
             .maybeSingle();
           
-          const currentSessionData = currentSession?.session_data || {};
+          const currentSessionData = currentSession?.session_data as any || {};
           
           // Update session to keep driver_state as 'online_searching' and is_online as true
           await supabase.from('driver_sessions').upsert({
