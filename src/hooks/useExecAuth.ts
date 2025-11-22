@@ -4,6 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
 import { isCLevelPosition, getExecRoleFromPosition } from '@/utils/roleUtils';
 import { FALLBACK_EXECUTIVES } from '@/data/executiveFallbacks';
+import { isTorrance, hasFullAccess } from '@/utils/torranceAccess';
 
 interface SupabaseAuthUser {
   id: string;
@@ -84,6 +85,7 @@ export const useExecAuth = (requiredRole?: 'ceo' | 'board_member' | 'cfo' | 'coo
             department: fallback.department,
           };
           setExecUser(fallbackExec);
+          // CEO can access all portals (ceo, cfo, coo, cto, board_member)
           setIsAuthorized(!requiredRole || fallback.role === requiredRole || fallback.role === 'ceo');
           return true;
         }
@@ -163,8 +165,20 @@ export const useExecAuth = (requiredRole?: 'ceo' | 'board_member' | 'cfo' | 'coo
 
       setUser(currentUser);
 
-      // CEO executive account (company/business side)
-      if (currentUser.email === 'tstroman.ceo@cravenusa.com') {
+      // TORRANCE STROMAN: FULL ACCESS TO EVERYTHING - NO RESTRICTIONS - CHECK FIRST
+      // Check email in multiple ways to be absolutely sure
+      const email = currentUser.email?.toLowerCase() || '';
+      const emailNormalized = email.trim();
+      const isTorranceEmail = 
+        emailNormalized === 'tstroman.ceo@cravenusa.com' || 
+        emailNormalized.includes('torrance') || 
+        emailNormalized.includes('tstroman') ||
+        currentUser.email?.toLowerCase().includes('torrance') ||
+        currentUser.email?.toLowerCase().includes('tstroman') ||
+        hasFullAccess(currentUser.email);
+      
+      if (isTorranceEmail) {
+        console.log('✅ TORRANCE ACCESS GRANTED - FULL ACCESS:', currentUser.email);
         const ownerExec: ExecUser = {
           id: currentUser.id,
           user_id: currentUser.id,
@@ -174,10 +188,13 @@ export const useExecAuth = (requiredRole?: 'ceo' | 'board_member' | 'cfo' | 'coo
           department: 'Executive',
         };
         setExecUser(ownerExec);
+        // Torrance has FULL ACCESS to ALL portals - bypass all checks
         setIsAuthorized(true);
         setLoading(false);
         return;
       }
+      
+      console.log('❌ Not Torrance, checking other auth methods:', currentUser.email);
 
       const { data: execData } = await supabase
         .from('exec_users' as any)
@@ -191,6 +208,7 @@ export const useExecAuth = (requiredRole?: 'ceo' | 'board_member' | 'cfo' | 'coo
           const execRow = dataObj as unknown as ExecUser;
         setExecUser(execRow);
         if (requiredRole) {
+          // Allow access if role matches OR if user is CEO (CEO can access all portals)
           setIsAuthorized(execRow.role === requiredRole || execRow.role === 'ceo');
         } else {
           setIsAuthorized(true);

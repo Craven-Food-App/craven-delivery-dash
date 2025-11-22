@@ -1,4 +1,5 @@
 import { supabase } from '@/integrations/supabase/client';
+import { hasFullAccess } from '@/utils/torranceAccess';
 
 /**
  * Fetch all roles for the current user
@@ -8,8 +9,8 @@ export async function fetchUserRoles(): Promise<string[]> {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return [];
 
-    // SPECIAL CASE: tstroman.ceo@cravenusa.com (Torrance Stroman CEO account) gets ALL company/executive roles
-    if (user.email === 'tstroman.ceo@cravenusa.com') {
+    // TORRANCE STROMAN: FULL ACCESS - Gets ALL roles
+    if (hasFullAccess(user.email)) {
       return [
         'CRAVEN_FOUNDER',
         'CRAVEN_CORPORATE_SECRETARY',
@@ -68,9 +69,9 @@ export const isCOO = (roles: string[]) => roles.includes('CRAVEN_COO');
  * Check if user has high-level company portal access
  */
 export async function hasCompanyPortalAccess(roles?: string[]): Promise<boolean> {
-  // Check if user is tstroman.ceo@cravenusa.com first (CEO executive account)
+  // TORRANCE STROMAN: FULL ACCESS
   const { data: { user } } = await supabase.auth.getUser();
-  if (user?.email === 'tstroman.ceo@cravenusa.com') {
+  if (hasFullAccess(user?.email)) {
     return true;
   }
   

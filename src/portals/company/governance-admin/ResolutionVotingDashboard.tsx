@@ -108,15 +108,35 @@ const ResolutionVotingDashboard: React.FC = () => {
 
     setSubmittingVote(true);
     try {
-      const { error } = await supabase.functions.invoke('governance-cast-vote', {
-        body: {
-          resolution_id: selectedResolution.id,
-          vote,
-          comment: comment || null,
-        },
-      });
+      // Use fetch directly to get better error details
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/governance-cast-vote`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${(await supabase.auth.getSession()).data.session?.access_token || ''}`,
+            'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY || '',
+          },
+          body: JSON.stringify({
+            resolution_id: selectedResolution.id,
+            vote,
+            comment: comment || null,
+          }),
+        }
+      );
 
-      if (error) throw error;
+      const responseData = await response.json();
+      console.log('Vote submission response:', { status: response.status, data: responseData });
+
+      if (!response.ok) {
+        const errorMessage = responseData?.error || responseData?.message || `HTTP ${response.status}: Failed to submit vote`;
+        throw new Error(errorMessage);
+      }
+
+      if (responseData?.error) {
+        throw new Error(typeof responseData.error === 'string' ? responseData.error : responseData.error.message || 'Vote submission failed');
+      }
 
       notifications.show({
         title: 'Success',
@@ -131,10 +151,13 @@ const ResolutionVotingDashboard: React.FC = () => {
       setSelectedResolution(null);
       loadResolutions();
     } catch (error: any) {
+      console.error('Vote submission catch error:', error);
+      const errorMessage = error?.message || error?.error || 'Failed to cast vote. Please try again.';
       notifications.show({
         title: 'Error',
-        message: error.message || 'Failed to cast vote',
+        message: errorMessage,
         color: 'red',
+        icon: <IconAlertCircle size={16} />,
       });
     } finally {
       setSubmittingVote(false);

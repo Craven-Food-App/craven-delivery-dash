@@ -125,6 +125,7 @@ serve(async (req) => {
       
       // Determine which documents to generate based on status
       // If force_regenerate is true, ignore existing documents and regenerate all
+      // IMPORTANT: When force_regenerate is true, we ALWAYS regenerate, regardless of existing URLs
       const hasAppointmentLetter = !force_regenerate && appointment.appointment_letter_url && String(appointment.appointment_letter_url).trim() !== '';
       const hasBoardResolution = !force_regenerate && appointment.board_resolution_url && String(appointment.board_resolution_url).trim() !== '';
       const hasCertificate = !force_regenerate && appointment.certificate_url && String(appointment.certificate_url).trim() !== '';
@@ -136,13 +137,83 @@ serve(async (req) => {
         (appointment as any).pre_incorporation_consent_url && 
         String((appointment as any).pre_incorporation_consent_url).trim() !== '';
       
-      console.log(`Force regenerate: ${force_regenerate}, Appointment status: ${appointment.status}`);
+      console.log(`Processing appointment ${appointment.id}: force_regenerate=${force_regenerate}, status=${appointment.status}`);
+      console.log(`Existing documents check (ignored if force_regenerate):`, {
+        hasAppointmentLetter,
+        hasBoardResolution,
+        hasCertificate,
+        hasEmploymentAgreement,
+        hasConfidentialityIP,
+        hasStockSubscription,
+        hasDeferredCompensation,
+        hasPreIncorporationConsent,
+      });
       
-      switch (appointment.status) {
+      // If force_regenerate is true, ALWAYS generate ALL documents regardless of status
+      if (force_regenerate) {
+        console.log(`[${appointment.id}] FORCE REGENERATE MODE: Adding ALL documents to queue`);
+        // Always generate these 5 standard documents
+        docTypes.push('appointment_letter');
+        docTypes.push('board_resolution');
+        docTypes.push('certificate');
+        docTypes.push('employment_agreement');
+        docTypes.push('confidentiality_ip');
+        
+        // Generate stock subscription if equity is included (or always for force regenerate to be safe)
+        if (appointment.equity_included) {
+          docTypes.push('stock_subscription');
+        }
+        
+        // Generate deferred compensation if equity included or compensation mentions deferred
+        const needsDeferredComp = appointment.equity_included || 
+          (appointment.compensation_structure && String(appointment.compensation_structure).toLowerCase().includes('deferred'));
+        if (needsDeferredComp) {
+          docTypes.push('deferred_compensation');
+        }
+        
+        // Generate pre-incorporation consent if formation mode is enabled
+        if ((appointment as any).formation_mode) {
+          docTypes.push('pre_incorporation_consent');
+        }
+        
+        console.log(`[${appointment.id}] FORCE REGENERATE: Queued ${docTypes.length} documents:`, docTypes);
+        console.log(`[${appointment.id}] Appointment details:`, {
+          equity_included: appointment.equity_included,
+          formation_mode: (appointment as any).formation_mode,
+          compensation_structure: appointment.compensation_structure,
+        });
+      } else {
+        // Normal flow: generate based on status
+        switch (appointment.status) {
         case 'DRAFT':
-          // Only appointment letter for drafts
+          // Generate ALL documents for DRAFT status (as per user requirements)
+          // This ensures all 7 (or 8 with formation mode) documents are created immediately
+          // Generate only missing documents (force_regenerate already handled above)
           if (!hasAppointmentLetter) {
             docTypes.push('appointment_letter');
+          }
+          if (!hasBoardResolution) {
+            docTypes.push('board_resolution');
+          }
+          if (!hasCertificate) {
+            docTypes.push('certificate');
+          }
+          if (!hasEmploymentAgreement) {
+            docTypes.push('employment_agreement');
+          }
+          if (!hasConfidentialityIP) {
+            docTypes.push('confidentiality_ip');
+          }
+          if (appointment.equity_included && !hasStockSubscription) {
+            docTypes.push('stock_subscription');
+          }
+          const needsDeferredComp = appointment.equity_included || 
+            (appointment.compensation_structure && String(appointment.compensation_structure).toLowerCase().includes('deferred'));
+          if (needsDeferredComp && !hasDeferredCompensation) {
+            docTypes.push('deferred_compensation');
+          }
+          if ((appointment as any).formation_mode && !hasPreIncorporationConsent) {
+            docTypes.push('pre_incorporation_consent');
           }
           break;
         
@@ -223,32 +294,111 @@ serve(async (req) => {
           }
           break;
         
-        default:
-          // For other statuses, just generate appointment letter if missing
-          if (!hasAppointmentLetter) {
+        case 'AWAITING_SIGNATURES':
+        case 'READY_FOR_SECRETARY_REVIEW':
+        case 'SECRETARY_APPROVED':
+        case 'ACTIVATING':
+          // For these statuses, ensure all documents exist (they should have been generated earlier)
+          // Generate any missing documents
+          if (!hasAppointmentLetter || force_regenerate) {
             docTypes.push('appointment_letter');
           }
+          if (!hasBoardResolution || force_regenerate) {
+            docTypes.push('board_resolution');
+          }
+          if (!hasCertificate || force_regenerate) {
+            docTypes.push('certificate');
+          }
+          if (!hasEmploymentAgreement || force_regenerate) {
+            docTypes.push('employment_agreement');
+          }
+          if (!hasConfidentialityIP || force_regenerate) {
+            docTypes.push('confidentiality_ip');
+          }
+          if (appointment.equity_included && (!hasStockSubscription || force_regenerate)) {
+            docTypes.push('stock_subscription');
+          }
+          const needsDeferredCompOther = appointment.equity_included || 
+            (appointment.compensation_structure && String(appointment.compensation_structure).toLowerCase().includes('deferred'));
+          if (needsDeferredCompOther && (!hasDeferredCompensation || force_regenerate)) {
+            docTypes.push('deferred_compensation');
+          }
+          if ((appointment as any).formation_mode && (!hasPreIncorporationConsent || force_regenerate)) {
+            docTypes.push('pre_incorporation_consent');
+          }
+          break;
+        
+        default:
+          // For other statuses, generate all standard documents if missing
+          if (!hasAppointmentLetter || force_regenerate) {
+            docTypes.push('appointment_letter');
+          }
+          if (!hasBoardResolution || force_regenerate) {
+            docTypes.push('board_resolution');
+          }
+          if (!hasCertificate || force_regenerate) {
+            docTypes.push('certificate');
+          }
+          if (!hasEmploymentAgreement || force_regenerate) {
+            docTypes.push('employment_agreement');
+          }
+          if (!hasConfidentialityIP || force_regenerate) {
+            docTypes.push('confidentiality_ip');
+          }
+          if (appointment.equity_included && (!hasStockSubscription || force_regenerate)) {
+            docTypes.push('stock_subscription');
+          }
+          const needsDeferredCompDefault = appointment.equity_included || 
+            (appointment.compensation_structure && String(appointment.compensation_structure).toLowerCase().includes('deferred'));
+          if (needsDeferredCompDefault && (!hasDeferredCompensation || force_regenerate)) {
+            docTypes.push('deferred_compensation');
+          }
+          if ((appointment as any).formation_mode && (!hasPreIncorporationConsent || force_regenerate)) {
+            docTypes.push('pre_incorporation_consent');
+          }
+        }
       }
       
-      console.log(`Documents to generate for appointment ${appointment.id}:`, docTypes);
-
+      console.log(`[${appointment.id}] ========================================`);
+      console.log(`[${appointment.id}] Documents queued for generation: ${docTypes.length}`);
+      console.log(`[${appointment.id}] Document types:`, docTypes);
+      console.log(`[${appointment.id}] ========================================`);
+      
+      if (docTypes.length === 0) {
+        console.warn(`[${appointment.id}] ⚠️ WARNING: No documents queued for generation!`);
+        console.warn(`[${appointment.id}] Status: ${appointment.status}, force_regenerate: ${force_regenerate}`);
+        console.warn(`[${appointment.id}] Existing URLs:`, {
+          appointment_letter: appointment.appointment_letter_url ? 'EXISTS' : 'MISSING',
+          board_resolution: appointment.board_resolution_url ? 'EXISTS' : 'MISSING',
+          certificate: appointment.certificate_url ? 'EXISTS' : 'MISSING',
+          employment_agreement: appointment.employment_agreement_url ? 'EXISTS' : 'MISSING',
+          confidentiality_ip: (appointment as any).confidentiality_ip_url ? 'EXISTS' : 'MISSING',
+          stock_subscription: (appointment as any).stock_subscription_url ? 'EXISTS' : 'MISSING',
+          deferred_compensation: (appointment as any).deferred_compensation_url ? 'EXISTS' : 'MISSING',
+          pre_incorporation_consent: (appointment as any).pre_incorporation_consent_url ? 'EXISTS' : 'MISSING',
+        });
+      }
+      
       // Generate documents
       const generatedDocs: string[] = [];
       const errors: string[] = [];
 
-      for (const docType of docTypes) {
+      console.log(`[${appointment.id}] Starting PARALLEL generation for ${docTypes.length} documents...`);
+      
+      // Process documents in parallel to avoid timeout issues
+      const documentPromises = docTypes.map(async (docType, index) => {
+        console.log(`[${appointment.id}] [${index + 1}/${docTypes.length}] Starting: ${docType}`);
         try {
-          console.log(`Attempting to generate ${docType} for appointment ${appointment.id}`);
-          
           // Call the generate function using fetch
-          // Pass the user's auth token (not service role key) to avoid JWT validation errors
+          // Pass the original user's auth header to maintain JWT validation
+          // The document generation function will use service role internally for database access
           const generateResponse = await fetch(
             `${supabaseUrl}/functions/v1/governance-generate-appointment-document`,
             {
               method: 'POST',
               headers: {
                 'Content-Type': 'application/json',
-                'Authorization': authHeader || `Bearer ${supabaseServiceKey}`,
+                'Authorization': authHeader || `Bearer ${supabaseServiceKey}`, // Use original auth header if available
                 'apikey': supabaseAnonKey,
               },
               body: JSON.stringify({
@@ -260,29 +410,76 @@ serve(async (req) => {
 
           const result = await generateResponse.json();
 
+          const responseDetails = {
+            ok: generateResponse.ok,
+            status: generateResponse.status,
+            success: result?.success,
+            error: result?.error,
+            message: result?.message,
+            document_url: result?.document_url,
+            document_type: result?.document_type,
+          };
+          console.log(`[${appointment.id}] Response for ${docType}:`, JSON.stringify(responseDetails, null, 2));
+
           if (!generateResponse.ok) {
-            const errorMsg = result?.error || result?.message || 'Failed to generate document';
-            console.error(`Error generating ${docType} for appointment ${appointment.id}:`, errorMsg);
-            errors.push(`${docType}: ${errorMsg}`);
-            continue;
+            const errorMsg = result?.error || result?.message || `HTTP ${generateResponse.status}: Failed to generate document`;
+            console.error(`[${appointment.id}] ✗ HTTP Error generating ${docType}:`, errorMsg);
+            console.error(`[${appointment.id}] Full error response:`, JSON.stringify(result, null, 2));
+            return { docType, success: false, error: errorMsg };
           }
 
-          console.log(`Response for ${docType}:`, result);
-          
-          if (result?.success) {
-            generatedDocs.push(docType);
-            console.log(`Successfully generated ${docType} for appointment ${appointment.id}`);
+          if (!result) {
+            const errorMsg = 'No response body returned from document generation function';
+            console.error(`[${appointment.id}] ✗ No response body for ${docType}:`, errorMsg);
+            return { docType, success: false, error: errorMsg };
+          }
+
+          if (result?.success === true && result?.document_url) {
+            console.log(`[${appointment.id}] ✓✓✓ SUCCESS: Generated ${docType}`);
+            console.log(`[${appointment.id}] Document URL: ${result.document_url}`);
+            return { docType, success: true, document_url: result.document_url };
           } else {
-            const errorMsg = result?.error || result?.message || 'Unknown error';
-            console.error(`Failed to generate ${docType} for appointment ${appointment.id}:`, errorMsg);
-            errors.push(`${docType}: ${errorMsg}`);
+            const errorMsg = result?.error || result?.message || 'Unknown error: No success flag or document URL returned';
+            console.error(`[${appointment.id}] ✗✗✗ FAILED: ${docType}`);
+            console.error(`[${appointment.id}] Error message: ${errorMsg}`);
+            console.error(`[${appointment.id}] Full result:`, JSON.stringify(result, null, 2));
+            return { docType, success: false, error: errorMsg };
           }
         } catch (err: any) {
           const errorMsg = err?.message || err?.toString() || 'Failed to generate document';
-          console.error(`Error generating ${docType} for appointment ${appointment.id}:`, errorMsg, err);
-          errors.push(`${docType}: ${errorMsg}`);
+          console.error(`[${appointment.id}] ✗ Exception generating ${docType}:`, errorMsg, err);
+          return { docType, success: false, error: errorMsg };
         }
-      }
+      });
+
+      // Wait for all documents to complete (in parallel)
+      console.log(`[${appointment.id}] Waiting for ${documentPromises.length} parallel document generations...`);
+      const promiseResults = await Promise.allSettled(documentPromises);
+      
+      // Process promise results
+      promiseResults.forEach((promiseResult, index) => {
+        if (promiseResult.status === 'fulfilled') {
+          const { docType, success, document_url, error } = promiseResult.value;
+          if (success) {
+            generatedDocs.push(docType);
+            console.log(`[${appointment.id}] ✓ Completed: ${docType}`);
+          } else {
+            errors.push(`${docType}: ${error}`);
+            console.error(`[${appointment.id}] ✗ Failed: ${docType} - ${error}`);
+          }
+        } else {
+          const docType = docTypes[index];
+          const errorMsg = promiseResult.reason?.message || promiseResult.reason?.toString() || 'Promise rejected';
+          errors.push(`${docType}: ${errorMsg}`);
+          console.error(`[${appointment.id}] ✗ Promise rejected for ${docType}:`, errorMsg);
+        }
+      });
+      
+      console.log(`[${appointment.id}] ========================================`);
+      console.log(`[${appointment.id}] Generation complete: ${generatedDocs.length} succeeded, ${errors.length} failed`);
+      console.log(`[${appointment.id}] Generated docs:`, generatedDocs);
+      console.log(`[${appointment.id}] Errors:`, errors);
+      console.log(`[${appointment.id}] ========================================`);
 
       results.push({
         appointment_id: appointment.id,
@@ -300,7 +497,7 @@ serve(async (req) => {
     }
 
     // Calculate totals
-    const totalGenerated = results.reduce((sum, r) => sum + r.documents_generated.length, 0);
+    const totalGenerated = results.reduce((sum, r) => sum + (r.documents_generated?.length || 0), 0);
     const totalErrors = results.reduce((sum, r) => sum + (r.errors ? r.errors.length : 0), 0);
     
     // Collect all unique errors
@@ -314,6 +511,14 @@ serve(async (req) => {
         });
       }
     });
+
+    console.log(`========================================`);
+    console.log(`FINAL SUMMARY:`);
+    console.log(`Processed appointments: ${appointments.length}`);
+    console.log(`Total documents generated: ${totalGenerated}`);
+    console.log(`Total errors: ${totalErrors}`);
+    console.log(`Results:`, JSON.stringify(results, null, 2));
+    console.log(`========================================`);
 
     return new Response(
       JSON.stringify({

@@ -26,6 +26,8 @@ interface ExecutiveDocumentEmailRequest {
   htmlContent?: string;
   documents?: Array<{ title: string; url: string; id?: string }>; // multiple docs support
   executiveId?: string; // Optional: to help find documents
+  temporaryPassword?: string; // Optional: temporary password if user was just created
+  userCreated?: boolean; // Optional: whether user was just created
 }
 
 // Convert HTML to PDF using aPDF.io for legacy .html documents
@@ -86,7 +88,7 @@ serve(async (req: Request) => {
   }
 
   try {
-    const { to, executiveName, documentTitle, documentUrl, pdfBase64, htmlContent, documents, executiveId }: ExecutiveDocumentEmailRequest = await req.json();
+    const { to, executiveName, documentTitle, documentUrl, pdfBase64, htmlContent, documents, executiveId, temporaryPassword, userCreated }: ExecutiveDocumentEmailRequest = await req.json();
 
     if (!to || !executiveName || !documentTitle) {
       return new Response(
@@ -460,6 +462,25 @@ serve(async (req: Request) => {
       '{{current_year}}': currentYear,
     };
 
+    // Build login credentials section if user was just created
+    let loginCredentialsHtml = '';
+    if (userCreated && temporaryPassword) {
+      loginCredentialsHtml = `
+<div style="background-color: #fff5ec; border-left: 4px solid #ff6b00; padding: 20px; margin: 30px 0; border-radius: 6px;">
+  <h3 style="margin: 0 0 15px 0; color: #ff6b00; font-size: 18px;">🔐 Your Account Has Been Created</h3>
+  <p style="margin: 0 0 15px 0; color: #4a4a4a; font-size: 15px; line-height: 1.6;">
+    Your executive portal account has been set up. Use these credentials to log in:
+  </p>
+  <div style="background-color: #ffffff; padding: 15px; border-radius: 4px; margin: 15px 0;">
+    <p style="margin: 5px 0; color: #1a1a1a; font-size: 14px;"><strong>Email:</strong> ${escapeHtml(to)}</p>
+    <p style="margin: 5px 0; color: #1a1a1a; font-size: 14px;"><strong>Temporary Password:</strong> <code style="background-color: #f5f5f5; padding: 4px 8px; border-radius: 3px; font-family: monospace;">${escapeHtml(temporaryPassword)}</code></p>
+  </div>
+  <p style="margin: 15px 0 0 0; color: #ff6b00; font-size: 14px; font-weight: bold;">
+    ⚠️ Important: Please change your password after your first login for security.
+  </p>
+</div>`;
+    }
+
     const htmlReplacements: Record<string, string> = {
       '{{documentTitle}}': safeDocumentTitle,
       '{{executiveName}}': safeExecutiveName,
@@ -473,6 +494,9 @@ serve(async (req: Request) => {
       '{{company_website_url}}': companyWebsiteUrl,
       '{{dynamicContent}}': dynamicContent,
       '{{linksHtml}}': linksHtml,
+      '{{loginCredentials}}': loginCredentialsHtml,
+      '{{temporaryPassword}}': temporaryPassword ? escapeHtml(temporaryPassword) : '',
+      '{{userEmail}}': escapeHtml(to),
     };
 
     const applyReplacements = (input: string, replacements: Record<string, string>) =>
@@ -480,6 +504,26 @@ serve(async (req: Request) => {
 
     emailSubject = applyReplacements(emailSubject, subjectReplacements);
     let emailHtml = applyReplacements(emailHtmlContent, htmlReplacements);
+    
+    // If user was just created and we have a temp password, inject login credentials section
+    // This will be inserted before the "If You Don't Have an Account Yet" section
+    if (userCreated && temporaryPassword) {
+      const loginSection = loginCredentialsHtml;
+      // Try to insert before "If You Don't Have an Account Yet" section
+      const accountSectionRegex = /(### If You Don't Have an Account Yet[\s\S]*?)(?=---|##|$)/;
+      if (accountSectionRegex.test(emailHtml)) {
+        emailHtml = emailHtml.replace(
+          accountSectionRegex,
+          `${loginSection}\n\n$1`
+        );
+      } else {
+        // If section not found, prepend to the email content after opening
+        emailHtml = emailHtml.replace(
+          /(<body[^>]*>)/,
+          `$1\n${loginSection}`
+        );
+      }
+    }
     
     // Fallback: Replace any hardcoded app.cravenusa.com URLs with the correct signing portal URL
     // This handles cases where the template has hardcoded URLs instead of placeholders

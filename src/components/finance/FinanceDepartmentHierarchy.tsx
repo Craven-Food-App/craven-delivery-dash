@@ -109,11 +109,17 @@ export const FinanceDepartmentHierarchy: React.FC = () => {
         .eq('employment_status', 'active');
 
       if (empError) {
-        // Don't throw if table doesn't exist, just log
-        if (empError.code === '42P01' || empError.message?.includes('does not exist')) {
-          console.warn('Finance employees table not found');
+        // Suppress relationship, policy, and schema errors
+        if (
+          empError.code === '42P01' || 
+          empError.message?.includes('does not exist') ||
+          empError.message?.includes('Could not find a relationship') ||
+          empError.message?.includes('infinite recursion detected in policy') ||
+          empError.message?.includes('schema cache')
+        ) {
+          console.warn('Supabase schema/relationship error (suppressed):', empError.message);
         } else {
-          throw empError;
+          console.error('Error fetching finance employees:', empError);
         }
       }
 

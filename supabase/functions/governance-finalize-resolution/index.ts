@@ -61,11 +61,11 @@ serve(async (req) => {
       );
     }
 
-    // Count total active board members
+    // Count total active board members (use status='Active' not is_active)
     const { count: totalBoardMembers } = await supabaseAdmin
       .from('board_members')
       .select('*', { count: 'exact', head: true })
-      .eq('is_active', true);
+      .eq('status', 'Active');
 
     if (!totalBoardMembers || totalBoardMembers === 0) {
       return new Response(
@@ -158,32 +158,79 @@ serve(async (req) => {
         },
       });
 
-      // If this is an appointment resolution and it was adopted, trigger execution
-      // Step 10: Resolution executed → governance-execute-resolution
-      // This will update onboarding status and send email to executive
-      if (newStatus === 'ADOPTED' && resolution.type === 'EXECUTIVE_APPOINTMENT' && resolution.metadata?.appointment_id) {
-        const appointmentId = resolution.metadata.appointment_id;
-
-        // Update executive_appointments status to APPROVED (for legacy compatibility)
-        const { data: execAppointment } = await supabaseAdmin
+      // If this is an appointment resolution and it was adopted, update appointment status
+      if (newStatus === 'ADOPTED' && resolution.type === 'EXECUTIVE_APPOINTMENT') {
+        // Find the executive appointment linked to this resolution
+        const { data: execAppointments, error: execApptError } = await supabaseAdmin
           .from('executive_appointments')
-          .select('id')
-          .eq('id', resolution.metadata?.executive_appointment_id)
+          .select('id, status')
+          .eq('board_resolution_id', resolution_id)
           .maybeSingle();
 
-        if (execAppointment) {
+        if (execAppointments) {
+          console.log(`Updating executive appointment ${execAppointments.id} status after resolution adoption`);
+          
+          // Step 1: Sync documents from appointment URLs to executive_documents FIRST
+          console.log('Syncing documents to executive_documents before status update...');
+          try {
+            const syncResponse = await fetch(`${supabaseUrl}/functions/v1/governance-sync-appointment-documents`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${supabaseServiceKey}`,
+              },
+              body: JSON.stringify({ appointment_id: execAppointments.id }),
+            });
+            
+            const syncData = await syncResponse.json();
+            if (syncData?.documents_synced > 0) {
+              console.log(`Synced ${syncData.documents_synced} documents for appointment ${execAppointments.id}`);
+            }
+          } catch (syncErr) {
+            console.warn('Document sync had issues, but continuing:', syncErr);
+          }
+          
+          // Step 2: Update status based on current state - flow should be:
+          // BOARD_ADOPTED → AWAITING_SIGNATURES → READY_FOR_SECRETARY_REVIEW
+          // If documents are already signed, go straight to READY_FOR_SECRETARY_REVIEW
+          // Otherwise, go to AWAITING_SIGNATURES or BOARD_ADOPTED
+          
+          // Check if documents are signed (after syncing)
+          const { data: documents } = await supabaseAdmin
+            .from('executive_documents')
+            .select('signature_status')
+            .eq('appointment_id', execAppointments.id);
+          
+          const allSigned = documents && documents.length > 0 && documents.every(d => d.signature_status === 'signed');
+          const someSigned = documents && documents.some(d => d.signature_status === 'signed');
+          
+          let newAppointmentStatus = 'BOARD_ADOPTED';
+          if (allSigned) {
+            newAppointmentStatus = 'READY_FOR_SECRETARY_REVIEW';
+          } else if (someSigned) {
+            newAppointmentStatus = 'AWAITING_SIGNATURES';
+          } else {
+            newAppointmentStatus = 'BOARD_ADOPTED';
+          }
+          
           await supabaseAdmin
             .from('executive_appointments')
             .update({
-              status: 'APPROVED',
+              status: newAppointmentStatus,
               updated_at: new Date().toISOString(),
             })
-            .eq('id', execAppointment.id);
+            .eq('id', execAppointments.id);
+          
+          console.log(`Updated appointment ${execAppointments.id} to status ${newAppointmentStatus}`);
+        } else if (execApptError) {
+          console.error('Error finding executive appointment:', execApptError);
         }
 
-        // Trigger resolution execution (this will handle onboarding and email)
+        // Step 3: Trigger resolution execution (this will send email with documents)
+        // This happens AFTER status is updated to BOARD_ADOPTED
+        console.log('Triggering resolution execution to send email...');
         try {
-          await fetch(`${supabaseUrl}/functions/v1/governance-execute-resolution`, {
+          const execResponse = await fetch(`${supabaseUrl}/functions/v1/governance-execute-resolution`, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
@@ -191,6 +238,13 @@ serve(async (req) => {
             },
             body: JSON.stringify({ resolution_id: resolution_id }),
           });
+          
+          const execResult = await execResponse.json();
+          if (execResponse.ok) {
+            console.log('Resolution executed successfully, email should be sent:', execResult);
+          } else {
+            console.error('Resolution execution failed:', execResult);
+          }
         } catch (err) {
           console.error('Error executing resolution:', err);
           // Don't fail the finalization if execution fails

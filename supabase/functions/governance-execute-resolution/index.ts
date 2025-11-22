@@ -63,67 +63,189 @@ serve(async (req) => {
     // Execute based on resolution type
     let executionResult: any = {};
 
-    if (resolutionType === 'EXECUTIVE_APPOINTMENT' && metadata.appointment_id) {
-      // Start executive onboarding workflow
-      const appointmentId = metadata.appointment_id;
-      
-      const { data: appointment } = await supabaseAdmin
-        .from('appointments')
+    if (resolutionType === 'EXECUTIVE_APPOINTMENT') {
+      // Find executive appointment linked to this resolution
+      const { data: execAppointment } = await supabaseAdmin
+        .from('executive_appointments')
         .select('*')
-        .eq('id', appointmentId)
-        .single();
+        .eq('board_resolution_id', resolution_id)
+        .maybeSingle();
 
-      if (appointment && appointment.appointee_user_id) {
-        // Step 10: Resolution executed → governance-execute-resolution
-        // Documents are already generated in step 3 (governance-handle-appointment-workflow)
-        // We just need to update onboarding status and send email
+      if (execAppointment) {
+        console.log(`Executing resolution for executive appointment ${execAppointment.id}`);
+        const appointmentId = execAppointment.id;
+
+        // Step 1: Ensure user account exists (create if needed with temporary password)
+        let user = null;
+        let tempPassword: string | null = null;
         
-        // Get existing documents for this appointment (already generated)
-        const { data: existingDocuments } = await supabaseAdmin
-          .from('board_documents')
-          .select('id, type, title')
-          .eq('related_appointment_id', appointmentId);
-
-        const documentIds = existingDocuments?.map(d => d.id) || [];
-
-        // Step 11: Update onboarding status to documents_sent
-        const { data: onboarding } = await supabaseAdmin
-          .from('executive_onboarding')
-          .update({
-            status: 'documents_sent',
-            updated_at: new Date().toISOString(),
-          })
-          .eq('appointment_id', appointmentId)
-          .eq('user_id', appointment.appointee_user_id)
-          .select()
-          .single();
-
-        // Step 7: Send email notification to appointee with documents
-        // This happens AFTER resolution is executed (step 10), not during document generation
-        if (documentIds.length > 0) {
-          try {
-            await fetch(`${supabaseUrl}/functions/v1/send-appointment-documents-email`, {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${supabaseServiceKey}`,
-              },
-              body: JSON.stringify({ 
-                appointmentId: appointmentId,
-                documentIds: documentIds,
-              }),
-            });
-          } catch (err) {
-            console.error('Error sending appointment email:', err);
+        if (execAppointment.proposed_officer_email) {
+          console.log(`Ensuring user account exists for ${execAppointment.proposed_officer_email}...`);
+          
+          // First, try to find existing user
+          const { data: { users } } = await supabaseAdmin.auth.admin.listUsers();
+          user = users?.find(u => u.email?.toLowerCase() === execAppointment.proposed_officer_email.toLowerCase());
+          
+          if (!user) {
+            // Create user with temporary password
+            tempPassword = `Temp${Date.now()}${Math.random().toString(36).substring(2, 8)}`;
+            console.log(`Creating new user account with temporary password...`);
+            
+            try {
+              const { data: newUser, error: createError } = await supabaseAdmin.auth.admin.createUser({
+                email: execAppointment.proposed_officer_email,
+                email_confirm: true,
+                password: tempPassword,
+                user_metadata: {
+                  full_name: execAppointment.proposed_officer_name,
+                },
+              });
+              
+              if (createError) {
+                // If user already exists, try to find it
+                if (createError.message?.toLowerCase().includes('already') || 
+                    createError.message?.toLowerCase().includes('registered')) {
+                  const { data: { user: foundUser } } = await supabaseAdmin.auth.admin.getUserByEmail(execAppointment.proposed_officer_email);
+                  if (foundUser) {
+                    user = foundUser;
+                    console.log(`Found existing user ${user.id} after creation attempt`);
+                  }
+                } else {
+                  console.warn(`User creation failed: ${createError.message}`);
+                }
+              } else if (newUser?.user) {
+                user = newUser.user;
+                console.log(`Created new user ${user.id} for ${execAppointment.proposed_officer_email}`);
+              }
+            } catch (userErr: any) {
+              console.warn(`Error creating user: ${userErr.message}`);
+            }
+          } else {
+            console.log(`Found existing user ${user.id} for ${execAppointment.proposed_officer_email}`);
           }
         }
 
+        // Step 2: Sync documents from appointment URLs to executive_documents if needed
+        console.log('Syncing documents to executive_documents...');
+        const { data: syncData, error: syncDocError } = await fetch(`${supabaseUrl}/functions/v1/governance-sync-appointment-documents`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${supabaseServiceKey}`,
+          },
+          body: JSON.stringify({ appointment_id: appointmentId }),
+        }).then(r => r.json()).catch(err => {
+          console.error('Error syncing documents:', err);
+          return { error: err.message };
+        });
+
+        if (syncDocError) {
+          console.warn('Document sync had issues, but continuing:', syncDocError);
+        } else {
+          console.log(`Synced ${syncData?.documents_synced || 0} documents for appointment ${appointmentId}`);
+        }
+
+        // Step 3: Send email notification to appointee with documents and login credentials
+        // This happens AFTER resolution is ADOPTED (Step 4)
+        console.log('Sending email to executive with appointment documents and login credentials...');
+        try {
+          const emailBody: any = { 
+            appointmentId: appointmentId,
+          };
+          
+          // Include temporary password if user was just created
+          if (tempPassword && user) {
+            emailBody.temporaryPassword = tempPassword;
+            emailBody.userCreated = true;
+          }
+          
+          const emailResponse = await fetch(`${supabaseUrl}/functions/v1/send-appointment-documents-email`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${supabaseServiceKey}`,
+            },
+            body: JSON.stringify(emailBody),
+          });
+
+          const emailResult = await emailResponse.json();
+          if (!emailResponse.ok) {
+            console.error('Email sending failed:', emailResult);
+          } else {
+            console.log(`Email sent successfully to ${execAppointment.proposed_officer_email}:`, emailResult);
+          }
+        } catch (err) {
+          console.error('Error sending appointment email:', err);
+        }
+
         executionResult = { 
-          onboarding_updated: true, 
-          onboarding_id: onboarding?.id,
-          documents_sent: documentIds.length,
-          status: 'documents_sent',
+          appointment_id: appointmentId,
+          executive_name: execAppointment.proposed_officer_name,
+          executive_email: execAppointment.proposed_officer_email,
+          user_created: !!tempPassword,
+          user_id: user?.id || null,
+          documents_synced: syncData?.documents_synced || 0,
+          email_sent: true,
         };
+      } else {
+        // Fallback: Try old appointments table
+        const appointmentId = metadata.appointment_id;
+        
+        if (appointmentId) {
+          const { data: appointment } = await supabaseAdmin
+            .from('appointments')
+            .select('*')
+            .eq('id', appointmentId)
+            .maybeSingle();
+
+          if (appointment && appointment.appointee_user_id) {
+            // Get existing documents for this appointment (already generated)
+            const { data: existingDocuments } = await supabaseAdmin
+              .from('board_documents')
+              .select('id, type, title')
+              .eq('related_appointment_id', appointmentId);
+
+            const documentIds = existingDocuments?.map(d => d.id) || [];
+
+            // Update onboarding status to documents_sent
+            const { data: onboarding } = await supabaseAdmin
+              .from('executive_onboarding')
+              .update({
+                status: 'documents_sent',
+                updated_at: new Date().toISOString(),
+              })
+              .eq('appointment_id', appointmentId)
+              .eq('user_id', appointment.appointee_user_id)
+              .select()
+              .maybeSingle();
+
+            // Send email notification to appointee with documents
+            if (documentIds.length > 0) {
+              try {
+                await fetch(`${supabaseUrl}/functions/v1/send-appointment-documents-email`, {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${supabaseServiceKey}`,
+                  },
+                  body: JSON.stringify({ 
+                    appointmentId: appointmentId,
+                    documentIds: documentIds,
+                  }),
+                });
+              } catch (err) {
+                console.error('Error sending appointment email:', err);
+              }
+            }
+
+            executionResult = { 
+              onboarding_updated: true, 
+              onboarding_id: onboarding?.id,
+              documents_sent: documentIds.length,
+              status: 'documents_sent',
+            };
+          }
+        }
       }
     } else if (resolutionType === 'EQUITY_GRANT' && metadata.grant_details) {
       // Execute equity grant

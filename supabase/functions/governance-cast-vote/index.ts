@@ -67,15 +67,24 @@ serve(async (req) => {
     });
 
     // Get board member for this user
+    // The board_members table uses 'status' column with value 'Active', not 'is_active'
     let { data: boardMember, error: boardError } = await supabaseAdmin
       .from('board_members')
       .select('id')
       .eq('user_id', user.id)
-      .eq('is_active', true)
-      .single();
+      .eq('status', 'Active')
+      .maybeSingle(); // Use maybeSingle() instead of single() to avoid error on not found
 
     // If no board member record exists, check if user has board member role and create one
-    if (boardError || !boardMember) {
+    if (boardError) {
+      console.error('Error checking board member:', boardError);
+      return new Response(
+        JSON.stringify({ error: `Failed to check board member status: ${boardError.message}` }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    if (!boardMember) {
       // Check if user has board member role
       const { data: userRoles } = await supabaseAdmin
         .from('user_roles')
@@ -84,12 +93,17 @@ serve(async (req) => {
         .in('role', ['CRAVEN_BOARD_MEMBER', 'CRAVEN_FOUNDER']);
 
       // Also check exec_users for board_member role
-      const { data: execUser } = await supabaseAdmin
+      const { data: execUser, error: execUserError } = await supabaseAdmin
         .from('exec_users')
         .select('role, email, full_name')
         .eq('user_id', user.id)
         .eq('role', 'board_member')
-        .single();
+        .maybeSingle(); // Use maybeSingle() to avoid error on not found
+      
+      // Log exec user check result (non-blocking)
+      if (execUserError && execUserError.code !== 'PGRST116') { // PGRST116 is "not found" which is OK
+        console.warn('Error checking exec_users (non-blocking):', execUserError);
+      }
 
       const hasBoardRole = (userRoles && userRoles.length > 0) || execUser || user.email === 'craven@usa.com';
 
@@ -99,17 +113,28 @@ serve(async (req) => {
         const userName = execUser?.full_name || userEmail.split('@')[0] || 'Board Member';
 
         // Create board member record
+        // The board_members table uses 'status' and 'role_title' columns
         const { data: newBoardMember, error: createError } = await supabaseAdmin
           .from('board_members')
           .insert({
             user_id: user.id,
             full_name: userName,
             email: userEmail,
-            role: execUser?.role === 'board_member' ? 'Director' : 'Board Chair',
-            is_active: true,
+            role_title: execUser?.role === 'board_member' ? 'Director' : 'Board Chair',
+            status: 'Active',
           })
           .select('id')
           .single();
+
+        if (createError || !newBoardMember) {
+          console.error('Error creating board member:', createError);
+          return new Response(
+            JSON.stringify({ error: `Failed to create board member record: ${createError?.message || 'Unknown error'}` }),
+            { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        }
+
+        boardMember = newBoardMember;
 
         if (createError || !newBoardMember) {
           console.error('Error creating board member:', createError);
@@ -129,16 +154,25 @@ serve(async (req) => {
     }
 
     // Check if vote already exists
-    const { data: existingVote } = await supabaseAdmin
+    const { data: existingVote, error: voteCheckError } = await supabaseAdmin
       .from('board_resolution_votes')
       .select('id')
       .eq('resolution_id', resolution_id)
       .eq('board_member_id', boardMember.id)
-      .single();
+      .maybeSingle(); // Use maybeSingle() to avoid error on not found
+
+    if (voteCheckError && voteCheckError.code !== 'PGRST116') { // PGRST116 is "not found" which is OK
+      console.error('Error checking existing vote:', voteCheckError);
+      return new Response(
+        JSON.stringify({ error: `Failed to check existing vote: ${voteCheckError.message}` }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
 
     let voteData;
     if (existingVote) {
       // Update existing vote
+      console.log(`Updating existing vote ${existingVote.id} for board member ${boardMember.id}`);
       const { data, error } = await supabaseAdmin
         .from('board_resolution_votes')
         .update({
@@ -150,42 +184,121 @@ serve(async (req) => {
         .single();
 
       if (error) {
-        throw error;
+        console.error('Error updating vote:', error);
+        console.error('Error details:', JSON.stringify(error, null, 2));
+        return new Response(
+          JSON.stringify({ 
+            error: `Failed to update vote: ${error.message}`,
+            details: error.details || error.hint || error.code,
+            code: error.code,
+          }),
+          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
       }
       voteData = data;
+      console.log('Vote updated successfully:', voteData);
     } else {
       // Create new vote
+      console.log(`Creating new vote for resolution ${resolution_id}, board member ${boardMember.id}, vote: ${vote}`);
+      const votePayload = {
+        resolution_id,
+        board_member_id: boardMember.id,
+        vote,
+        comment: comment || null,
+      };
+      console.log('Vote payload:', JSON.stringify(votePayload, null, 2));
+      
       const { data, error } = await supabaseAdmin
         .from('board_resolution_votes')
-        .insert({
-          resolution_id,
-          board_member_id: boardMember.id,
-          vote,
-          comment: comment || null,
-        })
+        .insert(votePayload)
         .select()
         .single();
 
       if (error) {
-        throw error;
+        console.error('Error creating vote:', error);
+        console.error('Error details:', JSON.stringify(error, null, 2));
+        console.error('Resolution ID:', resolution_id);
+        console.error('Board Member ID:', boardMember.id);
+        console.error('Vote:', vote);
+        
+        // Check if it's a unique constraint violation (already voted)
+        if (error.code === '23505') {
+          // Try to fetch and update the existing vote
+          console.log('Unique constraint violation - vote already exists, attempting to update...');
+          const { data: existingVoteData, error: fetchError } = await supabaseAdmin
+            .from('board_resolution_votes')
+            .select('id')
+            .eq('resolution_id', resolution_id)
+            .eq('board_member_id', boardMember.id)
+            .maybeSingle();
+          
+          if (!fetchError && existingVoteData) {
+            const { data: updatedData, error: updateError } = await supabaseAdmin
+              .from('board_resolution_votes')
+              .update({
+                vote,
+                comment: comment || null,
+              })
+              .eq('id', existingVoteData.id)
+              .select()
+              .single();
+            
+            if (updateError) {
+              return new Response(
+                JSON.stringify({ 
+                  error: `Failed to update existing vote: ${updateError.message}`,
+                  details: updateError.details || updateError.hint || updateError.code,
+                }),
+                { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+              );
+            }
+            voteData = updatedData;
+            console.log('Vote updated after constraint violation:', voteData);
+          } else {
+            return new Response(
+              JSON.stringify({ 
+                error: `Failed to create vote: ${error.message}`,
+                details: error.details || error.hint || error.code,
+                code: error.code,
+              }),
+              { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+            );
+          }
+        } else {
+          return new Response(
+            JSON.stringify({ 
+              error: `Failed to create vote: ${error.message}`,
+              details: error.details || error.hint || error.code,
+              code: error.code,
+            }),
+            { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        }
+      } else {
+        voteData = data;
+        console.log('Vote created successfully:', voteData);
       }
-      voteData = data;
     }
 
-    // Log the action
-    await supabaseAdmin.rpc('log_governance_action', {
-      p_action_type: 'vote_cast',
-      p_action_category: 'board',
-      p_target_type: 'resolution',
-      p_target_id: resolution_id,
-      p_target_name: `Resolution ${resolution_id}`,
-      p_description: `Cast ${vote} vote on resolution`,
-      p_metadata: {
-        vote,
-        comment: comment || null,
-        board_member_id: boardMember.id,
-      },
-    });
+    // Log the action (non-blocking - don't fail if logging fails)
+    try {
+      await supabaseAdmin.rpc('log_governance_action', {
+        p_action_type: 'vote_cast',
+        p_action_category: 'board',
+        p_target_type: 'resolution',
+        p_target_id: resolution_id,
+        p_target_name: `Resolution ${resolution_id}`,
+        p_description: `Cast ${vote} vote on resolution`,
+        p_metadata: {
+          vote,
+          comment: comment || null,
+          board_member_id: boardMember.id,
+        },
+      });
+    } catch (logError) {
+      console.warn('Failed to log governance action (non-blocking):', logError);
+      // Continue - logging failure shouldn't prevent vote from being cast
+    }
 
     // Check if resolution should be finalized (adopted/rejected)
     try {
@@ -209,9 +322,19 @@ serve(async (req) => {
     );
   } catch (error) {
     console.error('Error in governance-cast-vote:', error);
-    const errorMessage = error instanceof Error ? error.message : 'Internal server error';
+    console.error('Error stack:', error instanceof Error ? error.stack : 'No stack trace');
+    console.error('Error type:', typeof error);
+    console.error('Error stringified:', JSON.stringify(error, Object.getOwnPropertyNames(error)));
+    
+    const errorMessage = error instanceof Error ? error.message : (typeof error === 'string' ? error : 'Internal server error');
+    const errorDetails = error instanceof Error && error.stack ? { stack: error.stack } : {};
+    
     return new Response(
-      JSON.stringify({ error: errorMessage }),
+      JSON.stringify({ 
+        error: errorMessage,
+        details: errorDetails,
+        type: typeof error,
+      }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }

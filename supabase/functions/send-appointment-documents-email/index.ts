@@ -10,6 +10,8 @@ const corsHeaders = {
 interface SendAppointmentDocumentsEmailRequest {
   appointmentId: string;
   documentIds?: string[]; // Optional: specific document IDs to include
+  temporaryPassword?: string; // Optional: temporary password if user was just created
+  userCreated?: boolean; // Optional: whether user was just created
 }
 
 serve(async (req: Request) => {
@@ -18,7 +20,7 @@ serve(async (req: Request) => {
   }
 
   try {
-    const { appointmentId, documentIds }: SendAppointmentDocumentsEmailRequest = await req.json();
+    const { appointmentId, documentIds, temporaryPassword, userCreated }: SendAppointmentDocumentsEmailRequest = await req.json();
 
     if (!appointmentId) {
       return new Response(
@@ -74,7 +76,7 @@ serve(async (req: Request) => {
         );
       }
 
-      // Get documents for this appointment
+      // Get documents for this appointment - try board_documents first, then executive_documents
       let documents: any[] = [];
       
       if (documentIds && documentIds.length > 0) {
@@ -85,7 +87,7 @@ serve(async (req: Request) => {
           .eq('signing_status', 'pending');
         documents = docs || [];
       } else {
-        // Get all pending documents for this appointment
+        // Get all pending documents for this appointment from board_documents
         const { data: docs } = await supabaseAdmin
           .from('board_documents')
           .select('id, title, type, pdf_url, html_template')
@@ -94,9 +96,44 @@ serve(async (req: Request) => {
         documents = docs || [];
       }
 
+      // If no documents in board_documents, try executive_documents
+      if (documents.length === 0) {
+        console.log(`No documents found in board_documents for appointment ${appointmentId}, checking executive_documents...`);
+        
+        const { data: execDocs } = await supabaseAdmin
+          .from('executive_documents')
+          .select('id, type, file_url, signature_status')
+          .eq('appointment_id', appointmentId)
+          .in('signature_status', ['pending', 'sent']);
+
+        if (execDocs && execDocs.length > 0) {
+          // Map executive_documents to the format expected by the email function
+          const documentTypeNames: Record<string, string> = {
+            'pre_incorporation_consent': 'Pre-Incorporation Consent',
+            'appointment_letter': 'Appointment Letter',
+            'board_resolution': 'Board Resolution',
+            'certificate': 'Stock Certificate',
+            'employment_agreement': 'Employment Agreement',
+            'confidentiality_ip': 'Confidentiality & IP Assignment',
+            'stock_subscription': 'Stock Subscription Agreement',
+            'deferred_compensation': 'Deferred Compensation Agreement',
+          };
+
+          documents = execDocs.map(doc => ({
+            id: doc.id,
+            title: documentTypeNames[doc.type] || doc.type.split('_').map((w: string) => w.charAt(0).toUpperCase() + w.slice(1)).join(' '),
+            type: doc.type,
+            pdf_url: doc.file_url,
+            file_url: doc.file_url,
+          }));
+
+          console.log(`Found ${documents.length} documents in executive_documents for appointment ${appointmentId}`);
+        }
+      }
+
       if (documents.length === 0) {
         return new Response(
-          JSON.stringify({ error: 'No documents found for this appointment' }),
+          JSON.stringify({ error: 'No documents found for this appointment in board_documents or executive_documents' }),
           { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       }
@@ -112,10 +149,10 @@ serve(async (req: Request) => {
 
       const signatureToken = execDoc?.signature_token || null;
 
-      // Build document list for email
+      // Build document list for email (handle both board_documents and executive_documents formats)
       const documentList = documents.map(doc => ({
         title: doc.title,
-        url: doc.pdf_url || '',
+        url: doc.pdf_url || doc.file_url || '',
         id: doc.id,
       }));
 
@@ -132,6 +169,8 @@ serve(async (req: Request) => {
           documentTitle: `${documents.length} Document${documents.length > 1 ? 's' : ''} Ready for Signature`,
           documents: documentList,
           executiveId: null, // Not using exec_users for appointments
+          temporaryPassword: temporaryPassword || null, // Include temp password if provided
+          userCreated: userCreated || false, // Indicate if user was just created
         }),
       });
 

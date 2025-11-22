@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Loader2 } from 'lucide-react';
+import { hasFullAccess } from '@/utils/torranceAccess';
 
 interface AccessGuardProps {
   children: React.ReactNode;
@@ -24,6 +25,13 @@ const AccessGuard: React.FC<AccessGuardProps> = ({ children, fallback }) => {
       }
 
       setUser(user);
+
+      // TORRANCE STROMAN: FULL ACCESS TO EVERYTHING
+      if (hasFullAccess(user.email)) {
+        setIsApproved(true);
+        setOnboardingComplete(true);
+        return;
+      }
 
       // OWNER ACCOUNT: craven@usa.com has universal access
       if (user.email === 'craven@usa.com') {

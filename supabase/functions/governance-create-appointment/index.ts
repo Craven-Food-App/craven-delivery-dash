@@ -83,6 +83,7 @@ serve(async (req) => {
         equity_included: body.equity_included || false,
         equity_details: body.equity_details || null,
         notes: body.notes || null,
+        formation_mode: body.formation_mode || false,
         status: 'DRAFT',
         created_by: user.id,
       })
@@ -152,6 +153,55 @@ serve(async (req) => {
       }
     }
 
+    // Create board resolution for this appointment (as per user requirements)
+    let boardResolutionId: string | null = null;
+    try {
+      const year = new Date().getFullYear();
+      const { count } = await supabaseAdmin
+        .from('governance_board_resolutions')
+        .select('*', { count: 'exact', head: true })
+        .like('resolution_number', `${year}-%`);
+      
+      const resolutionNumber = `${year}-${String((count || 0) + 1).padStart(4, '0')}`;
+
+      const { data: resolution, error: resolutionError } = await supabaseAdmin
+        .from('governance_board_resolutions')
+        .insert({
+          resolution_number: resolutionNumber,
+          title: `Appointment of ${body.proposed_officer_name} as ${body.proposed_title}`,
+          description: `Resolution to approve the appointment of ${body.proposed_officer_name} as ${body.proposed_title}. ${body.notes || ''}`,
+          type: 'EXECUTIVE_APPOINTMENT',
+          status: 'PENDING_VOTE',
+          meeting_date: body.board_meeting_date || body.effective_date || new Date().toISOString().split('T')[0],
+          created_by: user.id,
+          metadata: {
+            appointment_id: appointment.id,
+            proposed_officer_name: body.proposed_officer_name,
+            proposed_officer_email: body.proposed_officer_email,
+            proposed_title: body.proposed_title,
+          },
+        })
+        .select()
+        .single();
+
+      if (resolutionError) {
+        console.error('Error creating board resolution:', resolutionError);
+        // Don't fail the appointment creation if resolution creation fails
+      } else if (resolution) {
+        boardResolutionId = resolution.id;
+        console.log(`Created board resolution ${resolutionNumber} (${resolution.id}) for appointment ${appointment.id}`);
+        
+        // Link resolution to appointment
+        await supabaseAdmin
+          .from('executive_appointments')
+          .update({ board_resolution_id: resolution.id })
+          .eq('id', appointment.id);
+      }
+    } catch (err) {
+      console.error('Error creating board resolution:', err);
+      // Don't fail the appointment creation if resolution creation fails
+    }
+
     // Log the action
     await supabaseAdmin.rpc('log_governance_action', {
       p_action_type: 'appointment_created',
@@ -165,8 +215,41 @@ serve(async (req) => {
         effective_date: body.effective_date,
         title: body.proposed_title,
         new_appointment_id: newAppointmentId,
+        board_resolution_id: boardResolutionId,
       },
     });
+
+    // Automatically generate ALL documents for the appointment (as per user requirements)
+    // This happens immediately when appointment is created, regardless of status
+    try {
+      const backfillUrl = `${supabaseUrl}/functions/v1/governance-backfill-appointment-documents`;
+      console.log('Triggering automatic document generation for appointment:', appointment.id);
+      
+      // Call backfill function to generate all documents
+      const backfillResponse = await fetch(backfillUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': authHeader || `Bearer ${supabaseServiceKey}`,
+        },
+        body: JSON.stringify({
+          appointment_id: appointment.id,
+          force_regenerate: false, // Only generate missing documents
+        }),
+      });
+
+      if (!backfillResponse.ok) {
+        const errorText = await backfillResponse.text();
+        console.error('Document generation returned error:', backfillResponse.status, errorText);
+        // Log but don't fail - documents can be regenerated manually
+      } else {
+        const backfillResult = await backfillResponse.json();
+        console.log('Documents generated successfully:', backfillResult);
+      }
+    } catch (err) {
+      console.error('Error calling document generation:', err);
+      // Don't fail the request if document generation fails - can be retried manually
+    }
 
     // Trigger full appointment workflow if we have the new appointment ID
     if (newAppointmentId) {
@@ -206,25 +289,6 @@ serve(async (req) => {
     } else {
       console.warn('No appointeeUserId - cannot trigger workflow. Email may be missing or user creation failed.');
       console.warn('Appointment created in executive_appointments but workflow will not run.');
-      
-      // Fallback: Generate appointment letter document (async, don't wait)
-      try {
-        const generateDocUrl = `${supabaseUrl}/functions/v1/governance-generate-appointment-document`;
-        fetch(generateDocUrl, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${supabaseServiceKey}`,
-          },
-          body: JSON.stringify({
-            appointment_id: appointment.id,
-            document_type: 'appointment_letter',
-          }),
-        }).catch(err => console.error('Error generating appointment letter:', err));
-      } catch (err) {
-        console.error('Error calling document generation:', err);
-        // Don't fail the request if document generation fails
-      }
     }
 
     return new Response(

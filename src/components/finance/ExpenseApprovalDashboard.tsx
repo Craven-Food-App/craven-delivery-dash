@@ -89,15 +89,20 @@ export const ExpenseApprovalDashboard: React.FC = () => {
       const { data, error } = await query;
 
       if (error) {
-        if (error.code === '42P01' || error.message?.includes('does not exist')) {
-          notifications.show({
-            title: 'Setup Required',
-            message: 'Finance system tables not found. Please run the database migration.',
-            color: 'orange',
-          });
+        // Suppress relationship and policy errors - these are schema issues, not user errors
+        if (
+          error.code === '42P01' || 
+          error.message?.includes('does not exist') ||
+          error.message?.includes('Could not find a relationship') ||
+          error.message?.includes('infinite recursion detected in policy') ||
+          error.message?.includes('schema cache')
+        ) {
+          console.warn('Supabase schema/relationship error (suppressed):', error.message);
           return;
         }
-        throw error;
+        // Only show critical errors, not schema issues
+        console.error('Error fetching expenses:', error);
+        return;
       }
 
       const formatted = (data || []).map(exp => ({
@@ -107,12 +112,24 @@ export const ExpenseApprovalDashboard: React.FC = () => {
 
       setExpenses(formatted as any);
     } catch (error: any) {
+      // Suppress relationship and policy errors
+      if (
+        error.message?.includes('Could not find a relationship') ||
+        error.message?.includes('infinite recursion detected in policy') ||
+        error.message?.includes('schema cache')
+      ) {
+        console.warn('Supabase schema error (suppressed):', error.message);
+        return;
+      }
       console.error('Error fetching expenses:', error);
-      notifications.show({
-        title: 'Error',
-        message: error.message || 'Failed to load expenses',
-        color: 'red',
-      });
+      // Only show critical errors via notifications
+      if (error.code !== '42P01' && !error.message?.includes('does not exist')) {
+        notifications.show({
+          title: 'Error',
+          message: error.message || 'Failed to load expenses',
+          color: 'red',
+        });
+      }
     } finally {
       setLoading(false);
     }

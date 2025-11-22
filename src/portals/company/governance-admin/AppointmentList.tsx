@@ -14,6 +14,9 @@ import {
   Paper,
   Divider,
   Alert,
+  Collapse,
+  List,
+  ThemeIcon,
 } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
 import { supabase } from '@/integrations/supabase/client';
@@ -26,6 +29,14 @@ import {
   IconCheck,
   IconX,
   IconClock,
+  IconChevronDown,
+  IconChevronUp,
+  IconBook,
+  IconUsers,
+  IconChecklist,
+  IconMail,
+  IconShield,
+  IconInfoCircle,
 } from '@tabler/icons-react';
 import { useNavigate } from 'react-router-dom';
 import dayjs from 'dayjs';
@@ -71,6 +82,10 @@ const AppointmentList: React.FC = () => {
   const [documentContent, setDocumentContent] = useState<string>('');
   const [loadingDocument, setLoadingDocument] = useState(false);
   const [fixingNathan, setFixingNathan] = useState(false);
+  const [mergingNathan, setMergingNathan] = useState(false);
+  const [updatingNathanStatus, setUpdatingNathanStatus] = useState(false);
+  const [sendingNathanEmail, setSendingNathanEmail] = useState(false);
+  const [instructionsOpened, setInstructionsOpened] = useState(false);
 
   useEffect(() => {
     fetchAppointments();
@@ -169,11 +184,32 @@ const AppointmentList: React.FC = () => {
       if (data) {
         const { appointments_found, successful, failed, results, errors } = data;
         
+        // Build detailed message
+        let message = `Processed ${appointments_found} appointment(s). ${successful || 0} successful, ${failed || 0} failed.`;
+        
+        // Add details about partial successes
+        const partialSuccesses = results?.filter((r: any) => r.partial_success) || [];
+        if (partialSuccesses.length > 0) {
+          message += ` ${partialSuccesses.length} partially successful (setup complete, workflow pending).`;
+        }
+        
+        // Add error details if any
+        const failedResults = results?.filter((r: any) => !r.success && !r.partial_success) || [];
+        if (failedResults.length > 0) {
+          const errorMessages = failedResults
+            .map((r: any) => {
+              const errorMsg = r.error || r.workflow_error || r.workflow_result?.error || 'Unknown error';
+              return `${r.appointment_name}: ${errorMsg}`;
+            })
+            .join('; ');
+          message += ` Errors: ${errorMessages}`;
+        }
+        
         notifications.show({
           title: 'Nathan Curry Appointments Fixed',
-          message: `Processed ${appointments_found} appointment(s). ${successful || 0} successful, ${failed || 0} failed.`,
+          message,
           color: (failed || 0) > 0 ? 'yellow' : 'green',
-          autoClose: 10000,
+          autoClose: 15000,
         });
 
         if (errors && errors.length > 0) {
@@ -184,11 +220,22 @@ const AppointmentList: React.FC = () => {
           console.log('Fix results:', results);
           // Log detailed results for debugging
           results.forEach((r: any) => {
-            if (!r.success) {
+            if (!r.success && !r.partial_success) {
               console.warn(`Appointment ${r.appointment_id} (${r.appointment_name}):`, {
+                error: r.error,
                 workflow_triggered: r.workflow_triggered,
-                workflow_error: r.workflow_result?.error,
-                backfill_error: r.backfill_result?.error,
+                workflow_error: r.workflow_error || r.workflow_result?.error,
+                user_created: r.user_created,
+                appointment_record_created: r.appointment_record_created,
+                resolution_created: r.resolution_created,
+              });
+            } else if (r.partial_success) {
+              console.info(`Appointment ${r.appointment_id} (${r.appointment_name}) - Partial success:`, {
+                workflow_triggered: r.workflow_triggered,
+                workflow_error: r.workflow_error,
+                user_created: r.user_created,
+                appointment_record_created: r.appointment_record_created,
+                resolution_created: r.resolution_created,
               });
             }
           });
@@ -209,6 +256,215 @@ const AppointmentList: React.FC = () => {
       });
     } finally {
       setFixingNathan(false);
+    }
+  };
+
+  const handleUpdateNathanStatus = async () => {
+    setUpdatingNathanStatus(true);
+    try {
+      // First check status
+      const { data: checkData, error: checkError } = await supabase.functions.invoke('governance-check-nathan-status', {
+        body: {},
+      });
+
+      if (checkError) throw checkError;
+
+      if (checkData?.appointments && checkData.appointments.length > 0) {
+        const nathanAppt = checkData.appointments[0];
+        const appointmentId = nathanAppt.appointment.id;
+        const currentStatus = nathanAppt.appointment.status;
+        const recommendedStatus = nathanAppt.recommended_status;
+
+        console.log('Nathan status check:', {
+          current: currentStatus,
+          recommended: recommendedStatus,
+          resolution: nathanAppt.resolution?.status,
+          documents: nathanAppt.documents,
+        });
+
+        // First, sync documents from appointment URLs to executive_documents table
+        if (nathanAppt.documents.total === 0) {
+          console.log('No documents found in executive_documents, syncing from appointment URLs...');
+          const { data: syncData, error: syncError } = await supabase.functions.invoke('governance-sync-appointment-documents', {
+            body: { appointment_id: appointmentId },
+          });
+
+          if (syncError) {
+            console.error('Error syncing documents:', syncError);
+            notifications.show({
+              title: 'Warning',
+              message: `Documents sync had issues: ${syncError.message}. Continuing with status update...`,
+              color: 'yellow',
+              autoClose: 5000,
+            });
+          } else {
+            notifications.show({
+              title: 'Documents Synced',
+              message: `Synced ${syncData?.documents_synced || 0} documents from appointment URLs`,
+              color: 'blue',
+              autoClose: 3000,
+            });
+          }
+        }
+
+        // Update status if needed
+        if (recommendedStatus !== currentStatus) {
+          const { data: updateData, error: updateError } = await supabase.functions.invoke('governance-update-appointment-status', {
+            body: { appointment_id: appointmentId },
+          });
+
+          if (updateError) throw updateError;
+
+          notifications.show({
+            title: 'Status Updated',
+            message: `Updated from ${currentStatus} to ${recommendedStatus}`,
+            color: 'green',
+            autoClose: 5000,
+          });
+
+          fetchAppointments();
+        } else {
+          notifications.show({
+            title: 'Status Check',
+            message: `Nathan's appointment is already at ${currentStatus}. Resolution: ${nathanAppt.resolution?.status || 'N/A'}, Documents: ${nathanAppt.documents.signed}/${nathanAppt.documents.total} signed`,
+            color: 'blue',
+            autoClose: 5000,
+          });
+        }
+      } else {
+        notifications.show({
+          title: 'Not Found',
+          message: 'No Nathan Curry appointments found',
+          color: 'yellow',
+        });
+      }
+    } catch (error: any) {
+      console.error('Error updating Nathan status:', error);
+      notifications.show({
+        title: 'Error',
+        message: error.message || 'Failed to update status',
+        color: 'red',
+      });
+    } finally {
+      setUpdatingNathanStatus(false);
+    }
+  };
+
+  const handleSendNathanEmail = async () => {
+    setSendingNathanEmail(true);
+    try {
+      // First check status and get appointment ID
+      const { data: checkData, error: checkError } = await supabase.functions.invoke('governance-check-nathan-status', {
+        body: {},
+      });
+
+      if (checkError) throw checkError;
+
+      if (checkData?.appointments && checkData.appointments.length > 0) {
+        const nathanAppt = checkData.appointments[0];
+        const appointmentId = nathanAppt.appointment.id;
+
+        // First ensure documents are synced
+        if (nathanAppt.documents.total === 0) {
+          console.log('No documents found, syncing first...');
+          const { data: syncData, error: syncError } = await supabase.functions.invoke('governance-sync-appointment-documents', {
+            body: { appointment_id: appointmentId },
+          });
+
+          if (syncError) {
+            throw new Error(`Failed to sync documents: ${syncError.message}`);
+          }
+
+          notifications.show({
+            title: 'Documents Synced',
+            message: `Synced ${syncData?.documents_synced || 0} documents before sending email`,
+            color: 'blue',
+            autoClose: 3000,
+          });
+        }
+
+        // Send email
+        const { data: emailData, error: emailError } = await supabase.functions.invoke('send-appointment-documents-email', {
+          body: { appointmentId },
+        });
+
+        if (emailError) throw emailError;
+
+        notifications.show({
+          title: 'Email Sent',
+          message: `Email sent to ${nathanAppt.appointment.email} with ${emailData?.documentsCount || 0} documents`,
+          color: 'green',
+          autoClose: 5000,
+        });
+
+        fetchAppointments();
+      } else {
+        notifications.show({
+          title: 'Not Found',
+          message: 'No Nathan Curry appointments found',
+          color: 'yellow',
+        });
+      }
+    } catch (error: any) {
+      console.error('Error sending email to Nathan:', error);
+      notifications.show({
+        title: 'Error',
+        message: error.message || 'Failed to send email',
+        color: 'red',
+      });
+    } finally {
+      setSendingNathanEmail(false);
+    }
+  };
+
+  const handleMergeNathanAppointments = async () => {
+    setMergingNathan(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('governance-merge-nathan-appointments', {
+        body: {},
+      });
+
+      if (error) throw error;
+
+      if (data) {
+        const { 
+          primary_appointment_id, 
+          primary_appointment_name,
+          documents_merged,
+          has_board_resolution,
+          merged_appointments,
+          merged_documents 
+        } = data;
+        
+        notifications.show({
+          title: 'Nathan Curry Appointments Merged',
+          message: `Merged ${merged_appointments} appointment(s) into primary. ${documents_merged} documents preserved. ${has_board_resolution ? 'Resolution included.' : 'No resolution found.'}`,
+          color: 'green',
+          autoClose: 10000,
+        });
+
+        console.log('Merge results:', {
+          primary_appointment_id,
+          primary_appointment_name,
+          documents_merged,
+          merged_documents,
+        });
+      }
+
+      // Refresh appointments list
+      fetchAppointments();
+      setTimeout(() => {
+        fetchAppointments();
+      }, 3000);
+    } catch (error: any) {
+      console.error('Error merging Nathan appointments:', error);
+      notifications.show({
+        title: 'Error',
+        message: error.message || 'Failed to merge Nathan Curry appointments',
+        color: 'red',
+      });
+    } finally {
+      setMergingNathan(false);
     }
   };
 
@@ -333,6 +589,247 @@ const AppointmentList: React.FC = () => {
               loading={fixingNathan}
             >
               Fix Nathan Curry Appointments
+            </Button>
+            <Button
+              variant="outline"
+              color="blue"
+              leftSection={<IconUsers size={16} />}
+              onClick={handleMergeNathanAppointments}
+              loading={mergingNathan}
+            >
+              Merge Nathan Curry Appointments
+            </Button>
+            <Button
+              variant="outline"
+              color="green"
+              leftSection={<IconChecklist size={16} />}
+              onClick={handleUpdateNathanStatus}
+              loading={updatingNathanStatus}
+            >
+              Update Nathan Status
+            </Button>
+            <Button
+              variant="outline"
+              color="violet"
+              leftSection={<IconMail size={16} />}
+              onClick={handleSendNathanEmail}
+              loading={sendingNathanEmail}
+            >
+              Send Email to Nathan
+            </Button>
+            <Button
+              leftSection={<IconPlus size={16} />}
+              onClick={() => navigate('/company/governance-admin/appointments/new')}
+            >
+              New Appointment
+            </Button>
+          </Group>
+        </Group>
+
+        {/* Instructions Section */}
+        <Card padding="md" radius="md" withBorder style={{ backgroundColor: '#f8f9fa' }}>
+          <Group justify="space-between" mb="xs">
+            <Group gap="xs">
+              <IconBook size={20} />
+              <Title order={3} size="h4">
+                Step-by-Step Appointment Instructions
+              </Title>
+            </Group>
+            <Button
+              variant="subtle"
+              size="xs"
+              leftSection={instructionsOpened ? <IconChevronUp size={16} /> : <IconChevronDown size={16} />}
+              onClick={() => setInstructionsOpened(!instructionsOpened)}
+            >
+              {instructionsOpened ? 'Hide' : 'Show'} Instructions
+            </Button>
+          </Group>
+          
+          <Collapse in={instructionsOpened}>
+            <Stack gap="lg" mt="md">
+              <Alert icon={<IconInfoCircle size={16} />} title="Overview" color="blue" variant="light">
+                Follow these steps to properly appoint executives and corporate officers with full documentation and board approval.
+              </Alert>
+
+              <div>
+                <Title order={4} size="h5" mb="sm">
+                  Step 1: Create New Appointment
+                </Title>
+                <List spacing="xs" size="sm" icon={
+                  <ThemeIcon color="blue" size={20} radius="xl">
+                    <IconFileText size={12} />
+                  </ThemeIcon>
+                }>
+                  <List.Item>Click the <Badge variant="light" size="sm">+ New Appointment</Badge> button above</List.Item>
+                  <List.Item>Fill out required fields: Officer Name, Email, Title, Effective Date, Appointment Type</List.Item>
+                  <List.Item>Enable <Badge variant="light" size="sm">Formation Mode</Badge> only if Articles of Incorporation are not yet filed</List.Item>
+                  <List.Item>Add optional details: Compensation, Equity, Department, Board Meeting Date</List.Item>
+                  <List.Item>Submit to create the appointment draft</List.Item>
+                </List>
+              </div>
+
+              <div>
+                <Title order={4} size="h5" mb="sm">
+                  Step 2: Document Generation
+                </Title>
+                <Text size="sm" c="dimmed" mb="xs">The system automatically generates:</Text>
+                <List spacing="xs" size="sm" icon={
+                  <ThemeIcon color="green" size={20} radius="xl">
+                    <IconCheck size={12} />
+                  </ThemeIcon>
+                }>
+                  <List.Item>Appointment Letter, Board Resolution, Officer Acceptance</List.Item>
+                  <List.Item>Employment Agreement, Confidentiality & IP Assignment</List.Item>
+                  <List.Item>Stock Subscription Agreement (if equity included)</List.Item>
+                  <List.Item>Pre-Incorporation Consent (if Formation Mode enabled)</List.Item>
+                </List>
+                <Alert icon={<IconClock size={14} />} title="Note" color="yellow" variant="light" mt="xs" size="sm">
+                  Document generation may take a few moments. Refresh to see updated status.
+                </Alert>
+              </div>
+
+              <div>
+                <Title order={4} size="h5" mb="sm">
+                  Step 3: Review Documents
+                </Title>
+                <List spacing="xs" size="sm" icon={
+                  <ThemeIcon color="orange" size={20} radius="xl">
+                    <IconChecklist size={12} />
+                  </ThemeIcon>
+                }>
+                  <List.Item>Check the <Badge variant="light" size="sm">Documents</Badge> column in the table</List.Item>
+                  <List.Item>Click the <Badge variant="light" size="sm" color="blue">eye icon</Badge> to view each document</List.Item>
+                  <List.Item>Verify all documents are present (7 standard, or 8 with Formation Mode)</List.Item>
+                  <List.Item>Use the <Badge variant="light" size="sm" color="orange">refresh icon</Badge> to regenerate if needed</List.Item>
+                </List>
+              </div>
+
+              <div>
+                <Title order={4} size="h5" mb="sm">
+                  Step 4: Board Approval
+                </Title>
+                <List spacing="xs" size="sm" icon={
+                  <ThemeIcon color="purple" size={20} radius="xl">
+                    <IconUsers size={12} />
+                  </ThemeIcon>
+                }>
+                  <List.Item>Navigate to <Badge variant="light" size="sm">Resolutions</Badge> tab to find the created resolution</List.Item>
+                  <List.Item>Board members vote via the <Badge variant="light" size="sm">Voting Dashboard</Badge> tab</List.Item>
+                  <List.Item>Status changes to <Badge color="green" size="sm">BOARD_ADOPTED</Badge> after approval</List.Item>
+                </List>
+              </div>
+
+              <div>
+                <Title order={4} size="h5" mb="sm">
+                  Step 5: Secretary Review
+                </Title>
+                <List spacing="xs" size="sm" icon={
+                  <ThemeIcon color="teal" size={20} radius="xl">
+                    <IconShield size={12} />
+                  </ThemeIcon>
+                }>
+                  <List.Item>Go to <Badge variant="light" size="sm">Officer Validation</Badge> tab</List.Item>
+                  <List.Item>Review appointment with status <Badge color="yellow" size="sm">READY_FOR_SECRETARY_REVIEW</Badge></List.Item>
+                  <List.Item>Approve to finalize - status becomes <Badge color="green" size="sm">SECRETARY_APPROVED</Badge></List.Item>
+                </List>
+              </div>
+
+              <div>
+                <Title order={4} size="h5" mb="sm">
+                  Step 6: Activation
+                </Title>
+                <List spacing="xs" size="sm" icon={
+                  <ThemeIcon color="green" size={20} radius="xl">
+                    <IconMail size={12} />
+                  </ThemeIcon>
+                }>
+                  <List.Item>System automatically creates user account and assigns roles</List.Item>
+                  <List.Item>Email notification sent with appointment documents</List.Item>
+                  <List.Item>Status changes to <Badge color="green" size="sm">ACTIVE</Badge> when complete</List.Item>
+                  <List.Item>Appointee can access executive portal and sign documents</List.Item>
+                </List>
+              </div>
+
+              <Divider />
+
+              <div>
+                <Title order={4} size="h5" mb="sm">
+                  Status Flow
+                </Title>
+                <Group gap="xs" wrap="wrap">
+                  <Badge color="gray" size="sm">DRAFT</Badge>
+                  <Text size="xs" c="dimmed">→</Text>
+                  <Badge color="blue" size="sm">SENT_TO_BOARD</Badge>
+                  <Text size="xs" c="dimmed">→</Text>
+                  <Badge color="cyan" size="sm">BOARD_ADOPTED</Badge>
+                  <Text size="xs" c="dimmed">→</Text>
+                  <Badge color="orange" size="sm">AWAITING_SIGNATURES</Badge>
+                  <Text size="xs" c="dimmed">→</Text>
+                  <Badge color="yellow" size="sm">READY_FOR_SECRETARY_REVIEW</Badge>
+                  <Text size="xs" c="dimmed">→</Text>
+                  <Badge color="lime" size="sm">SECRETARY_APPROVED</Badge>
+                  <Text size="xs" c="dimmed">→</Text>
+                  <Badge color="indigo" size="sm">ACTIVATING</Badge>
+                  <Text size="xs" c="dimmed">→</Text>
+                  <Badge color="green" size="sm">ACTIVE</Badge>
+                </Group>
+              </div>
+
+              <Alert icon={<IconAlertCircle size={14} />} title="Troubleshooting" color="yellow" variant="light" size="sm">
+                <Text size="xs" mb="xs"><strong>Documents not generating?</strong> Click the refresh icon on the appointment row to retry.</Text>
+                <Text size="xs" mb="xs"><strong>Stuck in DRAFT?</strong> Use the "Fix Nathan Curry Appointments" button (or similar) to trigger workflow manually.</Text>
+                <Text size="xs"><strong>User account issues?</strong> Ensure email is valid and unique. Account is created automatically during activation.</Text>
+              </Alert>
+            </Stack>
+          </Collapse>
+        </Card>
+
+        <Group justify="space-between">
+          <div></div>
+          <Group>
+            <Button
+              variant="subtle"
+              leftSection={<IconRefresh size={16} />}
+              onClick={fetchAppointments}
+              loading={loading}
+            >
+              Refresh
+            </Button>
+            <Button
+              variant="outline"
+              color="orange"
+              leftSection={<IconRefresh size={16} />}
+              onClick={handleFixNathanAppointments}
+              loading={fixingNathan}
+            >
+              Fix Nathan Curry Appointments
+            </Button>
+            <Button
+              variant="outline"
+              color="blue"
+              leftSection={<IconUsers size={16} />}
+              onClick={handleMergeNathanAppointments}
+              loading={mergingNathan}
+            >
+              Merge Nathan Curry Appointments
+            </Button>
+            <Button
+              variant="outline"
+              color="green"
+              leftSection={<IconChecklist size={16} />}
+              onClick={handleUpdateNathanStatus}
+              loading={updatingNathanStatus}
+            >
+              Update Nathan Status
+            </Button>
+            <Button
+              variant="outline"
+              color="violet"
+              leftSection={<IconMail size={16} />}
+              onClick={handleSendNathanEmail}
+              loading={sendingNathanEmail}
+            >
+              Send Email to Nathan
             </Button>
             <Button
               leftSection={<IconPlus size={16} />}

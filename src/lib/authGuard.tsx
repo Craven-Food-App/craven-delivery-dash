@@ -4,6 +4,7 @@ import { Container, Stack, Title, Text, Button, Card } from '@mantine/core';
 import { IconLock } from '@tabler/icons-react';
 import { supabase } from '@/integrations/supabase/client';
 import { fetchUserRoles, hasAnyRole } from './roles';
+import { hasFullAccess } from '@/utils/torranceAccess';
 
 interface CompanySecureRouteProps {
   children: React.ReactNode;
@@ -31,8 +32,8 @@ export const CompanySecureRoute: React.FC<CompanySecureRouteProps> = ({
           return;
         }
 
-        // SPECIAL CASE: tstroman.ceo@cravenusa.com (Torrance Stroman CEO account) always has access to company portal
-        if (user.email === 'tstroman.ceo@cravenusa.com') {
+        // TORRANCE STROMAN: FULL ACCESS TO EVERYTHING
+        if (hasFullAccess(user.email)) {
           setIsAuthorized(true);
           setLoading(false);
           return;

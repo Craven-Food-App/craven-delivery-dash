@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Container, Title, Text, Stack, Tabs, Card } from '@mantine/core';
-import { IconShield, IconUsers, IconFileText, IconUserCheck, IconHistory, IconChecklist, IconTags, IconKey, IconCheckbox, IconPlus, IconChartPie, IconCoins, IconCertificate } from '@tabler/icons-react';
+import { IconShield, IconUsers, IconFileText, IconUserCheck, IconHistory, IconChecklist, IconTags, IconKey, IconCheckbox, IconPlus, IconChartPie, IconCoins, IconCertificate, IconUserPlus } from '@tabler/icons-react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import AppointmentList from './AppointmentList';
 import ResolutionList from './ResolutionList';
@@ -15,6 +15,7 @@ import CapTableOverview from './CapTableOverview';
 import EquityGrantForm from './EquityGrantForm';
 import ShareCertificateViewer from './ShareCertificateViewer';
 import { BoardSetupModule } from '@/components/board/BoardSetupModule';
+import UserAccountManager from '@/components/admin/UserAccountManager';
 
 const GovernanceAdminDashboard: React.FC = () => {
   const navigate = useNavigate();
@@ -97,6 +98,9 @@ const GovernanceAdminDashboard: React.FC = () => {
               <Tabs.Tab value="roles" leftSection={<IconKey size={16} />}>
                 Role Management
               </Tabs.Tab>
+              <Tabs.Tab value="user-accounts" leftSection={<IconUserPlus size={16} />}>
+                Executive Accounts
+              </Tabs.Tab>
               <Tabs.Tab value="board-setup" leftSection={<IconUsers size={16} />}>
                 Board Setup
               </Tabs.Tab>
@@ -148,6 +152,10 @@ const GovernanceAdminDashboard: React.FC = () => {
 
             <Tabs.Panel value="roles" pt="md">
               <RoleManagement />
+            </Tabs.Panel>
+
+            <Tabs.Panel value="user-accounts" pt="md">
+              <UserAccountManager />
             </Tabs.Panel>
 
             <Tabs.Panel value="board-setup" pt="md">

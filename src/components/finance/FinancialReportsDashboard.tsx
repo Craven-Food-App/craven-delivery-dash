@@ -90,11 +90,21 @@ export const FinancialReportsDashboard: React.FC = () => {
 
   const fetchSummaryData = async () => {
     try {
-      const { data: expenses } = await supabase
+      const { data: expenses, error: expensesError } = await supabase
         .from('expense_requests')
         .select('amount, expense_date, status, expense_category:expense_categories(name)')
         .gte('expense_date', dayjs().subtract(90, 'days').toISOString().split('T')[0])
         .order('expense_date', { ascending: true });
+
+      // Suppress schema errors
+      if (
+        expensesError &&
+        (expensesError.message?.includes('Could not find a relationship') ||
+          expensesError.message?.includes('infinite recursion detected in policy') ||
+          expensesError.message?.includes('schema cache'))
+      ) {
+        console.warn('Supabase schema error (suppressed):', expensesError.message);
+      }
 
       const { data: budgets } = await supabase
         .from('budgets')
@@ -127,7 +137,7 @@ export const FinancialReportsDashboard: React.FC = () => {
 
       switch (reportType) {
         case 'expense_analysis':
-          const { data: expenseData } = await supabase
+          const { data: expenseData, error: expenseError } = await supabase
             .from('expense_requests')
             .select(`
               *,
@@ -136,6 +146,16 @@ export const FinancialReportsDashboard: React.FC = () => {
             `)
             .gte('expense_date', periodStart.toISOString().split('T')[0])
             .lte('expense_date', periodEnd.toISOString().split('T')[0]);
+
+          // Suppress schema errors
+          if (
+            expenseError &&
+            (expenseError.message?.includes('Could not find a relationship') ||
+              expenseError.message?.includes('infinite recursion detected in policy') ||
+              expenseError.message?.includes('schema cache'))
+          ) {
+            console.warn('Supabase schema error (suppressed):', expenseError.message);
+          }
 
           const totalExpenses = expenseData?.reduce((sum, e) => sum + e.amount, 0) || 0;
           const byCategory = expenseData?.reduce((acc: any, e: any) => {

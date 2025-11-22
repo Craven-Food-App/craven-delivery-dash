@@ -956,36 +956,46 @@ export default function GenerateOfficerDocuments() {
         return;
       }
 
-      const existingStatuses = documentStatusMap[exec.id] || [];
+      let existingStatuses = documentStatusMap[exec.id] || [];
       const docIdMap = new Map<string, string>();
-      existingStatuses.forEach((status) => {
-        if (status.exists && status.documentId) {
-          docIdMap.set(status.node.type, status.documentId);
-        }
-      });
-
+      
       if (options?.forceRegenerate) {
+        // Purge documents first
         try {
           await docsAPI.post('/documents/purge', { executive_id: exec.id });
         } catch (purgeError: any) {
           console.warn(`Purge via edge function failed for ${exec.full_name}:`, purgeError);
           await supabase.from('executive_documents').delete().eq('executive_id', exec.id);
         }
+        // Clear existing statuses since we just purged everything
+        existingStatuses = [];
         docIdMap.clear();
+      } else {
+        // Only populate docIdMap if not regenerating
+        existingStatuses.forEach((status) => {
+          if (status.exists && status.documentId) {
+            docIdMap.set(status.node.type, status.documentId);
+          }
+        });
       }
 
       const docsForEmail: Array<{ title: string; url: string }> = [];
       const execResults = { success: 0, failed: 0, errors: [] as string[] };
       let processed = 0;
 
+      console.log(`Starting document generation for ${exec.full_name}. Expected ${expectedNodes.length} documents.`);
+      
       for (const node of expectedNodes) {
         processed += 1;
         if (!isPartOfBatch) {
           setProgress(Math.round((processed / expectedNodes.length) * 100));
         }
 
+        console.log(`[${processed}/${expectedNodes.length}] Processing ${node.title} (${node.type}) for ${exec.full_name}`);
+
         const existingStatus = existingStatuses.find((status) => status.node.type === node.type);
         if (existingStatus?.exists && existingStatus.fileUrl && !options?.forceRegenerate) {
+          console.log(`  → Skipping ${node.title} - already exists`);
           docsForEmail.push({ title: node.title, url: existingStatus.fileUrl });
           continue;
         }
@@ -993,13 +1003,18 @@ export default function GenerateOfficerDocuments() {
         const validationIssues = validateExecutive(exec, node.type);
         if (validationIssues.length > 0) {
           const issueMessage = `${node.title}: ${validationIssues.join(', ')}`;
-          console.warn(`Validation failed for ${exec.full_name}:`, issueMessage);
+          console.warn(`  ✗ Validation failed for ${node.title}:`, validationIssues);
           execResults.failed += 1;
           execResults.errors.push(issueMessage);
           continue;
         }
 
         const dependsOnId = node.dependsOn ? docIdMap.get(node.dependsOn) || null : null;
+        if (node.dependsOn && !dependsOnId) {
+          console.warn(`  ⚠ ${node.title} depends on ${node.dependsOn} but dependency not found. This may cause issues.`);
+        } else if (node.dependsOn) {
+          console.log(`  → ${node.title} depends on ${node.dependsOn} (ID: ${dependsOnId})`);
+        }
 
         try {
           const data = await generateDocumentData(exec, node.type);
@@ -1025,20 +1040,31 @@ export default function GenerateOfficerDocuments() {
             document_title: node.title,
           });
 
-          if (response?.ok && response?.document) {
-            const fileUrl = response.file_url;
+          // docsAPI returns the result directly from supabase.functions.invoke, not a fetch Response
+          if (response?.error) {
+            const errorMsg = response.error || 'Unknown error';
+            console.error(`✗ Failed to generate ${node.title} for ${exec.full_name}:`, errorMsg, response);
+            throw new Error(errorMsg);
+          }
+
+          if (response?.document?.id) {
+            const fileUrl = response.file_url || response.document?.file_url;
             if (fileUrl) {
               docsForEmail.push({ title: node.title, url: fileUrl });
             }
             docIdMap.set(node.type, response.document.id);
             execResults.success += 1;
+            console.log(`✓ Successfully generated ${node.title} for ${exec.full_name} (ID: ${response.document.id})`);
           } else {
-            throw new Error(response?.error || 'Unknown error');
+            const errorMsg = response?.error || 'Response missing document data';
+            console.error(`✗ Invalid response for ${node.title}:`, response);
+            throw new Error(errorMsg);
           }
         } catch (error: any) {
-          console.error(`Error generating ${node.title} for ${exec.full_name}:`, error);
+          console.error(`✗ Error generating ${node.title} for ${exec.full_name}:`, error);
           execResults.failed += 1;
           execResults.errors.push(`${node.title}: ${error.message || error}`);
+          // Continue to next document instead of stopping
         }
       }
 
@@ -1078,15 +1104,26 @@ export default function GenerateOfficerDocuments() {
         console.warn(`No email address for ${exec.full_name}; skipping email send.`);
       }
 
+      console.log(`\n=== Summary for ${exec.full_name} ===`);
+      console.log(`Successfully generated: ${execResults.success} document(s)`);
+      console.log(`Failed: ${execResults.failed} document(s)`);
+      if (execResults.errors.length > 0) {
+        console.log(`Errors:`, execResults.errors);
+      }
+      console.log(`Total expected: ${expectedNodes.length} document(s)`);
+      console.log(`===============================\n`);
+
       if (execResults.failed > 0) {
         const detail = execResults.errors.join(' • ') || 'Unknown error';
         message.warning(
-          `${exec.full_name}: ${execResults.success} successful, ${execResults.failed} failed. ${detail}`,
-          8
+          `${exec.full_name}: Generated ${execResults.success} of ${expectedNodes.length} documents. ${execResults.failed} failed. ${detail}`,
+          10
         );
         console.warn(`Document generation/email failures for ${exec.full_name}:`, execResults.errors);
+      } else if (execResults.success > 0) {
+        message.success(`Generated ${execResults.success} document(s) for ${exec.full_name}. Please refresh to see them.`);
       } else {
-        message.success(`Sent executive packet to ${exec.full_name}`);
+        message.warning(`${exec.full_name}: No documents were generated. Check console for details.`);
       }
 
       await checkExistingDocuments(executives);

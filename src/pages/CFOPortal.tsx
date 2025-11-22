@@ -1,43 +1,71 @@
 // @ts-nocheck
 import React, { useEffect, useState, useRef, useCallback, useMemo } from "react";
-import { Typography, Row, Col, Statistic, Table, DatePicker, Space, Button, Divider, Alert, Modal, InputNumber, Form, message, Select, Input, Tooltip, Popover, Slider, Checkbox, Tag } from "antd";
 import {
-  DollarOutlined,
-  BarChartOutlined,
-  BankOutlined,
-  FundOutlined,
-  FileSearchOutlined,
-  CheckCircleOutlined,
-  ArrowLeftOutlined,
-  TeamOutlined,
-  FileTextOutlined,
-  AccountBookOutlined,
-  CheckCircleTwoTone,
-  LineChartOutlined,
-  CalculatorOutlined,
-  CheckSquareOutlined,
-  WalletOutlined,
-  EditOutlined,
-  FileOutlined,
-  SaveOutlined,
-  DeleteOutlined,
-  PlusOutlined,
-  PrinterOutlined,
-  ShareAltOutlined,
-  BoldOutlined,
-  ItalicOutlined,
-  UnderlineOutlined,
-  StrikethroughOutlined,
-  AlignLeftOutlined,
-  AlignCenterOutlined,
-  AlignRightOutlined,
-  UnorderedListOutlined,
-  OrderedListOutlined,
-  BgColorsOutlined,
-  FontSizeOutlined,
-  InfoCircleOutlined,
-  MailOutlined,
-} from "@ant-design/icons";
+  Grid,
+  Group,
+  Stack,
+  Button,
+  Text,
+  Title,
+  Card,
+  Paper,
+  Badge,
+  Alert,
+  Divider,
+  Modal,
+  TextInput,
+  NumberInput,
+  Select,
+  Checkbox,
+  Slider,
+  Tooltip,
+  Popover,
+  Loader,
+  Box,
+  Table,
+  ActionIcon,
+  Textarea,
+  ScrollArea,
+} from '@mantine/core';
+import { DatePickerInput } from '@mantine/dates';
+import { modals } from '@mantine/modals';
+import {
+  IconCurrencyDollar,
+  IconChartBar,
+  IconBuildingBank,
+  IconTrendingUp,
+  IconFileSearch,
+  IconCheck,
+  IconArrowLeft,
+  IconUsers,
+  IconFileText,
+  IconBook,
+  IconCircleCheck,
+  IconChartLine,
+  IconCalculator,
+  IconSquareCheck,
+  IconWallet,
+  IconFile,
+  IconDeviceFloppy,
+  IconTrash,
+  IconPlus,
+  IconPrinter,
+  IconShare,
+  IconBold,
+  IconItalic,
+  IconUnderline,
+  IconStrikethrough,
+  IconAlignLeft,
+  IconAlignCenter,
+  IconAlignRight,
+  IconList,
+  IconListNumbers,
+  IconPalette,
+  IconTypography,
+  IconInfoCircle,
+  IconMail,
+} from '@tabler/icons-react';
+import { useForm } from '@mantine/form';
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
@@ -63,42 +91,38 @@ import BusinessEmailSystem from '@/components/executive/BusinessEmailSystem';
 import ExecutivePortalLayout, { ExecutiveNavItem } from '@/components/executive/ExecutivePortalLayout';
 import ExecutiveWordProcessor from '@/components/executive/ExecutiveWordProcessor';
 import { FinancePortal } from '@/components/finance/FinancePortal';
-
-const { RangePicker } = DatePicker;
+import { MantineTable } from '@/components/cfo/MantineTable';
+import { EnhancedCFODashboard } from '@/components/cfo/EnhancedCFODashboard';
+import { AdvancedTreasuryManagement } from '@/components/cfo/AdvancedTreasuryManagement';
+import { EnhancedFPandA } from '@/components/cfo/EnhancedFPandA';
+import { CFOPortalInstructionManual } from '@/components/cfo/CFOPortalInstructionManual';
+import { EmbeddedToastProvider } from '@/components/cfo/EmbeddedToast';
+import { useToast } from '@/hooks/useEmbeddedToast';
 
 // Reusable InfoIcon component with Popover
 function InfoIcon({ content, title }: { content: string; title?: string }) {
-  const [open, setOpen] = useState(false);
-  
-  const popoverContent = (
-    <div style={{ maxWidth: '300px' }}>
-      {title && <div style={{ fontWeight: 'bold', marginBottom: '8px' }}>{title}</div>}
-      <div style={{ fontSize: '13px', lineHeight: '1.5' }}>{content}</div>
-    </div>
-  );
-
   return (
-    <Popover
-      content={popoverContent}
-      title={title || "Information"}
-      trigger="click"
-      open={open}
-      onOpenChange={setOpen}
-    >
-      <InfoCircleOutlined
-        style={{
-          fontSize: '14px',
-          color: '#1890ff',
-          cursor: 'pointer',
-          position: 'absolute',
-          top: '8px',
-          right: '8px',
-        }}
-        onClick={(e) => {
-          e.stopPropagation();
-          setOpen(!open);
-        }}
-      />
+    <Popover width={300} withArrow>
+      <Popover.Target>
+        <ActionIcon
+          variant="subtle"
+          color="blue"
+          style={{
+            position: 'absolute',
+            top: '8px',
+            right: '8px',
+            zIndex: 10,
+          }}
+        >
+          <IconInfoCircle size={16} />
+        </ActionIcon>
+      </Popover.Target>
+      <Popover.Dropdown>
+        <Stack gap="xs">
+          {title && <Text fw={600}>{title}</Text>}
+          <Text size="sm">{content}</Text>
+        </Stack>
+      </Popover.Dropdown>
     </Popover>
   );
 }
@@ -166,18 +190,15 @@ interface KpiData {
 }
 
 const SectionCard: React.FC<{ children: React.ReactNode; style?: React.CSSProperties }> = ({ children, style }) => (
-  <div
-    style={{
-      background: '#ffffff',
-      borderRadius: 12,
-      border: '1px solid #e2e8f0',
-      boxShadow: '0 1px 2px rgba(15, 23, 42, 0.08)',
-      padding: 24,
-      ...style,
-    }}
+  <Card
+    shadow="sm"
+    padding="lg"
+    radius="md"
+    withBorder
+    style={style}
   >
     {children}
-  </div>
+  </Card>
 );
 
 const MetricCard: React.FC<KpiData> = ({ title, value, change, changeUnit, icon: Icon, color }) => {
@@ -624,9 +645,9 @@ function CFODashboard() {
   );
 }
 
-export default function CFOPortal() {
+function CFOPortalContent() {
   const [loading, setLoading] = useState(false);
-  const [range, setRange] = useState<any>([]);
+  const [range, setRange] = useState<[Date | null, Date | null]>([null, null]);
   const [payouts, setPayouts] = useState<any[]>([]);
   const [transactions, setTransactions] = useState<any[]>([]);
   const navigate = useNavigate();
@@ -634,6 +655,7 @@ export default function CFOPortal() {
   const [isMobile, setIsMobile] = useState(false);
   const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
   const [isChatCollapsed, setIsChatCollapsed] = useState(true);
+  const toast = useToast();
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -687,21 +709,23 @@ export default function CFOPortal() {
   }, [fetchData]);
 
   const navItems = useMemo<ExecutiveNavItem[]>(() => [
-    { id: 'overview', label: 'Command Dashboard', icon: BarChart3 },
+    { id: 'overview', label: 'CFO Command Center', icon: BarChart3 },
     { id: 'finance', label: 'Finance Department', icon: DollarSign },
+    { id: 'fpa', label: 'FP&A & Forecasting', icon: Rocket },
+    { id: 'treasury', label: 'Advanced Treasury', icon: DollarSign },
     { id: 'transactions', label: `Review Transactions (${transactions.length})`, icon: FileText },
     { id: 'payouts', label: `Process Payouts (${payouts.length})`, icon: DollarSign },
     { id: 'manager', label: 'Manage Team', icon: Users },
     { id: 'ap', label: 'Run Payables', icon: FileText },
     { id: 'ar', label: 'Collect Receivables', icon: FileText },
     { id: 'approvals', label: 'Approve Spend', icon: ShieldAlert },
-    { id: 'forecast', label: 'Model Forecast', icon: Rocket },
+    { id: 'forecast', label: 'Cash Flow Forecast', icon: Rocket },
     { id: 'bva', label: 'Track Budget vs Actuals', icon: Lightbulb },
     { id: 'close', label: 'Close Checklist', icon: FileText },
-    { id: 'treasury', label: 'Manage Treasury', icon: DollarSign },
     { id: 'communications', label: 'Executive Communications', icon: Mail },
     { id: 'messages', label: 'Message Center', icon: Mail },
     { id: 'wordprocessor', label: 'Draft Documents', icon: FileText },
+    { id: 'manual', label: 'Instruction Manual', icon: FileText },
   ], [transactions.length, payouts.length]);
 
   const openPortal = (path: string, subdomain?: string) => {
@@ -724,44 +748,23 @@ export default function CFOPortal() {
     }
   };
 
-  const actionButtons = (
-    <Space wrap size={isMobile ? 4 : 8}>
-      <RangePicker onChange={setRange} size={isMobile ? 'small' : 'middle'} />
-      <Button onClick={fetchData} size={isMobile ? 'small' : 'middle'}>
-        Refresh
-      </Button>
-      <Button onClick={() => openPortal('/board', 'board')} size={isMobile ? 'small' : 'middle'}>
-        Board Portal
-      </Button>
-      <Button onClick={() => openPortal('/admin', 'admin')} size={isMobile ? 'small' : 'middle'}>
-        Admin Portal
-      </Button>
-      <Button onClick={() => openPortal('/ceo', 'ceo')} size={isMobile ? 'small' : 'middle'}>
-        CEO Command Center
-      </Button>
-      <Button
-        type="primary"
-        icon={<EditOutlined />}
-        onClick={() => setActiveSection('wordprocessor')}
-        size={isMobile ? 'small' : 'middle'}
-      >
-        Word Processor
-      </Button>
-    </Space>
-  );
 
   const renderContent = () => {
     switch (activeSection) {
       case 'overview':
-        return <CFODashboard />;
+        return <EnhancedCFODashboard />;
       case 'finance':
         return <FinancePortal />;
+      case 'fpa':
+        return <EnhancedFPandA />;
+      case 'treasury':
+        return <AdvancedTreasuryManagement />;
       case 'transactions':
         return (
-          <div className="overflow-hidden">
-            <Table
+          <Box style={{ overflow: 'hidden' }}>
+            <MantineTable
+              data={transactions}
               loading={loading}
-              dataSource={transactions}
               rowKey={(r: any) => r.id || r.created_at}
               size={isMobile ? 'small' : 'default'}
               scroll={{ x: isMobile ? 600 : 'auto' }}
@@ -771,14 +774,14 @@ export default function CFOPortal() {
                 { title: 'Amount', dataIndex: 'total_amount', render: (v: number) => `$${(v || 0).toLocaleString()}` },
               ]}
             />
-          </div>
+          </Box>
         );
       case 'payouts':
         return (
-          <div className="overflow-hidden">
-            <Table
+          <Box style={{ overflow: 'hidden' }}>
+            <MantineTable
+              data={payouts}
               loading={loading}
-              dataSource={payouts}
               rowKey={(r: any) => r.id}
               size={isMobile ? 'small' : 'default'}
               scroll={{ x: isMobile ? 600 : 'auto' }}
@@ -790,7 +793,7 @@ export default function CFOPortal() {
                 { title: 'Created', dataIndex: 'created_at', render: (v: string) => new Date(v).toLocaleString() },
               ]}
             />
-          </div>
+          </Box>
         );
       case 'manager':
         return <ManagerConsole />;
@@ -806,14 +809,14 @@ export default function CFOPortal() {
         return <BudgetVsActuals />;
       case 'close':
         return <CloseManagement />;
-      case 'treasury':
-        return <TreasuryView />;
       case 'communications':
         return <BusinessEmailSystem />;
       case 'wordprocessor':
         return <ExecutiveWordProcessor storageKey="cfo" supabaseTable="cfo_documents" />;
+      case 'manual':
+        return <CFOPortalInstructionManual />;
       default:
-        return <CFODashboard />;
+        return <EnhancedCFODashboard />;
     }
   };
 
@@ -829,7 +832,6 @@ export default function CFOPortal() {
       onSelect={setActiveSection}
       onBack={() => navigate('/hub')}
       onSignOut={handleSignOut}
-      actionButtons={actionButtons}
       userInfo={{
         initials: 'CF',
         name: 'Chief Financial Officer',
@@ -837,45 +839,33 @@ export default function CFOPortal() {
       }}
     >
       <div className="space-y-6">
-        <SectionCard style={{ background: '#ecfdf5', borderColor: '#bbf7d0', padding: 16 }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12, color: '#065f46', fontSize: 14 }}>
-            <span style={{ display: 'flex', alignItems: 'center', gap: 8, fontWeight: 600 }}>
-              <CheckCircleOutlined style={{ color: '#059669' }} /> Finance systems operational
-            </span>
-            <span style={{ fontSize: 12, color: '#047857' }}>
+        <Alert color="green" style={{ padding: 16 }}>
+          <Group justify="space-between" wrap="wrap" gap={12}>
+            <Group gap={8}>
+              <IconCircleCheck size={16} color="#059669" />
+              <Text size="sm" fw={600} c="green.7">Finance systems operational</Text>
+            </Group>
+            <Text size="xs" c="green.6">
               Last updated: {lastUpdated.toLocaleTimeString()}
-            </span>
-          </div>
-        </SectionCard>
+            </Text>
+          </Group>
+        </Alert>
 
         <SectionCard style={{ padding: 20 }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: isChatCollapsed ? 0 : 16 }}>
-            <h3 style={{ color: '#0f172a', fontSize: 18, fontWeight: 600, margin: 0 }}>Executive Chat</h3>
+          <Group justify="space-between" mb={isChatCollapsed ? 0 : 16}>
+            <Title order={4} style={{ margin: 0 }}>Executive Chat</Title>
             <Button
-              size="small"
-              type="default"
+              size="sm"
+              variant="default"
               onClick={() => setIsChatCollapsed((prev) => !prev)}
             >
               {isChatCollapsed ? 'Expand' : 'Collapse'}
             </Button>
-          </div>
+          </Group>
           {!isChatCollapsed && (
             <ExecutiveInboxIMessage role="cfo" deviceId={`cfo-portal-${window.location.hostname}`} />
           )}
         </SectionCard>
-
-        <div style={{ display:'grid', gridTemplateColumns: isMobile ? 'repeat(1, minmax(0,1fr))' : 'repeat(4, minmax(0,1fr))', gap:12 }}>
-          <BigNavButton color="#2563eb" hover="#1d4ed8" title="Manager Console" subtitle="Assign roles & track KPIs" onClick={()=> setActiveSection('manager')} infoContent="Access team management tools, view team KPIs, assign roles, and manage team performance metrics." />
-          <BigNavButton color="#16a34a" hover="#15803d" title="Accounts Payable" subtitle="Approve invoices & run payments" onClick={()=> setActiveSection('ap')} infoContent="Manage vendor invoices, create payment runs, approve expenses, and track accounts payable aging." />
-          <BigNavButton color="#f97316" hover="#ea580c" title="Accounts Receivable" subtitle="Collect cash faster" onClick={()=> setActiveSection('ar')} infoContent="View customer invoices, track receivables aging, manage collections, and monitor payment status." />
-          <BigNavButton color="#dc2626" hover="#b91c1c" title="Approvals" subtitle="Sign off on spend" onClick={()=> setActiveSection('approvals')} infoContent="Review and approve pending financial transactions, expense requests, and spending authorizations." />
-        </div>
-        <div style={{ display:'grid', gridTemplateColumns: isMobile ? 'repeat(1, minmax(0,1fr))' : 'repeat(4, minmax(0,1fr))', gap:12 }}>
-          <BigNavButton color="#0ea5e9" hover="#0284c7" title="Forecast" subtitle="Adjust cash levers" onClick={()=> setActiveSection('forecast')} infoContent="View cash flow projections, financial forecasts, and predictive analytics for future planning." />
-          <BigNavButton color="#7c3aed" hover="#6d28d9" title="Budget vs Actuals" subtitle="Investigate variances" onClick={()=> setActiveSection('bva')} infoContent="Compare budgeted amounts against actual expenses and revenue to identify variances and trends." />
-          <BigNavButton color="#9333ea" hover="#7e22ce" title="Close" subtitle="Complete monthly close" onClick={()=> setActiveSection('close')} infoContent="Monthly and quarterly closing checklist, journal entries, reconciliations, and closing procedures." />
-          <BigNavButton color="#0891b2" hover="#0e7490" title="Treasury" subtitle="Update bank positions" onClick={()=> setActiveSection('treasury')} infoContent="Monitor bank account balances, cash positions, and treasury management operations." />
-        </div>
 
         {shouldWrapContent ? (
           <SectionCard style={{ padding: isMobile ? 16 : 24, overflow: 'hidden' }}>
@@ -894,7 +884,17 @@ function ManagerConsole() {
   const [roles, setRoles] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [roleModal, setRoleModal] = useState(false);
-  const [form] = Form.useForm();
+  const form = useForm({
+    initialValues: {
+      user_label: '',
+      user_id: '',
+      role: '',
+    },
+    validate: {
+      user_label: (value) => (!value ? 'User label is required' : null),
+      role: (value) => (!value ? 'Role is required' : null),
+    },
+  });
   const [isMobile, setIsMobile] = useState(false);
   const refreshRoles = useCallback(async () => {
     const { data } = await supabase.from('finance_roles').select('user_id, role, user_label');
@@ -902,28 +902,29 @@ function ManagerConsole() {
   }, []);
 
   const handleRemoveRole = useCallback((record: any) => {
-    Modal.confirm({
+    modals.openConfirmModal({
       title: `Remove ${record.role} role`,
-      content: `Remove ${record.user_label || 'this user'} from ${record.role}?`,
-      okButtonProps: { danger: true },
-      onOk: async () => {
+      children: <Text>Remove {record.user_label || 'this user'} from {record.role}?</Text>,
+      labels: { confirm: 'Remove', cancel: 'Cancel' },
+      confirmProps: { color: 'red' },
+      onConfirm: async () => {
         setLoading(true);
         try {
           const base = supabase.from('finance_roles').delete().eq('role', record.role);
           const query = record.user_id ? base.eq('user_id', record.user_id) : base.is('user_id', null);
           const { error } = await query;
           if (error) throw error;
-          message.success('Role removed');
+          toast.success('Role removed', 'Success');
           await refreshRoles();
         } catch (err) {
           console.error('Error removing role', err);
-          message.error('Failed to remove role');
+          toast.error('Failed to remove role', 'Error');
         } finally {
           setLoading(false);
         }
       },
     });
-  }, [refreshRoles, setLoading]);
+  }, [refreshRoles]);
 
   useEffect(() => {
     (async () => {
@@ -959,105 +960,143 @@ function ManagerConsole() {
     <div style={{ position: 'relative' }}>
       <InfoIcon content="The Manager Console provides an overview of team KPIs, workload distribution, and financial metrics. Use this to monitor AP/AR status, assign team roles, and track team performance." title="Manager Console" />
       {(metrics.apOverdue > 0 || metrics.arPastDue > 0 || metrics.closeOpen > 5) && (
-        <Alert
-          type="warning"
-          showIcon
-          style={{ marginBottom: 12 }}
-          message={
-            <div>
-              {metrics.apOverdue > 0 && <div>AP overdue invoices: <strong>{metrics.apOverdue}</strong></div>}
-              {metrics.arPastDue > 0 && <div>AR past due: <strong>$ {metrics.arPastDue.toLocaleString()}</strong></div>}
-              {metrics.closeOpen > 5 && <div>Close tasks open: <strong>{metrics.closeOpen}</strong></div>}
-            </div>
-          }
-        />
+        <Alert color="yellow" mb={12}>
+          <Stack gap={4}>
+            {metrics.apOverdue > 0 && <Text size="sm">AP overdue invoices: <strong>{metrics.apOverdue}</strong></Text>}
+            {metrics.arPastDue > 0 && <Text size="sm">AR past due: <strong>$ {metrics.arPastDue.toLocaleString()}</strong></Text>}
+            {metrics.closeOpen > 5 && <Text size="sm">Close tasks open: <strong>{metrics.closeOpen}</strong></Text>}
+          </Stack>
+        </Alert>
       )}
-      <Row gutter={[16,16]} style={{ marginBottom: 12 }}>
-        <Col xs={12} sm={12} lg={6}><div style={{ background:'#f8fafc', padding: isMobile ? 12 : 16, borderRadius:8 }}><div style={{ color:'#64748b', fontSize: isMobile ? 12 : 14 }}>AP Queue (pending/approved)</div><div style={{ fontWeight:700, fontSize: isMobile ? 18 : 20 }}>{metrics.apPending}</div></div></Col>
-        <Col xs={12} sm={12} lg={6}><div style={{ background:'#fff7ed', padding: isMobile ? 12 : 16, borderRadius:8 }}><div style={{ color:'#9a3412', fontSize: isMobile ? 12 : 14 }}>AP Overdue</div><div style={{ fontWeight:700, fontSize: isMobile ? 18 : 20 }}>{metrics.apOverdue}</div></div></Col>
-        <Col xs={12} sm={12} lg={6}><div style={{ background:'#fff1f2', padding: isMobile ? 12 : 16, borderRadius:8 }}><div style={{ color:'#9f1239', fontSize: isMobile ? 12 : 14 }}>AR Past Due $</div><div style={{ fontWeight:700, fontSize: isMobile ? 18 : 20 }}>$ {metrics.arPastDue.toLocaleString()}</div></div></Col>
-        <Col xs={12} sm={12} lg={6}><div style={{ background:'#eef2ff', padding: isMobile ? 12 : 16, borderRadius:8 }}><div style={{ color:'#3730a3', fontSize: isMobile ? 12 : 14 }}>Close Tasks Open</div><div style={{ fontWeight:700, fontSize: isMobile ? 18 : 20 }}>{metrics.closeOpen}</div></div></Col>
-      </Row>
-      <Typography.Title level={5}>Team Workload</Typography.Title>
-      <Row gutter={[16,16]} style={{ marginBottom: 12 }}>
+      <Grid gutter="md" mb={12}>
+        <Grid.Col span={{ base: 12, sm: 12, lg: 6 }}>
+          <Paper p={isMobile ? 12 : 16} radius="md" bg="gray.0">
+            <Text size={isMobile ? 'xs' : 'sm'} c="gray.6">AP Queue (pending/approved)</Text>
+            <Text fw={700} size={isMobile ? 'lg' : 'xl'}>{metrics.apPending}</Text>
+          </Paper>
+        </Grid.Col>
+        <Grid.Col span={{ base: 12, sm: 12, lg: 6 }}>
+          <Paper p={isMobile ? 12 : 16} radius="md" bg="orange.0">
+            <Text size={isMobile ? 'xs' : 'sm'} c="orange.9">AP Overdue</Text>
+            <Text fw={700} size={isMobile ? 'lg' : 'xl'}>{metrics.apOverdue}</Text>
+          </Paper>
+        </Grid.Col>
+        <Grid.Col span={{ base: 12, sm: 12, lg: 6 }}>
+          <Paper p={isMobile ? 12 : 16} radius="md" bg="red.0">
+            <Text size={isMobile ? 'xs' : 'sm'} c="red.9">AR Past Due $</Text>
+            <Text fw={700} size={isMobile ? 'lg' : 'xl'}>$ {metrics.arPastDue.toLocaleString()}</Text>
+          </Paper>
+        </Grid.Col>
+        <Grid.Col span={{ base: 12, sm: 12, lg: 6 }}>
+          <Paper p={isMobile ? 12 : 16} radius="md" bg="blue.0">
+            <Text size={isMobile ? 'xs' : 'sm'} c="blue.9">Close Tasks Open</Text>
+            <Text fw={700} size={isMobile ? 'lg' : 'xl'}>{metrics.closeOpen}</Text>
+          </Paper>
+        </Grid.Col>
+      </Grid>
+      <Title order={5}>Team Workload</Title>
+      <Grid gutter="md" mb={12}>
         {['CFO','Controller','AP','AR','Treasury','Auditor'].map((r) => {
           const count = roles.filter(x => x.role === r).length;
           return (
-            <Col key={r} xs={12} md={8} lg={4}><div style={{ background:'#f1f5f9', padding: isMobile ? 10 : 12, borderRadius:8 }}><div style={{ color:'#475569', fontSize: isMobile ? 12 : 14 }}>{r}</div><div style={{ fontWeight:700, fontSize: isMobile ? 14 : 16 }}>{count} member(s)</div></div></Col>
+            <Grid.Col key={r} span={{ base: 12, md: 8, lg: 4 }}>
+              <Paper p={isMobile ? 10 : 12} radius="md" bg="gray.0">
+                <Text size={isMobile ? 'xs' : 'sm'} c="gray.7">{r}</Text>
+                <Text fw={700} size={isMobile ? 'sm' : 'md'}>{count} member(s)</Text>
+              </Paper>
+            </Grid.Col>
           );
         })}
-      </Row>
-      <Divider>Team Roles</Divider>
-      <Space style={{ marginBottom: 8 }}>
-        <Button onClick={() => setRoleModal(true)} size={isMobile ? 'small' : 'default'}>Assign Role</Button>
-      </Space>
-      <div className="overflow-hidden">
-        <Table
+      </Grid>
+      <Divider label="Team Roles" />
+      <Group mb={8}>
+        <Button onClick={() => setRoleModal(true)} size={isMobile ? 'sm' : 'md'}>Assign Role</Button>
+      </Group>
+      <Box style={{ overflow: 'hidden' }}>
+        <MantineTable
+          data={roles}
           loading={loading}
-          dataSource={roles}
           size={isMobile ? 'small' : 'default'}
           scroll={{ x: isMobile ? 600 : 'auto' }}
           columns={[
             { title: 'User', dataIndex: 'user_label' },
             { title: 'User ID', dataIndex: 'user_id' },
             { title: 'Role', dataIndex: 'role' },
-          {
-            title: 'Actions',
-            key: 'actions',
-            width: 160,
-            render: (_: any, record: any) => (
-              <Space>
-                <Button
-                  size="small"
-                  onClick={() => {
-                    form.setFieldsValue({
-                      user_label: record.user_label,
-                      user_id: record.user_id,
-                      role: record.role,
-                    });
-                    setRoleModal(true);
-                  }}
-                >
-                  Reassign
-                </Button>
-                <Button size="small" danger onClick={() => handleRemoveRole(record)}>
-                  Remove
-                </Button>
-              </Space>
-            ),
-          },
+            {
+              title: 'Actions',
+              key: 'actions',
+              width: 160,
+              render: (_: any, record: any) => (
+                <Group gap="xs">
+                  <Button
+                    size="sm"
+                    onClick={() => {
+                      form.setValues({
+                        user_label: record.user_label,
+                        user_id: record.user_id,
+                        role: record.role,
+                      });
+                      setRoleModal(true);
+                    }}
+                  >
+                    Reassign
+                  </Button>
+                  <Button size="sm" color="red" onClick={() => handleRemoveRole(record)}>
+                    Remove
+                  </Button>
+                </Group>
+              ),
+            },
           ]}
         />
-      </div>
+      </Box>
       <Modal
         title="Assign Finance Role"
-        open={roleModal}
-        width={isMobile ? '90%' : 600}
-        onCancel={() => setRoleModal(false)}
-        onOk={async () => {
-          const vals = await form.validateFields();
+        opened={roleModal}
+        onClose={() => setRoleModal(false)}
+        size={isMobile ? '90%' : 600}
+      >
+        <form onSubmit={form.onSubmit(async (vals) => {
           setLoading(true);
           try {
             const { error } = await supabase.from('finance_roles').insert({ user_id: vals.user_id, user_label: vals.user_label, role: vals.role });
             if (error) throw error;
             await refreshRoles();
             setRoleModal(false);
-            form.resetFields();
-            message.success('Role assigned');
+            form.reset();
+            toast.success('Role assigned', 'Success');
           } finally { setLoading(false); }
-        }}
-      >
-        <Form layout="vertical" form={form}>
-          <Form.Item name="user_label" label="User (name or email)" rules={[{ required: true }]}>
-            <input className="ant-input" />
-          </Form.Item>
-          <Form.Item name="user_id" label="User ID (optional)" tooltip="If known; otherwise leave blank">
-            <input className="ant-input" />
-          </Form.Item>
-          <Form.Item name="role" label="Role" rules={[{ required: true }]}>
-            <Select options={[{value:'CFO',label:'CFO'},{value:'Controller',label:'Controller'},{value:'AP',label:'AP'},{value:'AR',label:'AR'},{value:'Treasury',label:'Treasury'},{value:'Auditor',label:'Auditor'}]} />
-          </Form.Item>
-        </Form>
+        })}>
+          <Stack>
+            <TextInput
+              label="User (name or email)"
+              {...form.getInputProps('user_label')}
+              required
+            />
+            <TextInput
+              label="User ID (optional)"
+              {...form.getInputProps('user_id')}
+              description="If known; otherwise leave blank"
+            />
+            <Select
+              label="Role"
+              {...form.getInputProps('role')}
+              required
+              data={[
+                {value:'CFO',label:'CFO'},
+                {value:'Controller',label:'Controller'},
+                {value:'AP',label:'AP'},
+                {value:'AR',label:'AR'},
+                {value:'Treasury',label:'Treasury'},
+                {value:'Auditor',label:'Auditor'}
+              ]}
+            />
+            <Group justify="flex-end" mt="md">
+              <Button variant="subtle" onClick={() => setRoleModal(false)}>Cancel</Button>
+              <Button type="submit" loading={loading}>Assign</Button>
+            </Group>
+          </Stack>
+        </form>
       </Modal>
     </div>
   );
@@ -1066,7 +1105,17 @@ function ManagerConsole() {
 function RoleManagement() {
   const [roles, setRoles] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
-  const [form] = Form.useForm();
+  const form = useForm({
+    initialValues: {
+      user_label: '',
+      user_id: '',
+      role: '',
+    },
+    validate: {
+      user_label: (value) => (!value ? 'User label is required' : null),
+      role: (value) => (!value ? 'Role is required' : null),
+    },
+  });
   useEffect(() => {
     (async () => {
       setLoading(true);
@@ -1078,40 +1127,50 @@ function RoleManagement() {
   }, []);
   return (
     <div>
-      <Typography.Title level={5}>Invite User & Assign Role</Typography.Title>
-      <Form
-        layout="inline"
-        form={form}
-        onFinish={async (vals) => {
-          setLoading(true);
-          try {
-            const { error } = await supabase.from('finance_roles').insert({ user_id: vals.user_id || crypto.randomUUID(), user_label: vals.user_label, role: vals.role });
-            if (error) throw error;
-            const { data } = await supabase.from('finance_roles').select('user_id, user_label, role').order('user_label', { ascending: true });
-            setRoles((data || []).map((r:any, idx:number)=> ({ key: `${r.user_id}-${r.role}-${idx}`, ...r })));
-            form.resetFields();
-            message.success('Role assigned');
-          } finally { setLoading(false); }
-        }}
-      >
-        <Form.Item name="user_label" rules={[{ required: true }]}>
-          <input className="ant-input" placeholder="User email or name" />
-        </Form.Item>
-        <Form.Item name="user_id">
-          <input className="ant-input" placeholder="User ID (optional)" />
-        </Form.Item>
-        <Form.Item name="role" rules={[{ required: true }]}>
-          <Select style={{ minWidth: 180 }} options={[{value:'CFO',label:'CFO'},{value:'Controller',label:'Controller'},{value:'AP',label:'AP'},{value:'AR',label:'AR'},{value:'Treasury',label:'Treasury'},{value:'Auditor',label:'Auditor'}]} />
-        </Form.Item>
-        <Form.Item>
-          <Button type="primary" htmlType="submit">Assign</Button>
-        </Form.Item>
-      </Form>
+      <Title order={5}>Invite User & Assign Role</Title>
+      <form onSubmit={form.onSubmit(async (vals) => {
+        setLoading(true);
+        try {
+          const { error } = await supabase.from('finance_roles').insert({ user_id: vals.user_id || crypto.randomUUID(), user_label: vals.user_label, role: vals.role });
+          if (error) throw error;
+          const { data } = await supabase.from('finance_roles').select('user_id, user_label, role').order('user_label', { ascending: true });
+          setRoles((data || []).map((r:any, idx:number)=> ({ key: `${r.user_id}-${r.role}-${idx}`, ...r })));
+          form.reset();
+          toast.success('Role assigned', 'Success');
+        } finally { setLoading(false); }
+      })}>
+        <Group align="flex-end" mb="md">
+          <TextInput
+            placeholder="User email or name"
+            {...form.getInputProps('user_label')}
+            style={{ flex: 1, minWidth: 200 }}
+          />
+          <TextInput
+            placeholder="User ID (optional)"
+            {...form.getInputProps('user_id')}
+            style={{ flex: 1, minWidth: 200 }}
+          />
+          <Select
+            placeholder="Role"
+            {...form.getInputProps('role')}
+            data={[
+              {value:'CFO',label:'CFO'},
+              {value:'Controller',label:'Controller'},
+              {value:'AP',label:'AP'},
+              {value:'AR',label:'AR'},
+              {value:'Treasury',label:'Treasury'},
+              {value:'Auditor',label:'Auditor'}
+            ]}
+            style={{ minWidth: 180 }}
+          />
+          <Button type="submit" variant="filled" loading={loading}>Assign</Button>
+        </Group>
+      </form>
 
       <Divider />
-      <Table
+      <MantineTable
+        data={roles}
         loading={loading}
-        dataSource={roles}
         columns={[
           { title: 'User', dataIndex: 'user_label' },
           { title: 'User ID', dataIndex: 'user_id' },
@@ -1183,10 +1242,10 @@ function BudgetVsActuals() {
           </BarChart>
         </ChartContainer>
       </div>
-      <div className="overflow-hidden">
-        <Table
+      <Box style={{ overflow: 'hidden' }}>
+        <MantineTable
+          data={rows}
           loading={loading}
-          dataSource={rows}
           pagination={{ pageSize: isMobile ? 5 : 10, showSizeChanger: !isMobile }}
           size={isMobile ? 'small' : 'default'}
           scroll={{ x: isMobile ? 800 : 'auto' }}
@@ -1198,12 +1257,12 @@ function BudgetVsActuals() {
             { title: 'Variance', dataIndex: 'variance', render: (v: number) => {
                 const color = v >= 0 ? '#16a34a' : '#dc2626';
                 const prefix = v >= 0 ? '+' : '-';
-                return <span style={{ color }}>{prefix}$${Math.abs(v).toLocaleString()}</span>;
+                return <Text c={color}>{prefix}${Math.abs(v).toLocaleString()}</Text>;
               } },
             { title: 'Variance %', dataIndex: 'variancePct', render: (v: number) => `${(v||0).toFixed(1)}%` },
           ]}
         />
-      </div>
+      </Box>
     </div>
   );
 }
@@ -1284,48 +1343,51 @@ function CashFlowForecast() {
 
   return (
     <div>
-      <Typography.Paragraph style={{ color: '#334155' }}>
+      <Text c="gray.7" mb="md">
         Adjust expense ratio and forward revenue growth to model cash runway in real time.
-      </Typography.Paragraph>
-      <Space
-        direction={isMobile ? 'vertical' : 'horizontal'}
-        wrap
-        style={{ marginBottom: 16, width: '100%' }}
-        size={isMobile ? 12 : 20}
+      </Text>
+      <Stack
+        gap={isMobile ? 12 : 20}
+        mb={16}
       >
-        <div style={{ minWidth: isMobile ? '100%' : 240 }}>
-          <Typography.Text strong>Expense Ratio</Typography.Text>
+        <Box style={{ minWidth: isMobile ? '100%' : 240 }}>
+          <Text fw={600} mb={4}>Expense Ratio</Text>
           <Slider
             min={30}
             max={90}
             step={1}
             value={Math.round(expenseRatio * 100)}
             onChange={(val) => setExpenseRatio((Array.isArray(val) ? val[0] : val) / 100)}
+            mb={4}
           />
-          <Typography.Text type="secondary">{Math.round(expenseRatio * 100)}%</Typography.Text>
-        </div>
-        <div style={{ minWidth: isMobile ? '100%' : 240 }}>
-          <Typography.Text strong>Forward Growth Rate</Typography.Text>
+          <Text size="sm" c="dimmed">{Math.round(expenseRatio * 100)}%</Text>
+        </Box>
+        <Box style={{ minWidth: isMobile ? '100%' : 240 }}>
+          <Text fw={600} mb={4}>Forward Growth Rate</Text>
           <Slider
             min={-20}
             max={40}
             step={1}
             value={Math.round(growthRate * 100)}
             onChange={(val) => setGrowthRate((Array.isArray(val) ? val[0] : val) / 100)}
+            mb={4}
           />
-          <Typography.Text type="secondary">{Math.round(growthRate * 100)}%</Typography.Text>
-        </div>
-        <div style={{ minWidth: isMobile ? '100%' : 220 }}>
-          <Typography.Text strong>Cash After Scenario</Typography.Text>
-          <div style={{ fontSize: isMobile ? 20 : 24, fontWeight: 700, color: '#047857' }}>
+          <Text size="sm" c="dimmed">{Math.round(growthRate * 100)}%</Text>
+        </Box>
+        <Box style={{ minWidth: isMobile ? '100%' : 220 }}>
+          <Text fw={600} mb={4}>Cash After Scenario</Text>
+          <Text size={isMobile ? 'lg' : 'xl'} fw={700} c="green.7">
             ${Math.round(scenarioCash).toLocaleString()}
-          </div>
-          <Typography.Text type="secondary">6-month cumulative outlook</Typography.Text>
-        </div>
-        <Button onClick={() => { setExpenseRatio(0.65); setGrowthRate(0.05); }} disabled={expenseRatio === 0.65 && growthRate === 0.05}>
+          </Text>
+          <Text size="sm" c="dimmed">6-month cumulative outlook</Text>
+        </Box>
+        <Button 
+          onClick={() => { setExpenseRatio(0.65); setGrowthRate(0.05); }} 
+          disabled={expenseRatio === 0.65 && growthRate === 0.05}
+        >
           Reset Scenario
         </Button>
-      </Space>
+      </Stack>
       <div style={{ height: 320, marginBottom: 16 }}>
         <ChartContainer config={{ cash: { label: 'Cash', color: '#16a34a' } }}>
           <LineChart data={series} margin={{ left: 12, right: 12, top: 8, bottom: 8 }}>
@@ -1337,10 +1399,10 @@ function CashFlowForecast() {
           </LineChart>
         </ChartContainer>
       </div>
-      <div className="overflow-hidden">
-        <Table
+      <Box style={{ overflow: 'hidden' }}>
+        <MantineTable
+          data={series.map((s) => ({ key: s.period, ...s }))}
           loading={loading}
-          dataSource={series.map((s) => ({ key: s.period, ...s }))}
           pagination={false}
           size={isMobile ? 'small' : 'default'}
           columns={[
@@ -1350,7 +1412,7 @@ function CashFlowForecast() {
             { title: 'Projected Cash', dataIndex: 'cash', render: (v: number) => `$${(v || 0).toLocaleString()}` },
           ]}
         />
-      </div>
+      </Box>
     </div>
   );
 }
@@ -1383,11 +1445,11 @@ function ApprovalsPanel() {
         .update({ status: nextStatus })
         .eq('id', record.id);
       if (error) throw error;
-      message.success(`Request ${nextStatus}`);
+      toast.success(`Request ${nextStatus}`, 'Success');
       await loadApprovals(status);
     } catch (err) {
       console.error('Failed to update approval', err);
-      message.error('Unable to update approval');
+      toast.error('Unable to update approval', 'Error');
     } finally {
       setLoading(false);
     }
@@ -1411,16 +1473,36 @@ function ApprovalsPanel() {
   return (
     <div style={{ position: 'relative' }}>
       <InfoIcon content="Review and approve pending financial transactions, expense requests, and spending authorizations. Filter by status to view pending, approved, or rejected items." title="Financial Approvals" />
-      <Space direction={isMobile ? 'vertical' : 'horizontal'} style={{ marginBottom: 12, width: isMobile ? '100%' : 'auto' }}>
-        <Typography.Text>Filter:</Typography.Text>
-        <Button type={status==='pending'? 'primary':'default'} onClick={() => setStatus('pending')} block={isMobile}>Pending</Button>
-        <Button type={status==='approved'? 'primary':'default'} onClick={() => setStatus('approved')} block={isMobile}>Approved</Button>
-        <Button type={status==='rejected'? 'primary':'default'} onClick={() => setStatus('rejected')} block={isMobile}>Rejected</Button>
-      </Space>
-      <div className="overflow-hidden">
-        <Table
+      <Stack gap="xs" mb={12}>
+        <Text>Filter:</Text>
+        <Group>
+          <Button 
+            variant={status==='pending'? 'filled':'default'} 
+            onClick={() => setStatus('pending')} 
+            fullWidth={isMobile}
+          >
+            Pending
+          </Button>
+          <Button 
+            variant={status==='approved'? 'filled':'default'} 
+            onClick={() => setStatus('approved')} 
+            fullWidth={isMobile}
+          >
+            Approved
+          </Button>
+          <Button 
+            variant={status==='rejected'? 'filled':'default'} 
+            onClick={() => setStatus('rejected')} 
+            fullWidth={isMobile}
+          >
+            Rejected
+          </Button>
+        </Group>
+      </Stack>
+      <Box style={{ overflow: 'hidden' }}>
+        <MantineTable
+          data={rows}
           loading={loading}
-          dataSource={rows}
           size={isMobile ? 'small' : 'default'}
           scroll={{ x: isMobile ? 800 : 'auto' }}
           pagination={{ pageSize: isMobile ? 5 : 10, showSizeChanger: !isMobile }}
@@ -1429,37 +1511,42 @@ function ApprovalsPanel() {
             { title: 'Requester', dataIndex: 'requester' },
             { title: 'Description', dataIndex: 'description' },
             { title: 'Amount', dataIndex: 'amount', render: (v: number) => `$${(v||0).toLocaleString()}` },
-            { title: 'Status', dataIndex: 'status', render: (value: string) => <Tag color={statusColors[value] || 'default'} style={{ textTransform: 'capitalize' }}>{value}</Tag> },
+            { title: 'Status', dataIndex: 'status', render: (value: string) => (
+              <Badge color={statusColors[value] || 'gray'} style={{ textTransform: 'capitalize' }}>
+                {value}
+              </Badge>
+            ) },
             { title: 'Created', dataIndex: 'created_at', render: (v: string) => new Date(v).toLocaleString(), width: 180 },
             {
               title: 'Actions',
               key: 'actions',
               width: 220,
               render: (_: any, record: any) => (
-                <Space wrap>
-                  <Button size="small" type="primary" onClick={() => handleApprovalAction(record, 'approved')}>
+                <Group gap="xs" wrap>
+                  <Button size="sm" variant="filled" onClick={() => handleApprovalAction(record, 'approved')}>
                     Approve
                   </Button>
                   <Button
-                    size="small"
-                    danger
+                    size="sm"
+                    color="red"
                     onClick={() =>
-                      Modal.confirm({
+                      modals.openConfirmModal({
                         title: 'Reject request?',
-                        content: 'This will mark the request as rejected.',
-                        okButtonProps: { danger: true },
-                        onOk: () => handleApprovalAction(record, 'rejected'),
+                        children: <Text>This will mark the request as rejected.</Text>,
+                        labels: { confirm: 'Reject', cancel: 'Cancel' },
+                        confirmProps: { color: 'red' },
+                        onConfirm: () => handleApprovalAction(record, 'rejected'),
                       })
                     }
                   >
                     Reject
                   </Button>
-                </Space>
+                </Group>
               ),
             },
           ]}
         />
-      </div>
+      </Box>
     </div>
   );
 }
@@ -1507,11 +1594,11 @@ function AccountsPayable() {
         .update({ status: nextStatus })
         .eq('id', invoiceId);
       if (error) throw error;
-      message.success(`Invoice marked ${nextStatus}`);
+      toast.success(`Invoice marked ${nextStatus}`, 'Success');
       await loadInvoicesAndRuns(status);
     } catch (err) {
       console.error('Error updating invoice status', err);
-      message.error('Unable to update invoice');
+      toast.error('Unable to update invoice', 'Error');
     } finally {
       setLoading(false);
     }
@@ -1519,7 +1606,7 @@ function AccountsPayable() {
 
   const handleBulkStatusChange = useCallback(async (nextStatus: string) => {
     if (!selectedInvoices.length) {
-      message.info('Select at least one invoice');
+      toast.info('Select at least one invoice', 'Info');
       return;
     }
     setLoading(true);
@@ -1530,11 +1617,11 @@ function AccountsPayable() {
         .update({ status: nextStatus })
         .in('id', ids);
       if (error) throw error;
-      message.success(`Updated ${ids.length} invoices to ${nextStatus}`);
+      toast.success(`Updated ${ids.length} invoices to ${nextStatus}`, 'Success');
       await loadInvoicesAndRuns(status);
     } catch (err) {
       console.error('Bulk invoice update failed', err);
-      message.error('Failed to update invoices');
+      toast.error('Failed to update invoices', 'Error');
     } finally {
       setLoading(false);
     }
@@ -1557,13 +1644,13 @@ function AccountsPayable() {
   }, [status]);
   return (
     <div>
-      <Row gutter={[16,16]} style={{ marginBottom: 12 }}>
-        <Col xs={24} md={12}>
-          <div style={{ position: 'relative' }}>
+      <Grid gutter="md" mb={12}>
+        <Grid.Col span={{ base: 24, md: 12 }}>
+          <Box style={{ position: 'relative' }}>
             <InfoIcon content="This chart shows accounts payable aging by due date. It categorizes invoices into buckets (Current, 0-30 days, 31-60 days, etc.) to help identify which payments are overdue or coming due." title="AP Aging Chart" />
-            <Typography.Text strong>AP Aging (by Due Date)</Typography.Text>
-          </div>
-          <div style={{ height: 220, background:'#fff', position: 'relative' }}>
+            <Text fw={600}>AP Aging (by Due Date)</Text>
+          </Box>
+          <Box style={{ height: 220, background:'#fff', position: 'relative' }}>
             <ChartContainer config={{ current:{label:'Current', color:'#94a3b8'}, b30:{label:'0-30', color:'#22c55e'}, b60:{label:'31-60', color:'#eab308'}, b90:{label:'61-90', color:'#f97316'}, b90p:{label:'90+', color:'#ef4444'} }}>
               <BarChart data={[(() => {
                 const now = Date.now();
@@ -1587,14 +1674,14 @@ function AccountsPayable() {
                 <Bar dataKey="b90p" fill="var(--color-b90p)" />
               </BarChart>
             </ChartContainer>
-          </div>
-        </Col>
-        <Col xs={24} md={12}>
-          <div style={{ position: 'relative' }}>
+          </Box>
+        </Grid.Col>
+        <Grid.Col span={{ base: 24, md: 12 }}>
+          <Box style={{ position: 'relative' }}>
             <InfoIcon content="This chart forecasts upcoming cash needs based on approved and pending invoices. Use this to plan cash flow and ensure sufficient funds are available for upcoming payments." title="Upcoming Cash Needs" />
-            <Typography.Text strong>Upcoming Cash Needs (Approved/Pending)</Typography.Text>
-          </div>
-          <div style={{ height: 220, background:'#fff', position: 'relative' }}>
+            <Text fw={600}>Upcoming Cash Needs (Approved/Pending)</Text>
+          </Box>
+          <Box style={{ height: 220, background:'#fff', position: 'relative' }}>
             <ChartContainer config={{ pending:{label:'Pending', color:'#60a5fa'}, approved:{label:'Approved', color:'#34d399'} }}>
               <LineChart data={[1,2,3,4,5,6].map(m => {
                 const d = new Date(); d.setMonth(d.getMonth()+m-1); const ym = d.toISOString().slice(0,7);
@@ -1609,15 +1696,15 @@ function AccountsPayable() {
                 <Line type="monotone" dataKey="approved" stroke="var(--color-approved)" strokeWidth={2} dot={false} />
               </LineChart>
             </ChartContainer>
-          </div>
-        </Col>
-      </Row>
-      <Space style={{ marginBottom: 12 }}>
-        <Typography.Text>Status:</Typography.Text>
-        <Button type={status==='pending'? 'primary':'default'} onClick={() => setStatus('pending')}>Pending</Button>
-        <Button type={status==='approved'? 'primary':'default'} onClick={() => setStatus('approved')}>Approved</Button>
-        <Button type={status==='paid'? 'primary':'default'} onClick={() => setStatus('paid')}>Paid</Button>
-        <Divider type="vertical" />
+          </Box>
+        </Grid.Col>
+      </Grid>
+      <Group gap="xs" mb={12} wrap>
+        <Text>Status:</Text>
+        <Button variant={status==='pending'? 'filled':'default'} onClick={() => setStatus('pending')}>Pending</Button>
+        <Button variant={status==='approved'? 'filled':'default'} onClick={() => setStatus('approved')}>Approved</Button>
+        <Button variant={status==='paid'? 'filled':'default'} onClick={() => setStatus('paid')}>Paid</Button>
+        <Divider orientation="vertical" />
         <Button onClick={async () => {
           setCreatingRun(true);
         }}>Create Payment Run</Button>
@@ -1632,22 +1719,24 @@ function AccountsPayable() {
             if (pendingIds.length) {
               const { error } = await supabase.from('invoices').update({ status: 'approved' }).in('id', pendingIds);
               if (error) throw error;
-              message.success('Approved pending invoices');
+              toast.success('Approved pending invoices', 'Success');
               await loadInvoicesAndRuns(status);
             } else {
-              message.info('No pending invoices');
+              toast.info('No pending invoices', 'Info');
             }
           } finally {
             setLoading(false);
           }
         }}>Approve Pending</Button>
-      </Space>
+      </Group>
       <Modal
         title="Create Payment Run"
-        open={creatingRun}
-        onCancel={() => setCreatingRun(false)}
-        width={isMobile ? '90%' : 600}
-        onOk={async () => {
+        opened={creatingRun}
+        onClose={() => setCreatingRun(false)}
+        size={isMobile ? '90%' : 600}
+      >
+        <form onSubmit={async (e) => {
+          e.preventDefault();
           setLoading(true);
           try {
             const dueBefore = runDate;
@@ -1655,57 +1744,76 @@ function AccountsPayable() {
             const total = selected.reduce((s, i) => s + (i.amount || 0), 0);
             const { error } = await supabase.from('payment_runs').insert({ scheduled_date: dueBefore.toISOString().slice(0,10), status: 'draft', total_amount: total });
             if (error) throw error;
-            message.success(`Payment run created for $${total.toLocaleString()}`);
+            toast.success(`Payment run created for $${total.toLocaleString()}`, 'Success');
             await loadInvoicesAndRuns(status);
             setCreatingRun(false);
           } finally {
             setLoading(false);
           }
-        }}
-      >
-        <Space direction="vertical" style={{ width: '100%' }}>
-          <Typography.Text>Select due date cutoff</Typography.Text>
-          <DatePicker onChange={(d)=> setRunDate(d ? d.toDate() : new Date())} style={{ width: '100%' }} />
-          <Typography.Text type="secondary">Includes invoices with due date on or before selected date.</Typography.Text>
-        </Space>
+        }}>
+          <Stack>
+            <Text>Select due date cutoff</Text>
+            <DatePickerInput 
+              value={runDate} 
+              onChange={(d) => setRunDate(d || new Date())} 
+              style={{ width: '100%' }} 
+            />
+            <Text size="sm" c="dimmed">Includes invoices with due date on or before selected date.</Text>
+            <Group justify="flex-end" mt="md">
+              <Button variant="subtle" onClick={() => setCreatingRun(false)}>Cancel</Button>
+              <Button type="submit" loading={loading}>Create</Button>
+            </Group>
+          </Stack>
+        </form>
       </Modal>
       <Modal
         title="Link Invoices to Payment Run"
-        open={linking}
-        onCancel={() => setLinking(false)}
-        width={isMobile ? '90%' : 600}
-        onOk={async () => {
-          if (!selectedRun || !selectedInvoices.length) { message.info('Select a run and invoices'); return; }
+        opened={linking}
+        onClose={() => setLinking(false)}
+        size={isMobile ? '90%' : 600}
+      >
+        <form onSubmit={async (e) => {
+          e.preventDefault();
+          if (!selectedRun || !selectedInvoices.length) { 
+            toast.info('Select a run and invoices', 'Info'); 
+            return; 
+          }
           setLoading(true);
           try {
             const ids = selectedInvoices.map(i=> i.key);
             const { error } = await supabase.from('invoices').update({ payment_run_id: selectedRun }).in('id', ids);
             if (error) throw error;
-            message.success('Invoices linked to run');
+            toast.success('Invoices linked to run', 'Success');
             setLinking(false);
             await loadInvoicesAndRuns(status);
           } finally {
             setLoading(false);
           }
-        }}
-      >
-        <Space direction="vertical" style={{ width: '100%' }}>
-          <Typography.Text>Select Payment Run</Typography.Text>
-          <Select
-            style={{ width: '100%' }}
-            placeholder="Select run"
-            value={selectedRun}
-            onChange={setSelectedRun}
-            options={runs.map(r => ({ label: `${r.scheduled_date} • ${r.status} • $${(r.total_amount||0).toLocaleString()}`, value: r.id }))}
-          />
-          <Typography.Text type="secondary">Link selected invoices to the chosen run.</Typography.Text>
-        </Space>
+        }}>
+          <Stack>
+            <Text>Select Payment Run</Text>
+            <Select
+              placeholder="Select run"
+              value={selectedRun}
+              onChange={setSelectedRun}
+              data={runs.map(r => ({ label: `${r.scheduled_date} • ${r.status} • $${(r.total_amount||0).toLocaleString()}`, value: r.id }))}
+            />
+            <Text size="sm" c="dimmed">Link selected invoices to the chosen run.</Text>
+            <Group justify="flex-end" mt="md">
+              <Button variant="subtle" onClick={() => setLinking(false)}>Cancel</Button>
+              <Button type="submit" loading={loading}>Link</Button>
+            </Group>
+          </Stack>
+        </form>
       </Modal>
-      <div className="overflow-hidden">
-        <Table
+      <Box style={{ overflow: 'hidden' }}>
+        <MantineTable
+          data={invoices}
           loading={loading}
-          dataSource={invoices}
-          rowSelection={{ selectedRowKeys: selectedInvoices.map(s=>s.key), onChange: (_keys, sel)=> setSelectedInvoices(sel as any[]) }}
+          rowSelection={{ 
+            selectedRowKeys: selectedInvoices.map(s=>s.key), 
+            onChange: (_keys, sel)=> setSelectedInvoices(sel as any[]) 
+          }}
           size={isMobile ? 'small' : 'default'}
           scroll={{ x: isMobile ? 800 : 'auto' }}
           pagination={{ pageSize: isMobile ? 5 : 10, showSizeChanger: !isMobile }}
@@ -1718,36 +1826,40 @@ function AccountsPayable() {
             {
               title: 'Status',
               dataIndex: 'status',
-              render: (value: string) => <Tag color={statusColors[value] || 'default'} style={{ textTransform: 'capitalize' }}>{value}</Tag>,
+              render: (value: string) => (
+                <Badge color={statusColors[value] || 'gray'} style={{ textTransform: 'capitalize' }}>
+                  {value}
+                </Badge>
+              ),
             },
             {
               title: 'Actions',
               key: 'actions',
               width: 220,
               render: (_: any, record: any) => (
-                <Space wrap>
+                <Group gap="xs" wrap>
                   {record.status !== 'approved' && (
-                    <Button size="small" onClick={() => handleInvoiceStatusChange(record.key, 'approved')}>
+                    <Button size="sm" onClick={() => handleInvoiceStatusChange(record.key, 'approved')}>
                       Approve
                     </Button>
                   )}
                   {record.status !== 'paid' && (
-                    <Button size="small" type="primary" onClick={() => handleInvoiceStatusChange(record.key, 'paid')}>
+                    <Button size="sm" variant="filled" onClick={() => handleInvoiceStatusChange(record.key, 'paid')}>
                       Mark Paid
                     </Button>
                   )}
-                </Space>
+                </Group>
               ),
             },
           ]}
         />
-      </div>
+      </Box>
       <Divider />
-      <Typography.Title level={5}>Payment Runs</Typography.Title>
-      <div className="overflow-hidden">
-        <Table
+      <Title order={5}>Payment Runs</Title>
+      <Box style={{ overflow: 'hidden' }}>
+        <MantineTable
+          data={runs}
           loading={loading}
-          dataSource={runs}
           rowKey={(r)=> r.id}
           size={isMobile ? 'small' : 'default'}
           scroll={{ x: isMobile ? 800 : 'auto' }}
@@ -1758,8 +1870,8 @@ function AccountsPayable() {
             { title: 'Total', dataIndex: 'total_amount', render: (v:number)=> `$${(v||0).toLocaleString()}`, width: 140 },
             { title: 'Processed', dataIndex: 'processed_at', render: (v:string)=> v ? new Date(v).toLocaleString() : '-', width: 180 },
             { title: 'Actions', key: 'actions', render: (_:any, rec:any) => (
-              <Space>
-                <Button size="small" onClick={async () => {
+              <Group gap="xs">
+                <Button size="sm" onClick={async () => {
                   // mark run processed and mark linked invoices as paid
                   setLoading(true);
                   try {
@@ -1767,17 +1879,17 @@ function AccountsPayable() {
                     if (e1) throw e1;
                     const { error: e2 } = await supabase.from('invoices').update({ status: 'paid' }).eq('payment_run_id', rec.id);
                     if (e2) throw e2;
-                    message.success('Run processed');
+                    toast.success('Run processed', 'Success');
                     await loadInvoicesAndRuns(status);
                   } finally {
                     setLoading(false);
                   }
                 }}>Process Run</Button>
-              </Space>
+              </Group>
             )},
           ]}
         />
-      </div>
+      </Box>
     </div>
   );
 }
@@ -1811,7 +1923,7 @@ function AccountsReceivable() {
 
   const logReminder = useCallback(async (records: any[]) => {
     if (!records.length) {
-      message.info('Select at least one receivable');
+      toast.info('Select at least one receivable', 'Info');
       return;
     }
     setLoading(true);
@@ -1823,10 +1935,10 @@ function AccountsReceivable() {
       }));
       const { error } = await supabase.from('dunning_events').insert(inserts);
       if (error) throw error;
-      message.success('Reminder logged');
+      toast.success('Reminder logged', 'Success');
     } catch (err) {
       console.error('Failed to log reminder', err);
-      message.error('Unable to log reminder');
+      toast.error('Unable to log reminder', 'Error');
     } finally {
       setLoading(false);
     }
@@ -1838,7 +1950,7 @@ function AccountsReceivable() {
 
   const markCollected = useCallback(async (records: any[]) => {
     if (!records.length) {
-      message.info('Select receivables to mark as collected');
+      toast.info('Select receivables to mark as collected', 'Info');
       return;
     }
     setLoading(true);
@@ -1849,11 +1961,11 @@ function AccountsReceivable() {
         .update({ status: 'paid' })
         .in('id', ids);
       if (error) throw error;
-      message.success('Receivables marked as collected');
+      toast.success('Receivables marked as collected', 'Success');
       await loadReceivables();
     } catch (err) {
       console.error('Failed to mark collected', err);
-      message.error('Unable to mark receivables collected');
+      toast.error('Unable to mark receivables collected', 'Error');
     } finally {
       setLoading(false);
     }
@@ -1888,13 +2000,13 @@ function AccountsReceivable() {
   }, [loadReceivables]);
   return (
     <div>
-      <Row gutter={[16,16]} style={{ marginBottom: 12 }}>
-        <Col xs={24} md={12}>
-          <div style={{ position: 'relative' }}>
+      <Grid gutter="md" mb={12}>
+        <Grid.Col span={{ base: 24, md: 12 }}>
+          <Box style={{ position: 'relative' }}>
             <InfoIcon content="This chart displays accounts receivable aging buckets, categorizing outstanding invoices by how long they've been overdue. Use this to prioritize collection efforts." title="AR Aging Buckets" />
-            <Typography.Text strong>AR Aging Buckets</Typography.Text>
-          </div>
-          <div style={{ height: 220, background:'#fff', position: 'relative' }}>
+            <Text fw={600}>AR Aging Buckets</Text>
+          </Box>
+          <Box style={{ height: 220, background:'#fff', position: 'relative' }}>
             <ChartContainer config={{ current:{label:'Current', color:'#94a3b8'}, b30:{label:'0-30', color:'#22c55e'}, b60:{label:'31-60', color:'#eab308'}, b90:{label:'61-90', color:'#f97316'}, b90p:{label:'90+', color:'#ef4444'} }}>
               <BarChart data={[(() => {
                 const buckets = { current:0, b30:0, b60:0, b90:0, b90p:0 } as any;
@@ -1916,14 +2028,14 @@ function AccountsReceivable() {
                 <Bar dataKey="b90p" fill="var(--color-b90p)" />
               </BarChart>
             </ChartContainer>
-          </div>
-        </Col>
-        <Col xs={24} md={12}>
-          <div style={{ position: 'relative' }}>
+          </Box>
+        </Grid.Col>
+        <Grid.Col span={{ base: 24, md: 12 }}>
+          <Box style={{ position: 'relative' }}>
             <InfoIcon content="This chart shows the collections trend over the last 6 months, helping you track payment collection patterns and identify trends in receivables management." title="Collections Trend" />
-            <Typography.Text strong>Collections Trend (last 6 months)</Typography.Text>
-          </div>
-          <div style={{ height: 220, background:'#fff', position: 'relative' }}>
+            <Text fw={600}>Collections Trend (last 6 months)</Text>
+          </Box>
+          <Box style={{ height: 220, background:'#fff', position: 'relative' }}>
             <ChartContainer config={{ collected:{label:'Collected', color:'#16a34a'} }}>
               <LineChart data={[...Array(6)].map((_,i) => {
                 const d = new Date(); d.setMonth(d.getMonth()- (5-i));
@@ -1939,12 +2051,12 @@ function AccountsReceivable() {
                 <Line type="monotone" dataKey="collected" stroke="var(--color-collected)" strokeWidth={2} dot={false} />
               </LineChart>
             </ChartContainer>
-          </div>
-        </Col>
-      </Row>
-      <Space style={{ marginBottom: 12 }}>
+          </Box>
+        </Grid.Col>
+      </Grid>
+      <Group gap="xs" mb={12} wrap>
         <Button onClick={handleLogReminder}>Send Reminder</Button>
-        <Button onClick={handleMarkCollected} type="primary">Mark Collected</Button>
+        <Button onClick={handleMarkCollected} variant="filled">Mark Collected</Button>
         <Button onClick={() => {
           // CSV export of current grid
           const headers = ['Customer','Reference','Issue Date','Due Date','Days Past Due','Bucket','Amount','Status'];
@@ -1960,20 +2072,28 @@ function AccountsReceivable() {
           document.body.removeChild(a);
           URL.revokeObjectURL(url);
         }}>Export CSV</Button>
-      </Space>
-      <Row gutter={[16,16]} style={{ marginBottom: 12 }}>
+      </Group>
+      <Grid gutter="md" mb={12}>
         {['Current','0-30','31-60','61-90','90+'].map((b) => {
           const sum = rows.filter(r => r.bucket === b).reduce((s, r) => s + (r.amount || 0), 0);
           return (
-            <Col key={b} xs={12} md={6} lg={4}><div style={{ background:'#f1f5f9', padding:12, borderRadius:8 }}><div style={{ color:'#64748b' }}>{b}</div><div style={{ fontWeight:700 }}>$ {sum.toLocaleString()}</div></div></Col>
+            <Grid.Col key={b} span={{ base: 12, md: 6, lg: 4 }}>
+              <Paper p={12} radius="md" bg="gray.0">
+                <Text c="gray.6">{b}</Text>
+                <Text fw={700}>$ {sum.toLocaleString()}</Text>
+              </Paper>
+            </Grid.Col>
           );
         })}
-      </Row>
-      <div className="overflow-hidden">
-        <Table
+      </Grid>
+      <Box style={{ overflow: 'hidden' }}>
+        <MantineTable
+          data={rows}
           loading={loading}
-          dataSource={rows}
-          rowSelection={{ selectedRowKeys: selected.map(s=>s.key), onChange: (_keys, selRows)=> setSelected(selRows as any[]) }}
+          rowSelection={{ 
+            selectedRowKeys: selected.map(s=>s.key), 
+            onChange: (_keys, selRows)=> setSelected(selRows as any[]) 
+          }}
           size={isMobile ? 'small' : 'default'}
           scroll={{ x: isMobile ? 1000 : 'auto' }}
           pagination={{ pageSize: isMobile ? 5 : 10, showSizeChanger: !isMobile }}
@@ -1985,23 +2105,27 @@ function AccountsReceivable() {
             { title: 'Days Past Due', dataIndex: 'daysPast' },
             { title: 'Bucket', dataIndex: 'bucket' },
             { title: 'Amount', dataIndex: 'amount', render: (v: number) => `$${(v||0).toLocaleString()}` },
-            { title: 'Status', dataIndex: 'status', render: (value: string) => <Tag color={statusColors[value] || 'default'} style={{ textTransform: 'capitalize' }}>{value}</Tag> },
+            { title: 'Status', dataIndex: 'status', render: (value: string) => (
+              <Badge color={statusColors[value] || 'gray'} style={{ textTransform: 'capitalize' }}>
+                {value}
+              </Badge>
+            ) },
             {
               title: 'Actions',
               key: 'actions',
               width: 220,
               render: (_: any, record: any) => (
-                <Space wrap>
-                  <Button size="small" onClick={() => handleRowReminder(record)}>Remind</Button>
+                <Group gap="xs" wrap>
+                  <Button size="sm" onClick={() => handleRowReminder(record)}>Remind</Button>
                   {record.status !== 'paid' && (
-                    <Button size="small" type="primary" onClick={() => handleRowCollected(record)}>Mark Paid</Button>
+                    <Button size="sm" variant="filled" onClick={() => handleRowCollected(record)}>Mark Paid</Button>
                   )}
-                </Space>
+                </Group>
               ),
             },
           ]}
         />
-      </div>
+      </Box>
     </div>
   );
 }
@@ -2030,11 +2154,11 @@ function CloseManagement() {
         .update({ status: statusToSet })
         .eq('id', record.id);
       if (error) throw error;
-      message.success(`Task marked ${statusToSet}`);
+      toast.success(`Task marked ${statusToSet}`, 'Success');
       await loadCloseData();
     } catch (err) {
       console.error('Failed to update close task', err);
-      message.error('Unable to update task');
+      toast.error('Unable to update task', 'Error');
     } finally {
       setLoading(false);
     }
@@ -2049,11 +2173,11 @@ function CloseManagement() {
         .update({ status: statusToSet })
         .eq('id', record.id);
       if (error) throw error;
-      message.success(`Reconciliation ${statusToSet}`);
+      toast.success(`Reconciliation ${statusToSet}`, 'Success');
       await loadCloseData();
     } catch (err) {
       console.error('Failed to update reconciliation', err);
-      message.error('Unable to update reconciliation');
+      toast.error('Unable to update reconciliation', 'Error');
     } finally {
       setLoading(false);
     }
@@ -2075,35 +2199,40 @@ function CloseManagement() {
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
   return (
-    <Row gutter={[16,16]}>
-      <Col xs={24} lg={14}>
-        <Typography.Title level={5}>Close Checklist</Typography.Title>
-        <Space style={{ marginBottom: 8 }}>
-          <Button onClick={async () => {
-            setRolling(true);
-            try {
-              const now = new Date();
-              const currentPeriod = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1)).toISOString().slice(0,7);
-              const prev = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth()-1, 1)).toISOString().slice(0,7);
-              // Pull previous tasks and clone to current
-              const { data: prevTasks } = await supabase.from('close_tasks').select('*').eq('period', prev);
-              if (prevTasks && prevTasks.length) {
-                const inserts = prevTasks.map((t: any) => ({ period: currentPeriod, name: t.name, owner: t.owner, status: 'todo', due_day: t.due_day }));
-                await supabase.from('close_tasks').insert(inserts);
-                message.success('Rolled close tasks forward');
-                await loadCloseData();
-              } else {
-                message.info('No previous tasks to roll');
+    <Grid gutter="md">
+      <Grid.Col span={{ base: 24, lg: 14 }}>
+        <Title order={5}>Close Checklist</Title>
+        <Group mb={8}>
+          <Button 
+            onClick={async () => {
+              setRolling(true);
+              try {
+                const now = new Date();
+                const currentPeriod = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1)).toISOString().slice(0,7);
+                const prev = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth()-1, 1)).toISOString().slice(0,7);
+                // Pull previous tasks and clone to current
+                const { data: prevTasks } = await supabase.from('close_tasks').select('*').eq('period', prev);
+                if (prevTasks && prevTasks.length) {
+                  const inserts = prevTasks.map((t: any) => ({ period: currentPeriod, name: t.name, owner: t.owner, status: 'todo', due_day: t.due_day }));
+                  await supabase.from('close_tasks').insert(inserts);
+                  toast.success('Rolled close tasks forward', 'Success');
+                  await loadCloseData();
+                } else {
+                  toast.info('No previous tasks to roll', 'Info');
+                }
+              } finally {
+                setRolling(false);
               }
-            } finally {
-              setRolling(false);
-            }
-          }}>Roll Previous Month</Button>
-        </Space>
-        <div className="overflow-hidden">
-          <Table
+            }}
+            loading={rolling}
+          >
+            Roll Previous Month
+          </Button>
+        </Group>
+        <Box style={{ overflow: 'hidden' }}>
+          <MantineTable
+            data={tasks}
             loading={loading}
-            dataSource={tasks}
             pagination={false}
             size={isMobile ? 'small' : 'default'}
             scroll={{ x: isMobile ? 600 : 'auto' }}
@@ -2129,26 +2258,26 @@ function CloseManagement() {
                 key: 'actions',
                 width: 160,
                 render: (_: any, record: any) => (
-                  <Space>
-                    <Button size="small" onClick={() => handleTaskStatusChange(record, 'in_progress')}>
+                  <Group gap="xs">
+                    <Button size="sm" onClick={() => handleTaskStatusChange(record, 'in_progress')}>
                       Start
                     </Button>
-                    <Button size="small" type="primary" onClick={() => handleTaskStatusChange(record, 'done')}>
+                    <Button size="sm" variant="filled" onClick={() => handleTaskStatusChange(record, 'done')}>
                       Complete
                     </Button>
-                  </Space>
+                  </Group>
                 ),
               },
             ]}
           />
-        </div>
-      </Col>
-      <Col xs={24} lg={10}>
-        <Typography.Title level={5}>Reconciliations</Typography.Title>
-        <div className="overflow-hidden">
-          <Table
+        </Box>
+      </Grid.Col>
+      <Grid.Col span={{ base: 24, lg: 10 }}>
+        <Title order={5}>Reconciliations</Title>
+        <Box style={{ overflow: 'hidden' }}>
+          <MantineTable
+            data={recs}
             loading={loading}
-            dataSource={recs}
             pagination={false}
             size={isMobile ? 'small' : 'default'}
             scroll={{ x: isMobile ? 600 : 'auto' }}
@@ -2161,26 +2290,26 @@ function CloseManagement() {
                 key: 'actions',
                 width: 160,
                 render: (_: any, record: any) => (
-                  <Space>
-                    <Button size="small" onClick={() => handleReconStatusChange(record, 'in_progress')}>
+                  <Group gap="xs">
+                    <Button size="sm" onClick={() => handleReconStatusChange(record, 'in_progress')}>
                       Work
                     </Button>
                     <Button
-                      size="small"
-                      type="primary"
+                      size="sm"
+                      variant="filled"
                       onClick={() => handleReconStatusChange(record, 'tied')}
                     >
                       Tie Out
                     </Button>
-                  </Space>
+                  </Group>
                 ),
               },
               { title: 'Notes', dataIndex: 'notes' },
             ]}
           />
-        </div>
-      </Col>
-    </Row>
+        </Box>
+      </Grid.Col>
+    </Grid>
   );
 }
 
@@ -2188,10 +2317,29 @@ function TreasuryView() {
   const [accounts, setAccounts] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [editAcc, setEditAcc] = useState<any | null>(null);
-  const [form] = Form.useForm();
+  const form = useForm({
+    initialValues: {
+      current_balance: 0,
+    },
+    validate: {
+      current_balance: (value) => (value >= 0 ? null : 'Balance must be positive'),
+    },
+  });
   const [isMobile, setIsMobile] = useState(false);
   const [newAccountModal, setNewAccountModal] = useState(false);
-  const [newAccountForm] = Form.useForm();
+  const newAccountForm = useForm({
+    initialValues: {
+      name: '',
+      institution: '',
+      currency: 'USD',
+      current_balance: 0,
+    },
+    validate: {
+      name: (value) => (!value ? 'Account name is required' : null),
+      institution: (value) => (!value ? 'Institution is required' : null),
+      current_balance: (value) => (value >= 0 ? null : 'Balance must be positive'),
+    },
+  });
   const loadAccounts = useCallback(async () => {
     const { data } = await supabase.from('bank_accounts').select('id, name, institution, currency, current_balance, updated_at');
     setAccounts((data || []).map((x: any) => ({ key: x.id, ...x })));
@@ -2215,27 +2363,39 @@ function TreasuryView() {
   const total = accounts.reduce((s, a) => s + (a.current_balance || 0), 0);
   return (
     <div>
-      <Row gutter={[16,16]} style={{ marginBottom: 12 }}>
-        <Col xs={24} md={8}><div style={{ background:'#ecfeff', padding: isMobile ? 12 : 16, borderRadius:8 }}><div style={{ color:'#0891b2', fontSize: isMobile ? 12 : 14 }}>Total Cash</div><div style={{ fontWeight:700, fontSize: isMobile ? 16 : 18 }}>$ {total.toLocaleString()}</div></div></Col>
-        <Col xs={24} md={8}>
-          <div style={{ background:'#f5f3ff', padding: isMobile ? 12 : 16, borderRadius:8 }}>
-            <div style={{ color:'#6d28d9', fontSize: isMobile ? 12 : 14 }}>Accounts</div>
-            <div style={{ fontWeight:700, fontSize: isMobile ? 16 : 18 }}>{accounts.length}</div>
-          </div>
-        </Col>
-        <Col xs={24} md={8}>
-          <div style={{ background:'#ecfeff', padding: isMobile ? 12 : 16, borderRadius:8, display:'flex', justifyContent:'space-between', alignItems:'center' }}>
-            <span style={{ color:'#0369a1', fontWeight:600 }}>Actions</span>
-            <Button size={isMobile ? 'small' : 'middle'} type="primary" onClick={() => { newAccountForm.resetFields(); setNewAccountModal(true); }}>
+      <Grid gutter="md" mb={12}>
+        <Grid.Col span={{ base: 24, md: 8 }}>
+          <Paper p={isMobile ? 12 : 16} radius="md" bg="cyan.0">
+            <Text size={isMobile ? 'xs' : 'sm'} c="cyan.9">Total Cash</Text>
+            <Text fw={700} size={isMobile ? 'md' : 'lg'}>$ {total.toLocaleString()}</Text>
+          </Paper>
+        </Grid.Col>
+        <Grid.Col span={{ base: 24, md: 8 }}>
+          <Paper p={isMobile ? 12 : 16} radius="md" bg="violet.0">
+            <Text size={isMobile ? 'xs' : 'sm'} c="violet.9">Accounts</Text>
+            <Text fw={700} size={isMobile ? 'md' : 'lg'}>{accounts.length}</Text>
+          </Paper>
+        </Grid.Col>
+        <Grid.Col span={{ base: 24, md: 8 }}>
+          <Paper p={isMobile ? 12 : 16} radius="md" bg="cyan.0" style={{ display:'flex', justifyContent:'space-between', alignItems:'center' }}>
+            <Text c="cyan.9" fw={600}>Actions</Text>
+            <Button 
+              size={isMobile ? 'sm' : 'md'} 
+              variant="filled" 
+              onClick={() => { 
+                newAccountForm.reset(); 
+                setNewAccountModal(true); 
+              }}
+            >
               Add Account
             </Button>
-          </div>
-        </Col>
-      </Row>
-      <div className="overflow-hidden">
-        <Table
+          </Paper>
+        </Grid.Col>
+      </Grid>
+      <Box style={{ overflow: 'hidden' }}>
+        <MantineTable
+          data={accounts}
           loading={loading}
-          dataSource={accounts}
           size={isMobile ? 'small' : 'default'}
           scroll={{ x: isMobile ? 800 : 'auto' }}
           pagination={{ pageSize: isMobile ? 5 : 10, showSizeChanger: !isMobile }}
@@ -2245,42 +2405,58 @@ function TreasuryView() {
             { title: 'Currency', dataIndex: 'currency', width: 100 },
             { title: 'Current Balance', dataIndex: 'current_balance', render: (v: number) => `$${(v||0).toLocaleString()}` },
             { title: 'Updated', dataIndex: 'updated_at', render: (v: string) => new Date(v).toLocaleString(), width: 180 },
-            { title: 'Actions', key: 'actions', render: (_: any, rec: any) => <Button size="small" onClick={() => { setEditAcc(rec); form.setFieldsValue({ current_balance: rec.current_balance }); }}>Update</Button> },
+            { title: 'Actions', key: 'actions', render: (_: any, rec: any) => (
+              <Button size="sm" onClick={() => { 
+                setEditAcc(rec); 
+                form.setValues({ current_balance: rec.current_balance }); 
+              }}>
+                Update
+              </Button>
+            ) },
           ]}
         />
-      </div>
+      </Box>
       <Modal
         title={`Update Balance - ${editAcc?.name || ''}`}
-        open={!!editAcc}
-        width={isMobile ? '90%' : 600}
-        onCancel={() => setEditAcc(null)}
-        onOk={async () => {
-          const vals = await form.validateFields();
+        opened={!!editAcc}
+        onClose={() => setEditAcc(null)}
+        size={isMobile ? '90%' : 600}
+      >
+        <form onSubmit={form.onSubmit(async (vals) => {
           setLoading(true);
           try {
             const { error } = await supabase.from('bank_accounts').update({ current_balance: vals.current_balance, updated_at: new Date().toISOString() }).eq('id', editAcc.id);
             if (error) throw error;
-            message.success('Balance updated');
+            toast.success('Balance updated', 'Success');
             await loadAccounts();
             setEditAcc(null);
           } finally {
             setLoading(false);
           }
-        }}
-      >
-        <Form form={form} layout="vertical">
-          <Form.Item label="Current Balance" name="current_balance" rules={[{ required: true, message: 'Enter balance' }]}>
-            <InputNumber style={{ width: '100%' }} min={0} step={100} formatter={(v)=> String(v)} />
-          </Form.Item>
-        </Form>
+        })}>
+          <Stack>
+            <NumberInput
+              label="Current Balance"
+              {...form.getInputProps('current_balance')}
+              required
+              min={0}
+              step={100}
+              style={{ width: '100%' }}
+            />
+            <Group justify="flex-end" mt="md">
+              <Button variant="subtle" onClick={() => setEditAcc(null)}>Cancel</Button>
+              <Button type="submit" loading={loading}>Update</Button>
+            </Group>
+          </Stack>
+        </form>
       </Modal>
       <Modal
         title="Add Bank Account"
-        open={newAccountModal}
-        width={isMobile ? '90%' : 600}
-        onCancel={() => setNewAccountModal(false)}
-        onOk={async () => {
-          const vals = await newAccountForm.validateFields();
+        opened={newAccountModal}
+        onClose={() => setNewAccountModal(false)}
+        size={isMobile ? '90%' : 600}
+      >
+        <form onSubmit={newAccountForm.onSubmit(async (vals) => {
           setLoading(true);
           try {
             const { error } = await supabase.from('bank_accounts').insert({
@@ -2291,28 +2467,40 @@ function TreasuryView() {
               updated_at: new Date().toISOString(),
             });
             if (error) throw error;
-            message.success('Account created');
+            toast.success('Account created', 'Success');
             setNewAccountModal(false);
             await loadAccounts();
           } finally {
             setLoading(false);
           }
-        }}
-      >
-        <Form layout="vertical" form={newAccountForm}>
-          <Form.Item name="name" label="Account Name" rules={[{ required: true, message: 'Enter account name' }]}>
-            <Input />
-          </Form.Item>
-          <Form.Item name="institution" label="Institution" rules={[{ required: true, message: 'Enter institution' }]}>
-            <Input />
-          </Form.Item>
-          <Form.Item name="currency" label="Currency" initialValue="USD">
-            <Input />
-          </Form.Item>
-          <Form.Item name="current_balance" label="Opening Balance" initialValue={0}>
-            <InputNumber style={{ width: '100%' }} min={0} step={100} formatter={(v)=> String(v)} />
-          </Form.Item>
-        </Form>
+        })}>
+          <Stack>
+            <TextInput
+              label="Account Name"
+              {...newAccountForm.getInputProps('name')}
+              required
+            />
+            <TextInput
+              label="Institution"
+              {...newAccountForm.getInputProps('institution')}
+              required
+            />
+            <TextInput
+              label="Currency"
+              {...newAccountForm.getInputProps('currency')}
+            />
+            <NumberInput
+              label="Opening Balance"
+              {...newAccountForm.getInputProps('current_balance')}
+              min={0}
+              step={100}
+            />
+            <Group justify="flex-end" mt="md">
+              <Button variant="subtle" onClick={() => setNewAccountModal(false)}>Cancel</Button>
+              <Button type="submit" loading={loading}>Create</Button>
+            </Group>
+          </Stack>
+        </form>
       </Modal>
     </div>
   );
@@ -2356,7 +2544,7 @@ function WordProcessor() {
       }
     } catch (error) {
       console.error('Error loading documents:', error);
-      message.error('Failed to load documents');
+      toast.error('Failed to load documents', 'Error');
     } finally {
       setLoading(false);
     }
@@ -2381,7 +2569,7 @@ function WordProcessor() {
 
   const handleSaveDocument = async () => {
     if (!title.trim()) {
-      message.warning('Document title is required');
+      toast.warning('Document title is required', 'Warning');
       return;
     }
 
@@ -2394,7 +2582,7 @@ function WordProcessor() {
           .eq('id', currentDoc.id);
 
         if (error) throw error;
-        message.success('Document saved');
+        toast.success('Document saved', 'Success');
       } else {
         const { data, error } = await supabase
           .from('cfo_documents')
@@ -2409,24 +2597,24 @@ function WordProcessor() {
       fetchDocuments();
     } catch (error) {
       console.error('Error saving document:', error);
-      message.error('Failed to save document');
+      toast.error('Failed to save document', 'Error');
     } finally {
       setLoading(false);
     }
   };
 
   const handleDeleteDocument = async (doc: any) => {
-    Modal.confirm({
+    modals.openConfirmModal({
       title: 'Delete document',
-      content: `Are you sure you want to delete "${doc.title}"?`,
-      okText: 'Delete',
-      okType: 'danger',
-      onOk: async () => {
+      children: <Text>Are you sure you want to delete "{doc.title}"?</Text>,
+      labels: { confirm: 'Delete', cancel: 'Cancel' },
+      confirmProps: { color: 'red' },
+      onConfirm: async () => {
         setLoading(true);
         try {
           const { error } = await supabase.from('cfo_documents').delete().eq('id', doc.id);
           if (error) throw error;
-          message.success('Document deleted');
+          toast.success('Document deleted', 'Success');
 
           if (currentDoc?.id === doc.id) {
             setCurrentDoc(null);
@@ -2437,7 +2625,7 @@ function WordProcessor() {
           fetchDocuments();
         } catch (err) {
           console.error('Error deleting document:', err);
-          message.error('Failed to delete document');
+          toast.error('Failed to delete document', 'Error');
         } finally {
           setLoading(false);
         }
@@ -2448,7 +2636,7 @@ function WordProcessor() {
   const handleCreateDocument = async () => {
     const trimmed = newDocTitle.trim();
     if (!trimmed) {
-      message.warning('Enter a document title');
+      toast.warning('Enter a document title', 'Warning');
       return;
     }
 
@@ -2467,10 +2655,10 @@ function WordProcessor() {
       setTitle(data?.title ?? '');
       setContent(data?.content ?? '');
       fetchDocuments();
-      message.success('Document created');
+      toast.success('Document created', 'Success');
     } catch (err) {
       console.error('Error creating document:', err);
-      message.error('Failed to create document');
+      toast.error('Failed to create document', 'Error');
     } finally {
       setLoading(false);
     }
@@ -2504,47 +2692,52 @@ function WordProcessor() {
               gap: 12,
             }}
           >
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <Typography.Title level={5} style={{ margin: 0 }}>
+            <Group justify="space-between" mb="md">
+              <Title order={5} style={{ margin: 0 }}>
                 Documents
-              </Typography.Title>
+              </Title>
               <Button
-                type="primary"
-                size="small"
-                icon={<PlusOutlined />}
+                variant="filled"
+                size="sm"
+                leftSection={<IconPlus size={16} />}
                 onClick={() => setNewDocModalVisible(true)}
               >
                 New
               </Button>
-            </div>
+            </Group>
 
-            <div style={{ flex: 1, overflowY: 'auto' }}>
+            <ScrollArea style={{ flex: 1 }}>
               {loading && documents.length === 0 ? (
-                <div style={{ textAlign: 'center', padding: 20 }}>Loading…</div>
+                <Center p={20}>
+                  <Loader />
+                </Center>
               ) : documents.length === 0 ? (
-                <div style={{ textAlign: 'center', padding: 20, color: '#a1a1aa' }}>
-                  No documents yet
-                </div>
+                <Center p={20}>
+                  <Text c="dimmed">No documents yet</Text>
+                </Center>
               ) : (
-                documents.map((doc) => (
-                  <Button
-                    key={doc.id}
-                    type={currentDoc?.id === doc.id ? 'primary' : 'default'}
-                    block
-                    style={{
-                      marginBottom: 8,
-                      textAlign: 'left',
-                      height: 'auto',
-                      whiteSpace: 'normal',
-                    }}
-                    onClick={() => handleSelectDocument(doc)}
-                  >
-                    <div style={{ fontWeight: 600 }}>{doc.title || 'Untitled document'}</div>
-                    <div style={{ fontSize: 12, opacity: 0.7 }}>{formatDate(doc.updated_at || doc.created_at)}</div>
-                  </Button>
-                ))
+                <Stack gap="xs">
+                  {documents.map((doc) => (
+                    <Button
+                      key={doc.id}
+                      variant={currentDoc?.id === doc.id ? 'filled' : 'default'}
+                      fullWidth
+                      style={{
+                        textAlign: 'left',
+                        height: 'auto',
+                        whiteSpace: 'normal',
+                      }}
+                      onClick={() => handleSelectDocument(doc)}
+                    >
+                      <Stack gap={4} align="flex-start" style={{ width: '100%' }}>
+                        <Text fw={600} size="sm">{doc.title || 'Untitled document'}</Text>
+                        <Text size="xs" c="dimmed">{formatDate(doc.updated_at || doc.created_at)}</Text>
+                      </Stack>
+                    </Button>
+                  ))}
+                </Stack>
               )}
-            </div>
+            </ScrollArea>
           </div>
         )}
 
@@ -2561,56 +2754,76 @@ function WordProcessor() {
         >
           {currentDoc ? (
             <>
-              <Space style={{ width: '100%' }} wrap>
-                <Input
+              <Group wrap style={{ width: '100%' }}>
+                <TextInput
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
                   placeholder="Document title"
                   style={{ flex: 1, minWidth: 200 }}
                 />
-                <Button type="primary" loading={loading} onClick={handleSaveDocument}>
+                <Button variant="filled" loading={loading} onClick={handleSaveDocument}>
                   Save
                 </Button>
-                <Button danger onClick={() => currentDoc && handleDeleteDocument(currentDoc)}>
+                <Button color="red" onClick={() => currentDoc && handleDeleteDocument(currentDoc)}>
                   Delete
                 </Button>
-              </Space>
+              </Group>
 
-              <Input.TextArea
+              <Textarea
                 value={content}
                 onChange={(e) => setContent(e.target.value)}
-                autoSize={{ minRows: isMobile ? 12 : 18, maxRows: 30 }}
+                minRows={isMobile ? 12 : 18}
+                maxRows={30}
                 placeholder="Start typing your document here…"
               />
             </>
           ) : (
-            <div style={{ textAlign: 'center', padding: 40 }}>
-              <Typography.Title level={4}>Create your first document</Typography.Title>
-              <Typography.Paragraph type="secondary">
-                Draft financial memos, board summaries, or approvals using the built-in editor.
-              </Typography.Paragraph>
-              <Button type="primary" onClick={() => setNewDocModalVisible(true)}>
-                Create Document
-              </Button>
-            </div>
+            <Center p={40}>
+              <Stack align="center" gap="md">
+                <Title order={4}>Create your first document</Title>
+                <Text c="dimmed" ta="center">
+                  Draft financial memos, board summaries, or approvals using the built-in editor.
+                </Text>
+                <Button variant="filled" onClick={() => setNewDocModalVisible(true)}>
+                  Create Document
+                </Button>
+              </Stack>
+            </Center>
           )}
         </div>
       </div>
 
       <Modal
-        open={newDocModalVisible}
+        opened={newDocModalVisible}
         title="New Document"
-        okText="Create"
-        okButtonProps={{ loading }}
-        onOk={handleCreateDocument}
-        onCancel={() => setNewDocModalVisible(false)}
+        onClose={() => setNewDocModalVisible(false)}
       >
-        <Input
-          value={newDocTitle}
-          onChange={(e) => setNewDocTitle(e.target.value)}
-          placeholder="Document title"
-        />
+        <form onSubmit={(e) => {
+          e.preventDefault();
+          handleCreateDocument();
+        }}>
+          <Stack>
+            <TextInput
+              value={newDocTitle}
+              onChange={(e) => setNewDocTitle(e.target.value)}
+              placeholder="Document title"
+              required
+            />
+            <Group justify="flex-end" mt="md">
+              <Button variant="subtle" onClick={() => setNewDocModalVisible(false)}>Cancel</Button>
+              <Button type="submit" variant="filled" loading={loading}>Create</Button>
+            </Group>
+          </Stack>
+        </form>
       </Modal>
     </>
+  );
+}
+
+export default function CFOPortal() {
+  return (
+    <EmbeddedToastProvider>
+      <CFOPortalContent />
+    </EmbeddedToastProvider>
   );
 }
