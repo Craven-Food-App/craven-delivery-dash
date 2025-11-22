@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Box,
   Group,
@@ -6,6 +6,7 @@ import {
   Image,
   Badge,
 } from '@mantine/core';
+import { useScrollDirection } from '@/hooks/useScrollDirection';
 
 type DriverTabType = 'home' | 'schedule' | 'earnings' | 'notifications' | 'account';
 
@@ -28,6 +29,26 @@ export const DriverBottomNav: React.FC<DriverBottomNavProps> = ({
   onTabChange,
   notificationCount = 0
 }) => {
+  const { scrollDirection, isScrolling } = useScrollDirection(5, 200);
+  const [isVisible, setIsVisible] = useState(true);
+
+  useEffect(() => {
+    // Always show at the top
+    if (window.scrollY < 10) {
+      setIsVisible(true);
+      return;
+    }
+
+    // Hide when scrolling down
+    if (isScrolling && scrollDirection === 'down') {
+      setIsVisible(false);
+    } 
+    // Show when scrolling up or when scrolling stops
+    else if (scrollDirection === 'up' || !isScrolling) {
+      setIsVisible(true);
+    }
+  }, [scrollDirection, isScrolling]);
+
   return (
     <>
       <Box
@@ -36,7 +57,16 @@ export const DriverBottomNav: React.FC<DriverBottomNavProps> = ({
         left={0}
         right={0}
         bg="white"
-        style={{ borderTop: '1px solid var(--mantine-color-gray-2)', zIndex: 50, boxShadow: '0 -4px 6px rgba(0,0,0,0.1)', height: 'calc(5rem + env(safe-area-inset-bottom, 0px))', paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
+        style={{ 
+          borderTop: '1px solid var(--mantine-color-gray-2)', 
+          zIndex: 50, 
+          boxShadow: '0 -4px 6px rgba(0,0,0,0.1)', 
+          height: 'calc(5rem + env(safe-area-inset-bottom, 0px))', 
+          paddingBottom: 'env(safe-area-inset-bottom, 0px)',
+          transform: isVisible ? 'translateY(0)' : 'translateY(100%)',
+          transition: 'transform 0.3s ease-in-out',
+          willChange: 'transform'
+        }}
       >
         <Group h={80} gap={0}>
           {tabs.map((tab) => {

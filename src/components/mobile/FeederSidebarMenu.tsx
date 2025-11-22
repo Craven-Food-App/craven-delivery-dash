@@ -1,5 +1,5 @@
 import React from 'react';
-import { IconX, IconHome, IconCalendar, IconCurrencyDollar, IconBell, IconUser, IconStar, IconTrendingUp, IconMessageCircle, IconLogout, IconFlame } from '@tabler/icons-react';
+import { IconX, IconHome, IconCalendar, IconCurrencyDollar, IconUser, IconStar, IconTrendingUp, IconMessageCircle, IconLogout, IconFlame } from '@tabler/icons-react';
 import { supabase } from '@/integrations/supabase/client';
 import {
   Box,
@@ -97,11 +97,10 @@ const FeederSidebarMenu: React.FC<FeederSidebarMenuProps> = ({
     { icon: IconHome, label: 'Home', path: 'home' },
     { icon: IconCalendar, label: 'Schedule', path: 'schedule' },
     { icon: IconCurrencyDollar, label: 'Earnings', path: 'earnings' },
-    { icon: IconBell, label: 'Notifications', path: 'notifications' },
+    { icon: IconMessageCircle, label: 'Chat', path: 'messages' },
     { icon: IconUser, label: 'Account', path: 'account' },
     { icon: IconStar, label: 'Ratings', path: 'ratings' },
-    { icon: IconTrendingUp, label: 'Promos', path: 'promos' },
-    { icon: IconMessageCircle, label: 'Help', path: 'help' }
+    { icon: IconTrendingUp, label: 'Promos', path: 'promos' }
   ];
 
   const handleMenuClick = (path: string) => {
@@ -116,7 +115,8 @@ const FeederSidebarMenu: React.FC<FeederSidebarMenuProps> = ({
         'account': 'Account',
         'ratings': 'Ratings',
         'promos': 'Promos',
-        'help': 'Help'
+        'help': 'Messages',
+        'messages': 'Messages'
       };
       const capitalizedPath = pathMap[path] || path.charAt(0).toUpperCase() + path.slice(1);
       onNavigate(capitalizedPath);
@@ -269,6 +269,7 @@ const FeederSidebarMenu: React.FC<FeederSidebarMenuProps> = ({
           {menuItems.map((item, idx) => {
             const isActive = activeTab === item.path;
             const IconComponent = item.icon;
+            const isMessagesItem = item.path === 'messages';
             return (
               <Button
                 key={idx}
@@ -285,7 +286,19 @@ const FeederSidebarMenu: React.FC<FeederSidebarMenuProps> = ({
                     variant={isActive ? 'light' : 'light'}
                     style={{ backgroundColor: isActive ? 'rgba(255,255,255,0.3)' : 'var(--mantine-color-orange-1)' }}
                   >
-                    <IconComponent size={24} color={isActive ? 'white' : 'var(--mantine-color-orange-6)'} />
+                    {isMessagesItem ? (
+                      <img 
+                        src="/app-chat.png" 
+                        alt="Messages" 
+                        style={{ 
+                          width: '24px', 
+                          height: '24px',
+                          filter: isActive ? 'brightness(0) invert(1)' : 'none'
+                        }} 
+                      />
+                    ) : (
+                      <IconComponent size={24} color={isActive ? 'white' : 'var(--mantine-color-orange-6)'} />
+                    )}
                   </ThemeIcon>
                 }
                 size="lg"

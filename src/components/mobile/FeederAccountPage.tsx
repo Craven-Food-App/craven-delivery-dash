@@ -12,7 +12,6 @@ import {
   IconChevronRight,
   IconStar,
   IconAward,
-  IconBell,
   IconMenu,
   IconArrowLeft,
   IconEye,
@@ -589,18 +588,10 @@ const FeederAccountPage: React.FC<FeederAccountPageProps> = ({ onOpenMenu, onOpe
             variant="subtle"
             color="dark"
             onClick={() => {
-              if (onOpenNotifications) {
-                onOpenNotifications();
-              } else {
-                notifications.show({
-                  title: "Notifications coming soon.",
-                  message: '',
-                  color: "blue",
-                });
-              }
+              window.location.href = '/mobile?tab=messages';
             }}
           >
-            <IconBell size={28} />
+            <img src="/app-chat.png" alt="Messages" style={{ width: '28px', height: '28px' }} />
           </ActionIcon>
         </Group>
 

@@ -23,7 +23,7 @@ import FeederScheduleTab from './FeederScheduleTab';
 import CorporateEarningsDashboard from './CorporateEarningsDashboard';
 import FeederAccountPage from './FeederAccountPage';
 import FeederRatingsTab from './FeederRatingsTab';
-import { DriverSupportChatPage } from './DriverSupportChatPage';
+import CravenAppComm from './CravenAppComm';
 import { getRatingColor, getRatingTier, formatRating, getTrendIcon, getTrendColor } from '@/utils/ratingHelpers';
 import { DriverBottomNav } from './DriverBottomNav';
 import NotificationsPage from '@/components/notifications/NotificationsPage';
@@ -311,7 +311,7 @@ export const MobileDriverDashboard: React.FC = () => {
   
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [showOrderModal, setShowOrderModal] = useState(false);
-  const [activeTab, setActiveTab] = useState<'home' | 'schedule' | 'earnings' | 'notifications' | 'account' | 'ratings' | 'promos' | 'preferences' | 'help'>('home');
+  const [activeTab, setActiveTab] = useState<'home' | 'schedule' | 'earnings' | 'notifications' | 'account' | 'ratings' | 'promos' | 'preferences' | 'help' | 'messages'>('home');
   const [driverRating, setDriverRating] = useState<number>(5.0);
   const [driverDeliveries, setDriverDeliveries] = useState<number>(0);
   const [ratingTrend, setRatingTrend] = useState<number>(0);
@@ -333,8 +333,8 @@ export const MobileDriverDashboard: React.FC = () => {
   // Handle URL parameter changes
   useEffect(() => {
     const tab = searchParams.get('tab');
-    if (tab && ['schedule', 'earnings', 'notifications', 'account', 'ratings', 'promos', 'preferences', 'help'].includes(tab)) {
-      setActiveTab(tab as 'schedule' | 'earnings' | 'notifications' | 'account' | 'ratings' | 'promos' | 'preferences' | 'help');
+    if (tab && ['schedule', 'earnings', 'notifications', 'account', 'ratings', 'promos', 'preferences', 'help', 'messages'].includes(tab)) {
+      setActiveTab(tab as 'schedule' | 'earnings' | 'notifications' | 'account' | 'ratings' | 'promos' | 'preferences' | 'help' | 'messages');
     } else {
       setActiveTab('home');
     }
@@ -443,8 +443,10 @@ export const MobileDriverDashboard: React.FC = () => {
         navigate('/mobile?tab=promos');
         break;
       case 'Help':
-        setActiveTab('help');
-        navigate('/mobile?tab=help');
+      case 'Chat':
+      case 'Messages':
+        setActiveTab('messages');
+        navigate('/mobile?tab=messages');
         break;
       case 'Logout':
         // Handle logout
@@ -1298,7 +1300,13 @@ export const MobileDriverDashboard: React.FC = () => {
         
         {activeTab === 'help' && (
           <div className="fixed inset-0 z-20 bg-background">
-            <DriverSupportChatPage />
+            <CravenAppComm />
+          </div>
+        )}
+        
+        {activeTab === 'messages' && (
+          <div className="fixed inset-0 z-20 bg-background">
+            <CravenAppComm />
           </div>
         )}
         

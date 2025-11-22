@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { IconMenu2, IconBell, IconStar, IconTrendingUp, IconThumbUp, IconClock, IconPackage } from '@tabler/icons-react';
+import { IconMenu2, IconStar, IconTrendingUp, IconThumbUp, IconClock, IconPackage } from '@tabler/icons-react';
 import { notifications } from '@mantine/notifications';
 import { supabase } from '@/integrations/supabase/client';
 import {
@@ -237,20 +237,12 @@ const FeederRatingsTab: React.FC<FeederRatingsTabProps> = ({
         <Title order={1} c="orange.3" fw={700} style={{ letterSpacing: '0.05em' }}>RATINGS</Title>
         <ActionIcon
           onClick={() => {
-            if (onOpenNotifications) {
-              onOpenNotifications();
-            } else {
-              notifications.show({
-                title: 'Notifications coming soon.',
-                message: '',
-                color: 'blue',
-              });
-            }
+            window.location.href = '/mobile?tab=messages';
           }}
           variant="subtle"
           color="white"
         >
-          <IconBell size={28} />
+          <img src="/app-chat.png" alt="Messages" style={{ width: '28px', height: '28px' }} />
         </ActionIcon>
       </Group>
 
