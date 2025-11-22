@@ -107,6 +107,7 @@ const LiveDashboard = () => {
       let driversData = [];
       try {
         // Try the automatic JOIN first
+        // Note: We'll filter by driver_state in the application layer since JSONB filtering is complex
         const { data, error } = await supabase
           .from('driver_profiles')
           .select(`
@@ -119,8 +120,30 @@ const LiveDashboard = () => {
           `)
           .eq('driver_sessions.is_online', true)
           .order('rating', { ascending: false });
-
-        if (error) {
+        
+        // Filter to only drivers who are actively searching
+        // Also include drivers without driver_state set (legacy sessions) - treat them as searching
+        if (!error && data) {
+          const filteredData = data.filter(driver => {
+            const session = driver.driver_sessions;
+            if (Array.isArray(session)) {
+              return session.some(s => {
+                const sessionData = s.session_data as any;
+                const driverState = sessionData?.driver_state;
+                // Include 'online_searching' or undefined/null (legacy)
+                return driverState === 'online_searching' || driverState === undefined || driverState === null;
+              });
+            } else if (session) {
+              const sessionData = session.session_data as any;
+              const driverState = sessionData?.driver_state;
+              // Include 'online_searching' or undefined/null (legacy)
+              return driverState === 'online_searching' || driverState === undefined || driverState === null;
+            }
+            return false;
+          });
+          driversData = filteredData;
+          console.log('Loaded', driversData.length, 'actively searching drivers via automatic join');
+        } else if (error) {
           console.warn('Driver JOIN query failed, using manual join:', error);
           
           // Fallback: Manual join
@@ -134,18 +157,71 @@ const LiveDashboard = () => {
             .select('driver_id, is_online, last_activity, session_data')
             .eq('is_online', true);
           
-          // Manually join
+          // Filter to only drivers who are actively searching (not paused, not on delivery)
+          // Also include drivers without driver_state set (legacy sessions) - treat them as searching
+          const searchingSessions = (sessions || []).filter(session => {
+            const sessionData = session.session_data as any;
+            const driverState = sessionData?.driver_state;
+            // Include 'online_searching' or undefined/null (legacy)
+            return driverState === 'online_searching' || driverState === undefined || driverState === null;
+          });
+          
+          // Manually join - driver_sessions.driver_id matches driver_profiles.id (not user_id)
           driversData = (profiles || [])
-            .filter(p => sessions?.some(s => s.driver_id === p.id))
+            .filter(p => searchingSessions.some(s => s.driver_id === p.id))
             .map(p => ({
               ...p,
-              driver_sessions: sessions?.find(s => s.driver_id === p.id)
+              driver_sessions: searchingSessions.find(s => s.driver_id === p.id)
             }));
           
           console.log('Loaded', driversData.length, 'online drivers via manual join');
+          
+          // Fallback: If no sessions found, use driver_profiles.is_available
+          // Only show drivers who have been active recently (within last 5 minutes)
+          if (driversData.length === 0) {
+            console.log('No sessions found, using driver_profiles.is_available as fallback...');
+            const thirtyMinutesAgo = new Date(Date.now() - 30 * 60 * 1000).toISOString();
+            const { data: availableDrivers } = await supabase
+              .from('driver_profiles')
+              .select('*')
+              .eq('is_available', true)
+              .eq('status', 'online')
+              .or(`last_location_update.gte.${thirtyMinutesAgo},last_location_update.is.null`) // Drivers active in last 30 min OR no location update
+              .order('rating', { ascending: false });
+            
+            if (availableDrivers && availableDrivers.length > 0) {
+              console.log('Found', availableDrivers.length, 'available drivers from driver_profiles (active in last 5 min)');
+              driversData = availableDrivers.map(p => ({
+                ...p,
+                driver_sessions: null // No session data available
+              }));
+            }
+          }
         } else {
           driversData = data || [];
           console.log('Loaded', driversData.length, 'online drivers via automatic join');
+          
+          // Fallback: If no sessions found, use driver_profiles.is_available
+          // Only show drivers who have been active recently (within last 5 minutes)
+          if (driversData.length === 0) {
+            console.log('No sessions found, using driver_profiles.is_available as fallback...');
+            const thirtyMinutesAgo = new Date(Date.now() - 30 * 60 * 1000).toISOString();
+            const { data: availableDrivers } = await supabase
+              .from('driver_profiles')
+              .select('*')
+              .eq('is_available', true)
+              .eq('status', 'online')
+              .or(`last_location_update.gte.${thirtyMinutesAgo},last_location_update.is.null`) // Drivers active in last 30 min OR no location update
+              .order('rating', { ascending: false });
+            
+            if (availableDrivers && availableDrivers.length > 0) {
+              console.log('Found', availableDrivers.length, 'available drivers from driver_profiles');
+              driversData = availableDrivers.map(p => ({
+                ...p,
+                driver_sessions: null // No session data available
+              }));
+            }
+          }
         }
       } catch (err) {
         console.error('Critical error fetching drivers:', err);

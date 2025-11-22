@@ -11,3 +11,4 @@ COMMENT ON COLUMN public.executive_appointments.confidentiality_ip_url IS 'URL t
 COMMENT ON COLUMN public.executive_appointments.stock_subscription_url IS 'URL to Stock Subscription / Issuance Agreement document';
 
 
+

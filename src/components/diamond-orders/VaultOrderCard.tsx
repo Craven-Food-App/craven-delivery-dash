@@ -41,8 +41,8 @@ export const VaultOrderCard: React.FC<VaultOrderCardProps> = ({ order, onClaim, 
       }}
     >
       <Stack gap="md">
-        <Group justify="apart">
-          <Group gap="xs">
+        <Group justify="apart" wrap="nowrap" style={{ overflow: 'visible' }}>
+          <Group gap="xs" wrap="nowrap">
             <ThemeIcon
               size={40}
               radius="xl"
@@ -54,13 +54,28 @@ export const VaultOrderCard: React.FC<VaultOrderCardProps> = ({ order, onClaim, 
             >
               {isUnlocked ? <Unlock size={24} /> : <Lock size={24} />}
             </ThemeIcon>
-            <Text fw={700} size="lg" c={isUnlocked ? 'white' : 'dimmed'}>
+            <Text fw={700} size="lg" c={isUnlocked ? 'white' : 'dimmed'} style={{ whiteSpace: 'nowrap' }}>
               VAULT ORDER
             </Text>
           </Group>
           
           {isUnlocked && (
-            <Badge color="orange" variant="filled" size="sm">
+            <Badge 
+              color="orange" 
+              variant="filled" 
+              size="md"
+              style={{
+                padding: '6px 12px',
+                fontSize: '12px',
+                fontWeight: 700,
+                textTransform: 'uppercase',
+                letterSpacing: '0.5px',
+                whiteSpace: 'nowrap',
+                minWidth: 'fit-content',
+                flexShrink: 0,
+                overflow: 'visible'
+              }}
+            >
               <Sparkles size={12} style={{ marginRight: 4 }} />
               Unlocked
             </Badge>

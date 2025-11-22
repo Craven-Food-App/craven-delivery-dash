@@ -15,3 +15,4 @@ COMMENT ON COLUMN public.executive_appointments.formation_mode IS 'If true, this
 COMMENT ON COLUMN public.executive_appointments.pre_incorporation_consent_url IS 'URL to Pre-Incorporation Consent document (only for formation_mode appointments)';
 
 
+

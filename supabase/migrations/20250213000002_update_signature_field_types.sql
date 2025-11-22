@@ -24,3 +24,4 @@ COMMENT ON COLUMN public.document_template_signature_fields.field_type IS
 'Type of signature field: signature, initials/initial, date, text, name, email, company, or title';
 
 
+

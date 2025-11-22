@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { IconArrowLeft, IconBell, IconMapPin, IconVolume, IconDeviceMobile, IconMoon, IconSun, IconNavigation } from '@tabler/icons-react';
+import { IconArrowLeft, IconBell, IconMapPin, IconVolume, IconDeviceMobile, IconNavigation } from '@tabler/icons-react';
 import { notifications } from '@mantine/notifications';
 import { useNavigation } from '@/hooks/useNavigation';
 import { IOSPushNotifications } from './IOSPushNotifications';
@@ -30,7 +30,6 @@ export const AppSettingsSection: React.FC<AppSettingsSectionProps> = ({ onBack }
     locationServices: true,
     soundAlerts: true,
     vibration: true,
-    darkMode: false,
     language: 'english',
     distanceUnit: 'miles'
   });
@@ -244,43 +243,29 @@ export const AppSettingsSection: React.FC<AppSettingsSectionProps> = ({ onBack }
           </Card.Section>
         </Card>
 
-        {/* Display */}
+        {/* Language */}
         <Card shadow="sm" radius="lg" withBorder>
           <Card.Section p="md" style={{ borderBottom: '1px solid var(--mantine-color-gray-2)' }}>
             <Group gap="xs">
               <ThemeIcon size="lg" radius="md" color="orange" variant="light">
                 <IconDeviceMobile size={20} />
               </ThemeIcon>
-              <Title order={4} fw={600}>Display</Title>
+              <Title order={4} fw={600}>Language</Title>
             </Group>
           </Card.Section>
           <Card.Section p="md">
-            <Stack gap="md">
-              <Group justify="space-between">
-                <Box>
-                  <Text fw={500}>Dark Mode</Text>
-                  <Text size="sm" c="dimmed">Use dark theme</Text>
-                </Box>
-                <Switch
-                  checked={settings.darkMode}
-                  onChange={(e) => handleSettingChange('darkMode', e.currentTarget.checked)}
-                  color="orange"
-                />
-              </Group>
-
-              <Box>
-                <Text fw={500} mb="xs">Language</Text>
-                <Select
-                  value={settings.language}
-                  onChange={(value) => handleSettingChange('language', value || 'english')}
-                  data={[
-                    { value: 'english', label: 'English' },
-                    { value: 'spanish', label: 'Español' },
-                    { value: 'french', label: 'Français' },
-                  ]}
-                />
-              </Box>
-            </Stack>
+            <Box>
+              <Text fw={500} mb="xs">Language</Text>
+              <Select
+                value={settings.language}
+                onChange={(value) => handleSettingChange('language', value || 'english')}
+                data={[
+                  { value: 'english', label: 'English' },
+                  { value: 'spanish', label: 'Español' },
+                  { value: 'french', label: 'Français' },
+                ]}
+              />
+            </Box>
           </Card.Section>
         </Card>
 

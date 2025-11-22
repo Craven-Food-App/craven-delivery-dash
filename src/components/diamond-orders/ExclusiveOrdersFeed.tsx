@@ -94,12 +94,47 @@ export const ExclusiveOrdersFeed: React.FC<ExclusiveOrdersFeedProps> = ({ onClai
 
   return (
     <Tabs defaultValue="all">
-      <Tabs.List>
-        <Tabs.Tab value="all">All</Tabs.Tab>
-        <Tabs.Tab value="flash">Flash Drops</Tabs.Tab>
-        <Tabs.Tab value="vault">Vault</Tabs.Tab>
-        <Tabs.Tab value="mystery">Mystery</Tabs.Tab>
-        <Tabs.Tab value="batches">Batches</Tabs.Tab>
+      <Tabs.List style={{ flexWrap: 'nowrap', overflowX: 'auto' }}>
+        <Tabs.Tab 
+          value="all" 
+          c="white"
+          fw={700}
+          style={{ whiteSpace: 'nowrap' }}
+        >
+          All
+        </Tabs.Tab>
+        <Tabs.Tab 
+          value="flash" 
+          c="white"
+          fw={700}
+          style={{ whiteSpace: 'nowrap' }}
+        >
+          Flash Drops
+        </Tabs.Tab>
+        <Tabs.Tab 
+          value="vault" 
+          c="white"
+          fw={700}
+          style={{ whiteSpace: 'nowrap' }}
+        >
+          Vault
+        </Tabs.Tab>
+        <Tabs.Tab 
+          value="mystery" 
+          c="white"
+          fw={700}
+          style={{ whiteSpace: 'nowrap' }}
+        >
+          Mystery
+        </Tabs.Tab>
+        <Tabs.Tab 
+          value="batches" 
+          c="white"
+          fw={700}
+          style={{ whiteSpace: 'nowrap' }}
+        >
+          Batches
+        </Tabs.Tab>
       </Tabs.List>
 
       <Tabs.Panel value="all" pt="md">

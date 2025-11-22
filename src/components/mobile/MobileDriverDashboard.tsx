@@ -741,15 +741,53 @@ export const MobileDriverDashboard: React.FC = () => {
     }
   };
 
-  // Track online time
+  // Track online time and keep session updated
   useEffect(() => {
     if (driverState === 'online_searching') {
       const timer = setInterval(() => {
         setOnlineTime(prev => prev + 1);
       }, 1000);
-      return () => clearInterval(timer);
+      
+      // Update session every 30 seconds to keep driver marked as online and searching
+      // This ensures drivers in "Still searching" state remain visible as online
+      const sessionUpdateInterval = setInterval(async () => {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          // Get current session data
+          const { data: currentSession } = await supabase
+            .from('driver_sessions')
+            .select('session_data')
+            .eq('driver_id', user.id)
+            .maybeSingle();
+          
+          const currentSessionData = currentSession?.session_data || {};
+          
+          // Update session to keep driver_state as 'online_searching' and is_online as true
+          await supabase.from('driver_sessions').upsert({
+            driver_id: user.id,
+            is_online: true,
+            last_activity: new Date().toISOString(),
+            session_data: {
+              ...currentSessionData,
+              driver_state: 'online_searching', // Ensure state is maintained
+              online_since: currentSessionData?.online_since || new Date().toISOString(),
+              vehicle_type: currentSessionData?.vehicle_type || selectedVehicle,
+              earning_mode: currentSessionData?.earning_mode || earningMode,
+              current_city: currentSessionData?.current_city || currentCity,
+              ...(endTime && { end_time: endTime.toISOString() }),
+            }
+          }, {
+            onConflict: 'driver_id'
+          });
+        }
+      }, 30000); // Update every 30 seconds
+      
+      return () => {
+        clearInterval(timer);
+        clearInterval(sessionUpdateInterval);
+      };
     }
-  }, [driverState]);
+  }, [driverState, selectedVehicle, earningMode, currentCity, endTime]);
 
   // Listen for schedule status changes to sync CRAVE NOW button
   useEffect(() => {
@@ -821,7 +859,7 @@ export const MobileDriverDashboard: React.FC = () => {
       setSessionData(sessionData);
 
       // Ensure driver profile exists before creating session
-      const { data: existingProfile } = await supabase
+      let { data: existingProfile } = await supabase
         .from('driver_profiles')
         .select('id')
         .eq('user_id', user.id)
@@ -831,16 +869,24 @@ export const MobileDriverDashboard: React.FC = () => {
       
       if (!existingProfile) {
         // Create driver profile if it doesn't exist
-        const { error: createProfileError } = await supabase.from('driver_profiles').insert({
-          user_id: user.id,
-          status: 'online',
-          is_available: true,
-          last_location_update: new Date().toISOString()
-        });
+        const { data: newProfile, error: createProfileError } = await supabase
+          .from('driver_profiles')
+          .insert({
+            user_id: user.id,
+            status: 'online',
+            is_available: true,
+            last_location_update: new Date().toISOString()
+          })
+          .select('id')
+          .single();
         if (createProfileError) {
           console.error('Error creating driver profile:', createProfileError);
         } else {
           profileExists = true;
+          // Update existingProfile so we can use its id for session creation
+          if (newProfile) {
+            existingProfile = newProfile;
+          }
         }
       }
 
@@ -856,11 +902,12 @@ export const MobileDriverDashboard: React.FC = () => {
       }
 
       // Update or create driver session for persistence (only if profile exists)
-      if (profileExists) {
+      // NOTE: driver_sessions.driver_id must reference driver_profiles.id, not user.id
+      if (profileExists && existingProfile) {
         const {
           error: sessionError
         } = await supabase.from('driver_sessions').upsert({
-          driver_id: user.id,
+          driver_id: existingProfile.id, // Use profile.id, not user.id (FK constraint)
           is_online: true,
           last_activity: new Date().toISOString(),
           session_data: sessionData
@@ -869,7 +916,12 @@ export const MobileDriverDashboard: React.FC = () => {
         });
         if (sessionError) {
           console.error('Error updating driver session:', sessionError);
+          console.error('Session error details:', JSON.stringify(sessionError, null, 2));
+        } else {
+          console.log('✅ Driver session created/updated successfully');
         }
+      } else {
+        console.warn('⚠️ Cannot create session: profile does not exist');
       }
 
       // Get location and update craver_locations table

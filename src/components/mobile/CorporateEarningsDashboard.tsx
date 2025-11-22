@@ -82,16 +82,33 @@ const CorporateEarningsDashboard: React.FC<CorporateEarningsDashboardProps> = ({
           .gte('earned_at', dayStart.toISOString())
           .lt('earned_at', dayEnd.toISOString());
 
-        const dayPayments = dayEarnings?.reduce((sum, e) => sum + (e.amount_cents || 0), 0) / 100 || 0;
+        // Calculate total daily earnings (base pay + tips) and tips separately
+        const dayTotalEarnings = dayEarnings?.reduce((sum, e) => {
+          const total = (e.total_cents || (e.amount_cents || 0) + (e.tip_cents || 0));
+          return sum + total;
+        }, 0) / 100 || 0;
         const dayTips = dayEarnings?.reduce((sum, e) => sum + (e.tip_cents || 0), 0) / 100 || 0;
+        
+        // Debug logging for each day
+        console.log(`Day ${idx} (${dayStart.toLocaleDateString()}):`, {
+          earningsCount: dayEarnings?.length || 0,
+          totalEarnings: dayTotalEarnings,
+          tips: dayTips,
+          rawTotalCents: dayEarnings?.reduce((sum, e) => sum + (e.total_cents || (e.amount_cents || 0) + (e.tip_cents || 0)), 0) || 0,
+          rawTipCents: dayEarnings?.reduce((sum, e) => sum + (e.tip_cents || 0), 0) || 0
+        });
 
         weeklyEarningsData.push({
-          payments: dayPayments,
-          tips: dayTips
+          payments: dayTotalEarnings, // Total daily earnings (orange bar)
+          tips: dayTips // Tips (yellow bar)
         });
       }
 
       setWeeklyData(weeklyEarningsData);
+      
+      // Debug logging
+      console.log('Weekly earnings data:', weeklyEarningsData);
+      console.log('Weekly data totals:', weeklyEarningsData.map(d => ({ payments: d.payments, tips: d.tips })));
 
       // Calculate acceptance rate
       const { data: assignments } = await supabase
@@ -253,35 +270,70 @@ const CorporateEarningsDashboard: React.FC<CorporateEarningsDashboardProps> = ({
             <div className="flex-1">
               <div className="bg-white/10 backdrop-blur-sm rounded-xl p-2">
                 <p className="text-white text-[10px] font-semibold mb-1">Daily Earnings</p>
-                <div className="flex items-end gap-0.5 h-16">
-                  {weeklyData.length > 0 ? weeklyData.map((day, idx) => {
-                    const maxValue = Math.max(50, ...weeklyData.flatMap(d => [d.payments, d.tips])); // Dynamic max
-                    const paymentsHeight = maxValue > 0 ? (day.payments / maxValue) * 100 : 0;
-                    const tipsHeight = maxValue > 0 ? (day.tips / maxValue) * 100 : 0;
-                    return (
-                      <div key={idx} className="flex-1 flex flex-col items-center gap-0.5">
-                        <div className="w-full flex gap-0.5 items-end justify-center">
-                          {/* Payment bar */}
-                          <div 
-                            className="flex-1 bg-gradient-to-t from-orange-500 to-yellow-400 rounded-t min-h-[2px]"
-                            style={{ height: `${Math.max(paymentsHeight, 2)}%` }}
-                          />
-                          {/* Tips bar */}
-                          <div 
-                            className="flex-1 bg-gradient-to-t from-yellow-400 to-orange-300 rounded-t min-h-[2px]"
-                            style={{ height: `${Math.max(tipsHeight, 2)}%` }}
-                          />
+                <div className="flex items-end gap-0.5" style={{ height: '80px', minHeight: '80px' }}>
+                  {weeklyData.length > 0 ? (() => {
+                    // Calculate max value across all days (use total earnings for scaling)
+                    const allTotalEarnings = weeklyData.map(d => d.payments); // payments now contains total earnings
+                    const maxValue = Math.max(1, ...allTotalEarnings); // Ensure at least 1 to avoid division by zero
+                    
+                    return weeklyData.map((day, idx) => {
+                      // Orange bar = total daily earnings (payments + tips)
+                      const totalEarningsHeight = maxValue > 0 ? Math.max((day.payments / maxValue) * 100, 5) : 5;
+                      // Yellow bar = tips only
+                      // Ensure tips are always visible when they exist - use a minimum height
+                      let tipsHeight = 0;
+                      if (day.tips > 0) {
+                        // Calculate proportional height
+                        const proportionalHeight = maxValue > 0 ? (day.tips / maxValue) * 100 : 0;
+                        // Use at least 10% height if tips exist, or proportional if larger
+                        tipsHeight = Math.max(proportionalHeight, 10);
+                      }
+                      
+                      // Debug logging for Friday specifically (index 5: S=0, M=1, T=2, W=3, T=4, F=5, S=6)
+                      if (idx === 5) {
+                        console.log('Friday chart data:', {
+                          totalEarnings: day.payments,
+                          tips: day.tips,
+                          totalEarningsHeight: `${totalEarningsHeight}%`,
+                          tipsHeight: `${tipsHeight}%`,
+                          maxValue,
+                          proportionalHeight: maxValue > 0 ? `${(day.tips / maxValue) * 100}%` : '0%'
+                        });
+                      }
+                      
+                      return (
+                        <div key={idx} className="flex-1 flex flex-col items-center gap-0.5" style={{ height: '100%' }}>
+                          <div className="w-full flex gap-0.5 items-end justify-center" style={{ height: '100%' }}>
+                            {/* Orange bar - Total Daily Earnings */}
+                            <div 
+                              className="flex-1 bg-gradient-to-t from-orange-500 to-orange-600 rounded-t"
+                              style={{ 
+                                height: `${totalEarningsHeight}%`,
+                                minHeight: '4px',
+                                transition: 'height 0.3s ease'
+                              }}
+                            />
+                            {/* Yellow bar - Tips */}
+                            <div 
+                              className="flex-1 bg-gradient-to-t from-yellow-400 to-yellow-500 rounded-t"
+                              style={{ 
+                                height: `${tipsHeight}%`,
+                                minHeight: '4px',
+                                transition: 'height 0.3s ease'
+                              }}
+                            />
+                          </div>
+                          <span className="text-white text-[8px] mt-0.5">{['S', 'M', 'T', 'W', 'T', 'F', 'S'][idx]}</span>
                         </div>
-                        <span className="text-white text-[8px] mt-0.5">{['S', 'M', 'T', 'W', 'T', 'F', 'S'][idx]}</span>
-                      </div>
-                    );
-                  }) : (
+                      );
+                    });
+                  })() : (
                     // Loading or empty state
                     Array.from({ length: 7 }).map((_, idx) => (
-                      <div key={idx} className="flex-1 flex flex-col items-center gap-0.5">
-                        <div className="w-full flex gap-0.5 items-end justify-center h-full">
-                          <div className="flex-1 bg-white/20 rounded-t min-h-[2px]" />
-                          <div className="flex-1 bg-white/20 rounded-t min-h-[2px]" />
+                      <div key={idx} className="flex-1 flex flex-col items-center gap-0.5" style={{ height: '100%' }}>
+                        <div className="w-full flex gap-0.5 items-end justify-center" style={{ height: '100%' }}>
+                          <div className="flex-1 bg-white/20 rounded-t" style={{ minHeight: '4px', height: '20%' }} />
+                          <div className="flex-1 bg-white/20 rounded-t" style={{ minHeight: '4px', height: '20%' }} />
                         </div>
                         <span className="text-white text-[8px] mt-0.5">{['S', 'M', 'T', 'W', 'T', 'F', 'S'][idx]}</span>
                       </div>
@@ -291,11 +343,11 @@ const CorporateEarningsDashboard: React.FC<CorporateEarningsDashboardProps> = ({
                 {/* Legend */}
                 <div className="flex items-center justify-center gap-3 mt-1.5">
                   <div className="flex items-center gap-1">
-                    <div className="w-2 h-2 bg-gradient-to-t from-orange-500 to-yellow-400 rounded"></div>
-                    <span className="text-white text-[8px]">Payments</span>
+                    <div className="w-2 h-2 bg-gradient-to-t from-orange-500 to-orange-600 rounded"></div>
+                    <span className="text-white text-[8px]">Daily Earnings</span>
                   </div>
                   <div className="flex items-center gap-1">
-                    <div className="w-2 h-2 bg-gradient-to-t from-yellow-400 to-orange-300 rounded"></div>
+                    <div className="w-2 h-2 bg-gradient-to-t from-yellow-400 to-yellow-500 rounded"></div>
                     <span className="text-white text-[8px]">Tips</span>
                   </div>
                 </div>
@@ -327,7 +379,7 @@ const CorporateEarningsDashboard: React.FC<CorporateEarningsDashboardProps> = ({
         </Group>
         <Box
           style={{
-            backgroundColor: '#1a1a1a',
+            backgroundColor: 'hsl(14, 90%, 53%)', // Craven orange primary color
             borderRadius: '8px',
             padding: '16px',
             minHeight: 200,
@@ -385,7 +437,15 @@ const CorporateEarningsDashboard: React.FC<CorporateEarningsDashboardProps> = ({
       <div className="px-5 mb-3">
         <h3 className="text-white text-sm font-bold mb-2 tracking-wide">EARNINGS SNAPSHOT</h3>
         <div className="bg-orange-50 rounded-2xl p-4 shadow-xl">
-          <h4 className="text-2xl font-black text-gray-900 mb-0.5">${earnings.today.toFixed(2)}</h4>
+          <h4 
+            className="font-black text-gray-900 mb-0.5 whitespace-nowrap overflow-hidden"
+            style={{ 
+              fontSize: 'clamp(1.25rem, 4vw, 1.5rem)',
+              lineHeight: '1.2'
+            }}
+          >
+            ${earnings.today.toFixed(2)}
+          </h4>
           <p className="text-orange-800 text-xs font-semibold">Today</p>
         </div>
       </div>
@@ -395,15 +455,39 @@ const CorporateEarningsDashboard: React.FC<CorporateEarningsDashboardProps> = ({
         <h3 className="text-white text-sm font-bold mb-2 tracking-wide">Today's FEED FLOW</h3>
         <div className="grid grid-cols-3 gap-0 text-center">
           <div className="border-r border-white/30 py-2">
-            <p className="text-3xl font-black text-white mb-0.5">{earnings.todayDeliveries}</p>
+            <p 
+              className="font-black text-white mb-0.5 whitespace-nowrap overflow-hidden"
+              style={{ 
+                fontSize: 'clamp(1rem, 3.5vw, 1.875rem)',
+                lineHeight: '1.2'
+              }}
+            >
+              {earnings.todayDeliveries}
+            </p>
             <p className="text-white text-[10px] font-semibold">Delivered</p>
           </div>
           <div className="border-r border-white/30 py-2">
-            <p className="text-3xl font-black text-white mb-0.5">{earnings.todayAcceptance}%</p>
+            <p 
+              className="font-black text-white mb-0.5 whitespace-nowrap overflow-hidden"
+              style={{ 
+                fontSize: 'clamp(1rem, 3.5vw, 1.875rem)',
+                lineHeight: '1.2'
+              }}
+            >
+              {earnings.todayAcceptance}%
+            </p>
             <p className="text-white text-[10px] font-semibold">Acceptance</p>
           </div>
           <div className="py-2">
-            <p className="text-3xl font-black text-white mb-0.5">${earnings.todayTips.toFixed(2)}</p>
+            <p 
+              className="font-black text-white mb-0.5 whitespace-nowrap overflow-hidden"
+              style={{ 
+                fontSize: 'clamp(1rem, 3.5vw, 1.875rem)',
+                lineHeight: '1.2'
+              }}
+            >
+              ${earnings.todayTips.toFixed(2)}
+            </p>
             <p className="text-white text-[10px] font-semibold">Tips</p>
           </div>
         </div>

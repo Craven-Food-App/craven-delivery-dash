@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { IconArrowLeft, IconBell, IconGlobe, IconMoon, IconSun, IconVolume, IconVolumeOff } from '@tabler/icons-react';
+import { IconArrowLeft, IconBell, IconGlobe, IconVolume, IconVolumeOff } from '@tabler/icons-react';
 import { supabase } from '@/integrations/supabase/client';
 import { notifications } from '@mantine/notifications';
 import {
@@ -26,7 +26,6 @@ const AppSettingsPage: React.FC<AppSettingsPageProps> = ({ onBack }) => {
     pushNotifications: true,
     soundEnabled: true,
     vibrationEnabled: true,
-    darkMode: false,
     language: 'en',
   });
 
@@ -51,7 +50,6 @@ const AppSettingsPage: React.FC<AppSettingsPageProps> = ({ onBack }) => {
           pushNotifications: preferences.notification_sound ?? true,
           soundEnabled: preferences.notification_sound ?? true,
           vibrationEnabled: preferences.notification_sound ?? true,
-          darkMode: false, // Default to light mode as theme field doesn't exist
           language: 'en',
         });
       }
@@ -69,7 +67,6 @@ const AppSettingsPage: React.FC<AppSettingsPageProps> = ({ onBack }) => {
       if (key === 'pushNotifications') updates.push_notifications_enabled = value;
       if (key === 'soundEnabled') updates.sound_enabled = value;
       if (key === 'vibrationEnabled') updates.vibration_enabled = value;
-      if (key === 'darkMode') updates.theme = value ? 'dark' : 'light';
 
       // Update or create preferences
       const { error } = await supabase
@@ -184,43 +181,6 @@ const AppSettingsPage: React.FC<AppSettingsPageProps> = ({ onBack }) => {
               />
             </Group>
           </Stack>
-        </Card>
-
-        {/* Appearance */}
-        <Card shadow="sm" radius="lg" p="xl" withBorder>
-          <Group gap="md" mb="md">
-            <ThemeIcon size="xl" radius="lg" color="purple" variant="light">
-              {settings.darkMode ? (
-                <IconMoon size={24} color="var(--mantine-color-purple-6)" />
-              ) : (
-                <IconSun size={24} color="var(--mantine-color-purple-6)" />
-              )}
-            </ThemeIcon>
-            <Box>
-              <Title order={4} fw={700} c="dark">Appearance</Title>
-              <Text size="sm" c="dimmed">Theme and display settings</Text>
-            </Box>
-          </Group>
-
-          <Group justify="space-between" p="md" style={{ border: '2px solid var(--mantine-color-gray-2)', borderRadius: '12px' }}>
-            <Group gap="md">
-              {settings.darkMode ? (
-                <IconMoon size={20} color="var(--mantine-color-gray-6)" />
-              ) : (
-                <IconSun size={20} color="var(--mantine-color-gray-6)" />
-              )}
-              <Box>
-                <Text fw={700} c="dark">Dark Mode</Text>
-                <Text size="sm" c="dimmed">Switch to dark theme</Text>
-              </Box>
-            </Group>
-            <Switch
-              checked={settings.darkMode}
-              onChange={(e) => updateSetting('darkMode', e.currentTarget.checked)}
-              color="orange"
-              size="lg"
-            />
-          </Group>
         </Card>
 
         {/* Language */}

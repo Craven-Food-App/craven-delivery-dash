@@ -87,3 +87,4 @@ Each template includes:
 The migration is **idempotent** - it's safe to run multiple times. It will update existing templates or create them if they don't exist.
 
 
+

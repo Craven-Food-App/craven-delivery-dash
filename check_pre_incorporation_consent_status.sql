@@ -18,3 +18,4 @@ ORDER BY created_at DESC;
 -- Check the Edge Function logs in Supabase Dashboard for errors
 
 
+

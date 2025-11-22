@@ -34,6 +34,10 @@ interface OrderItem {
   name: string;
   quantity: number;
   price: number;
+  price_cents?: number;
+  menu_items?: {
+    name: string;
+  };
 }
 
 interface Driver {
@@ -143,9 +147,11 @@ export default function OrderHistory() {
           ),
           order_items (
             id,
-            name,
             quantity,
-            price
+            price_cents,
+            menu_items (
+              name
+            )
           )
         `)
         .eq('customer_id', user.id)
@@ -164,9 +170,19 @@ export default function OrderHistory() {
         return;
       }
 
+      // Transform order items to ensure name is properly set
+      const transformedData = (data || []).map((order: any) => ({
+        ...order,
+        order_items: (order.order_items || []).map((item: any) => ({
+          ...item,
+          name: item.menu_items?.name || item.name || 'Unknown Item',
+          price: item.price_cents || item.price || 0,
+        })),
+      }));
+
       // Fetch driver info for orders that are being delivered
       const ordersWithDrivers = await Promise.all(
-        (data || []).map(async (order: any) => {
+        transformedData.map(async (order: any) => {
           if (['picked_up', 'out_for_delivery', 'delivering'].includes(order.order_status)) {
             try {
               // First get the assignment
@@ -509,7 +525,7 @@ export default function OrderHistory() {
                           {order.order_items?.map((item, idx) => (
                             <Group key={idx} justify="space-between">
                               <Text size="sm" c="#404040" fw={500}>
-                                {item.name}
+                                {item.name || item.menu_items?.name || 'Unknown Item'}
                               </Text>
                               <Text size="sm" c="#737373" fw={600}>
                                 x{item.quantity}

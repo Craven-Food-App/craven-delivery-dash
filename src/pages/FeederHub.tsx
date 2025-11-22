@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Car, DollarSign, Clock, Shield, CheckCircle, Star } from "lucide-react";
+import { Car, DollarSign, Clock, CheckCircle, Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -21,11 +21,6 @@ const FeederHub = () => {
       icon: Clock,
       title: "Flexible Hours",
       description: "Work full-time or part-time. You're in control of when and where you deliver."
-    },
-    {
-      icon: Shield,
-      title: "Insurance Coverage", 
-      description: "Stay protected with our comprehensive insurance coverage while you're on delivery."
     },
     {
       icon: CheckCircle,
@@ -122,20 +117,22 @@ const FeederHub = () => {
             </p>
           </div>
           
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {benefits.map((benefit, index) => (
-              <Card key={index} className="text-center hover:shadow-hover transition-all duration-300">
-                <CardHeader>
-                  <div className="mx-auto mb-4 p-3 bg-primary/10 rounded-full w-fit">
-                    <benefit.icon className="h-6 w-6 text-primary" />
-                  </div>
-                  <CardTitle className="text-lg">{benefit.title}</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <CardDescription>{benefit.description}</CardDescription>
-                </CardContent>
-              </Card>
-            ))}
+          <div className="flex justify-center">
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-5xl">
+              {benefits.map((benefit, index) => (
+                <Card key={index} className="text-center hover:shadow-hover transition-all duration-300">
+                  <CardHeader>
+                    <div className="mx-auto mb-4 p-3 bg-primary/10 rounded-full w-fit">
+                      <benefit.icon className="h-6 w-6 text-primary" />
+                    </div>
+                    <CardTitle className="text-lg">{benefit.title}</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <CardDescription>{benefit.description}</CardDescription>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
           </div>
         </div>
       </section>

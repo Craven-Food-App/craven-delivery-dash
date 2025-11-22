@@ -21,3 +21,4 @@ WHERE template_key = 'pre_incorporation_consent';
 -- Run migration: 20250211000017_enhance_templates_with_legal_formatting.sql
 
 
+

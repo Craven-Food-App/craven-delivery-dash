@@ -177,3 +177,4 @@ COMMENT ON COLUMN public.executive_appointments.reporting_to IS 'Who the officer
 COMMENT ON COLUMN public.executive_appointments.department IS 'Department the officer belongs to';
 
 
+

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
-import { MapPin, Search, User, ShoppingCart, ChevronDown, LogOut, Menu, X, Gift, Store, Building2 } from "lucide-react";
-import { Link } from "react-router-dom";
+import { MapPin, Search, User, ShoppingCart, ChevronDown, LogOut, Menu, X, Gift, Store, Building2, Plus, Minus } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
 import cravenLogo from "@/assets/craven-logo.png";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -25,8 +25,13 @@ import { useToast } from "@/hooks/use-toast";
 import { useMerchantStatus } from "@/hooks/useMerchantStatus";
 import AuthModal from "./auth/AuthModal";
 import AddressSelector from "./address/AddressSelector";
-import { ThemeToggle } from "./ThemeToggle";
 import { useFeatureFlag } from "@/hooks/useFeatureFlag";
+import { useCart } from "@/contexts/CartContext";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 
 interface User {
   id: string;
@@ -35,16 +40,20 @@ interface User {
 }
 
 const Header = () => {
+  const navigate = useNavigate();
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState(null);
   const [loading, setLoading] = useState(true);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
-  const [cartItems, setCartItems] = useState(0);
   const [selectedAddress, setSelectedAddress] = useState<any>(null);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isCartOpen, setIsCartOpen] = useState(false);
   const { toast } = useToast();
   const { isMerchant, merchantLoading } = useMerchantStatus(user?.id || null);
   const restaurantsVisible = useFeatureFlag('feature_restaurants_visible');
+  
+  // Get cart from context
+  const { cartItems, cartCount, removeFromCart, updateCartItem, getCartTotal, clearCart } = useCart();
   
   // Check if on feeder subdomain
   const isFeederSubdomain = typeof window !== 'undefined' && 
@@ -201,8 +210,6 @@ const Header = () => {
 
             {/* Desktop Actions */}
             <div className="hidden md:flex items-center space-x-2">
-              <ThemeToggle />
-              
               {!isFeederSubdomain && !isMerchantSubdomain && (
                 <Button 
                   variant="ghost" 
@@ -225,14 +232,134 @@ const Header = () => {
               )}
               
               {user && (
-                <Button variant="ghost" size="icon" className="relative">
-                  <ShoppingCart className="h-5 w-5" />
-                  {cartItems > 0 && (
-                    <span className="absolute -top-1 -right-1 bg-primary text-primary-foreground text-xs rounded-full h-5 w-5 flex items-center justify-center">
-                      {cartItems}
-                    </span>
-                  )}
-                </Button>
+                <Popover open={isCartOpen} onOpenChange={setIsCartOpen}>
+                  <PopoverTrigger asChild>
+                    <Button 
+                      variant="ghost" 
+                      size="icon" 
+                      className="relative"
+                    >
+                      <ShoppingCart className="h-5 w-5" />
+                      {cartCount > 0 && (
+                        <span className="absolute -top-1 -right-1 bg-primary text-primary-foreground text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                          {cartCount}
+                        </span>
+                      )}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-80 p-0" align="end">
+                    <div className="p-4 border-b">
+                      <div className="flex items-center justify-between">
+                        <h3 className="font-semibold text-lg">Cart</h3>
+                        {cartItems.length > 0 && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => {
+                              clearCart();
+                              toast({
+                                title: "Cart cleared",
+                                description: "All items removed from cart",
+                              });
+                            }}
+                            className="text-xs text-muted-foreground"
+                          >
+                            Clear
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                    <div className="max-h-96 overflow-y-auto">
+                      {cartItems.length === 0 ? (
+                        <div className="p-8 text-center">
+                          <ShoppingCart className="h-12 w-12 mx-auto text-muted-foreground mb-4 opacity-50" />
+                          <p className="text-muted-foreground font-medium">Cart Empty</p>
+                          <p className="text-sm text-muted-foreground mt-1">(No Items In Cart)</p>
+                        </div>
+                      ) : (
+                        <div className="p-4 space-y-4">
+                          {cartItems.map((item) => (
+                            <div key={item.id} className="flex items-start gap-3 pb-4 border-b last:border-0">
+                              <div className="flex-1">
+                                <div className="flex items-start justify-between gap-2">
+                                  <div className="flex-1">
+                                    <p className="font-medium text-sm">{item.name}</p>
+                                    {item.special_instructions && (
+                                      <p className="text-xs text-muted-foreground mt-1">
+                                        Note: {item.special_instructions}
+                                      </p>
+                                    )}
+                                    {item.modifiers && item.modifiers.length > 0 && (
+                                      <div className="text-xs text-muted-foreground mt-1">
+                                        {item.modifiers.map((mod: any, idx: number) => (
+                                          <span key={idx}>
+                                            {mod.name}
+                                            {idx < item.modifiers!.length - 1 && ', '}
+                                          </span>
+                                        ))}
+                                      </div>
+                                    )}
+                                  </div>
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-6 w-6"
+                                    onClick={() => removeFromCart(item.id)}
+                                  >
+                                    <X className="h-4 w-4" />
+                                  </Button>
+                                </div>
+                                <div className="flex items-center justify-between mt-2">
+                                  <div className="flex items-center gap-2">
+                                    <Button
+                                      variant="outline"
+                                      size="icon"
+                                      className="h-7 w-7"
+                                      onClick={() => updateCartItem(item.id, Math.max(1, item.quantity - 1))}
+                                    >
+                                      <Minus className="h-3 w-3" />
+                                    </Button>
+                                    <span className="text-sm font-medium w-8 text-center">{item.quantity}</span>
+                                    <Button
+                                      variant="outline"
+                                      size="icon"
+                                      className="h-7 w-7"
+                                      onClick={() => updateCartItem(item.id, item.quantity + 1)}
+                                    >
+                                      <Plus className="h-3 w-3" />
+                                    </Button>
+                                  </div>
+                                  <p className="text-sm font-semibold">
+                                    ${((item.price_cents * item.quantity) / 100).toFixed(2)}
+                                  </p>
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                    {cartItems.length > 0 && (
+                      <div className="p-4 border-t space-y-3">
+                        <div className="flex items-center justify-between">
+                          <span className="font-semibold">Total</span>
+                          <span className="font-bold text-lg">
+                            ${(getCartTotal() / 100).toFixed(2)}
+                          </span>
+                        </div>
+                        <Button
+                          className="w-full"
+                          onClick={() => {
+                            setIsCartOpen(false);
+                            navigate('/checkout');
+                          }}
+                        >
+                          Proceed to Checkout
+                        </Button>
+                      </div>
+                    )}
+                  </PopoverContent>
+                </Popover>
               )}
               
               {user ? (
@@ -424,12 +551,6 @@ const Header = () => {
                   </>
                 )}
               </nav>
-
-              {/* Mobile Theme Toggle */}
-              <div className="flex items-center justify-between pb-4">
-                <span className="text-sm font-medium text-foreground">Theme</span>
-                <ThemeToggle />
-              </div>
 
               {/* Mobile Auth Section */}
               <div className="pt-4 border-t border-border">
