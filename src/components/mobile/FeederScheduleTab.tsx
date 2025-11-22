@@ -558,11 +558,82 @@ const FeederScheduleTab: React.FC<FeederScheduleTabProps> = ({
     if (!timeToNextShift) return 0;
     
     const totalMinutes = timeToNextShift.hours * 60 + timeToNextShift.minutes;
-    const maxMinutes = 24 * 60;
+    // Calculate progress: 0% when 24 hours away, 100% when shift starts (0 minutes away)
+    // More intuitive: as time decreases, progress increases
+    const maxMinutes = 24 * 60; // 24 hours in minutes
     const progress = Math.min(100, Math.max(0, ((maxMinutes - totalMinutes) / maxMinutes) * 100));
     
     return Math.round(progress);
   }, [timeToNextShift]);
+
+  const handleNextShiftClick = () => {
+    // Find the next shift and scroll to it or highlight it
+    if (schedules.length === 0) {
+      notifications.show({
+        title: 'No shifts scheduled',
+        message: 'Schedule a shift to see it here',
+        color: 'blue',
+      });
+      setViewMode('available');
+      return;
+    }
+
+    // Find the day with the next shift
+    const activeSchedules = schedules.filter(s => s && s.is_active === true);
+    if (activeSchedules.length === 0) {
+      notifications.show({
+        title: 'No active shifts',
+        message: 'Schedule a shift to see it here',
+        color: 'blue',
+      });
+      setViewMode('available');
+      return;
+    }
+
+    // Calculate which day has the next shift
+    const now = new Date();
+    const currentDay = now.getDay();
+    const currentTimeMinutes = now.getHours() * 60 + now.getMinutes();
+
+    let nextShiftDay = -1;
+    let minDiffMs = Infinity;
+
+    for (let dayOffset = 0; dayOffset < 14; dayOffset++) {
+      const checkDate = new Date(now);
+      checkDate.setDate(now.getDate() + dayOffset);
+      checkDate.setHours(0, 0, 0, 0);
+      const checkDay = checkDate.getDay();
+      
+      const dayShifts = activeSchedules
+        .filter(s => s.day_of_week === checkDay)
+        .sort((a, b) => a.start_time.localeCompare(b.start_time));
+      
+      for (const shift of dayShifts) {
+        const [startHour, startMin] = shift.start_time.split(':').map(Number);
+        const shiftDateTime = new Date(checkDate);
+        shiftDateTime.setHours(startHour, startMin, 0, 0);
+        
+        const diffMs = shiftDateTime.getTime() - now.getTime();
+        
+        if (diffMs > 0 && diffMs < minDiffMs) {
+          minDiffMs = diffMs;
+          nextShiftDay = dayOffset;
+        }
+      }
+    }
+
+    if (nextShiftDay >= 0 && nextShiftDay < weekDays.length) {
+      setActiveDay(nextShiftDay);
+      setViewMode('schedule');
+      notifications.show({
+        title: 'Next shift highlighted',
+        message: '',
+        color: 'green',
+      });
+    } else {
+      setViewMode('schedule');
+    }
+  };
 
   const highDemandZone = surgeZones.length > 0 
     ? { name: surgeZones[0].zone_name }
@@ -614,21 +685,35 @@ const FeederScheduleTab: React.FC<FeederScheduleTabProps> = ({
         {/* Next Shift Row */}
         <Box mb="md">
           <Group gap="md" mb="md">
-            <RingProgress
-              size={80}
-              thickness={8}
-              sections={timeToNextShift ? [{ value: progressPercentage, color: 'white' }] : []}
-              label={
-                <Text c="white" size="9px" fw={700} ta="center" style={{ lineHeight: 1.2 }}>
-                  NEXT<br/>SHIFT
-                </Text>
-              }
-              styles={{
-                curve: {
-                  stroke: 'rgba(255,255,255,0.3)',
-                },
+            <Box
+              onClick={handleNextShiftClick}
+              style={{
+                cursor: 'pointer',
+                transition: 'transform 0.2s ease',
               }}
-            />
+              onMouseEnter={(e) => {
+                e.currentTarget.style.transform = 'scale(1.1)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = 'scale(1)';
+              }}
+            >
+              <RingProgress
+                size={80}
+                thickness={8}
+                sections={timeToNextShift ? [{ value: progressPercentage, color: 'white' }] : []}
+                label={
+                  <Text c="white" size="9px" fw={700} ta="center" style={{ lineHeight: 1.2 }}>
+                    NEXT<br/>SHIFT
+                  </Text>
+                }
+                styles={{
+                  curve: {
+                    stroke: 'rgba(255,255,255,0.3)',
+                  },
+                }}
+              />
+            </Box>
             <Box style={{ flex: 1 }}>
               <Text c="white" size="lg" fw={600}>Time To Next Shift</Text>
               <Text c="white" size="sm" opacity={0.8}>{formatTimeRemaining()}</Text>
