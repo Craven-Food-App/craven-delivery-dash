@@ -391,11 +391,15 @@ export const PushNotificationSetup: React.FC = () => {
           const response = await supabase.functions.invoke('send-push-notification', {
             body: {
               userId: userData.user.id,
-              title: '🚗 Test Notification!',
-              message: 'This is a test to verify background notifications work.',
-              data: {
-                type: 'test',
-                timestamp: new Date().toISOString()
+              type: 'test',
+              notification: {
+                title: '🚗 Test Notification!',
+                body: 'This is a test to verify background notifications work.',
+                icon: '/logo.png',
+                data: {
+                  type: 'test',
+                  timestamp: new Date().toISOString()
+                }
               }
             }
           });

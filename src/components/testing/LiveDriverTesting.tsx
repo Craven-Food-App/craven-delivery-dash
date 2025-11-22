@@ -337,9 +337,13 @@ export const LiveDriverTesting = () => {
       const { error: pushError } = await supabase.functions.invoke('send-push-notification', {
         body: {
           userId: selectedDriver,
-          title: `Test Order: ${restaurant.name || 'Test Restaurant'}`,
-          message: 'Test pickup - this is a test order',
-          data: notificationPayload
+          type: 'order_assignment',
+          notification: {
+            title: `Test Order: ${restaurant.name || 'Test Restaurant'}`,
+            body: 'Test pickup - this is a test order',
+            icon: '/logo.png',
+            data: notificationPayload
+          }
         }
       });
       if (pushError) {

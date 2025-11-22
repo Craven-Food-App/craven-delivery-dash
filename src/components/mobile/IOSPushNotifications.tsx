@@ -175,11 +175,15 @@ export const IOSPushNotifications = ({ userId }: IOSPushNotificationsProps) => {
       await supabase.functions.invoke('send-push-notification', {
         body: {
           userId: userId,
-          title: '🎉 Test Notification',
-          message: 'If you see this, push notifications are working!',
-          data: {
-            type: 'test',
-            timestamp: new Date().toISOString()
+          type: 'test',
+          notification: {
+            title: '🎉 Test Notification',
+            body: 'If you see this, push notifications are working!',
+            icon: '/logo.png',
+            data: {
+              type: 'test',
+              timestamp: new Date().toISOString()
+            }
           }
         }
       });
